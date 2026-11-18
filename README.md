@@ -411,6 +411,11 @@ targeted the old icon class, needs the new one.
 * PHP 8.3 or later
 * WordPress 7.1 or later
 
+The script's REST requests (searches, icon lists, oEmbed previews, action
+buttons, regions) go through `wp.apiFetch`, a dependency of the script, so a
+screen left open past its nonce's life renews the nonce and tries again
+instead of answering 403.
+
 ## License
 
 GPL-2.0-or-later

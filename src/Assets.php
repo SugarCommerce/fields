@@ -89,11 +89,13 @@ final class Assets {
 		// jquery is a base dependency even though the kit is vanilla: several
 		// of the core controls it drives — the colour picker above all — are
 		// jQuery plugins, and a script that runs before them finds nothing to
-		// call and fails without a word.
+		// call and fails without a word. wp-api-fetch carries the REST
+		// requests, so a nonce that ran out while the screen was open is
+		// renewed rather than answered with a 403.
 		wp_register_script(
 			$handle,
 			$this->url . '/js/field-kit.js',
-			[ 'jquery' ],
+			[ 'jquery', 'wp-api-fetch' ],
 			$this->version( 'js/field-kit.js' ),
 			true
 		);

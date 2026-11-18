@@ -1737,10 +1737,73 @@ function finish() {
 		process.exit( 1 );
 	}
 
-	console.log( `  ${ expected.length } modules loaded and initialised cleanly, colour picker signals correctly, a native colour keeps its swatch and box in step, an icon choice is written and escaped, an added repeater row is live and renumbered, chips reorder, a root binds once, a password reveals, a count counts, a region follows its country, an accordion opens and closes, a secret is marked for removal and unmarked, the save bar says what changed` );
+	console.log( `  ${ expected.length } modules loaded and initialised cleanly, colour picker signals correctly, a native colour keeps its swatch and box in step, an icon choice is written and escaped, an added repeater row is live and renumbered, chips reorder, a root binds once, a password reveals, a count counts, a region follows its country, an accordion opens and closes, a secret is marked for removal and unmarked, the save bar says what changed, requests go through apiFetch` );
 }
 
-regionChecks.then( finish, ( error ) => {
+/*
+ * Requests go through wp.apiFetch, which renews a nonce that ran out while
+ * the screen was open. A plain fetch with the nonce printed on the page got a
+ * 403 from every search and button the morning after.
+ */
+async function requestChecks() {
+	const calls = [];
+	let reply = () => Promise.resolve( { items: [ 1 ] } );
+
+	context.window.wp = {
+		apiFetch: ( options ) => {
+			calls.push( options );
+
+			return reply( options );
+		},
+	};
+
+	try {
+		if ( typeof modules.request !== 'function' ) {
+			console.error( '  request(): not exposed' );
+			failures ++;
+
+			return;
+		}
+
+		// The icon list asks through apiFetch and gets the body back.
+		const wrap = Object.assign( makeElement(), { dataset: { endpoint: 'https://example.test/wp-json/sugarcommerce-fields/v1/icons', nonce: 'stale' } } );
+		const page = await modules.IconPicker.fetch( wrap, { id: 'heroicons', version: '1' }, 'cart', 2 );
+
+		if ( 1 !== calls.length || ! /\/icons\?set=heroicons&search=cart&page=2/.test( calls[ 0 ].url ) || true !== calls[ 0 ].parse ) {
+			console.error( `  request(): the icon list did not go through apiFetch: ${ JSON.stringify( calls ) }` );
+			failures ++;
+		} else if ( ! page || 1 !== page.items[ 0 ] ) {
+			console.error( '  request(): the icon list lost its answer' );
+			failures ++;
+		}
+
+		// A POST keeps its method and body; a refusal still reads as one.
+		reply = () => Promise.reject( { code: 'rest_forbidden', message: 'No.', data: { status: 403 } } );
+
+		const refused = await modules.request( 'https://example.test/wp-json/x', { method: 'POST', body: '{"a":1}' } );
+		const body = await refused.json();
+
+		if ( 'POST' !== calls[ 1 ].method || '{"a":1}' !== calls[ 1 ].body || false !== refused.ok || 403 !== refused.status || 'No.' !== body.message ) {
+			console.error( '  request(): a refusal did not read like a fetch Response' );
+			failures ++;
+		}
+
+		// A body that was not JSON fails to parse, as fetch's would.
+		reply = () => Promise.reject( { code: 'invalid_json', message: 'Not JSON.' } );
+
+		const broken = await modules.request( 'https://example.test/wp-json/x' );
+		const parsed = await broken.json().then( () => 'parsed', () => 'rejected' );
+
+		if ( 'rejected' !== parsed ) {
+			console.error( '  request(): a body that was not JSON parsed' );
+			failures ++;
+		}
+	} finally {
+		delete context.window.wp;
+	}
+}
+
+regionChecks.then( requestChecks ).then( finish, ( error ) => {
 	console.error( `  Region: ${ error.message }` );
 	failures ++;
 	finish();
