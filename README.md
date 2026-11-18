@@ -432,6 +432,11 @@ and bulk edit column `field-kit-inline`, and bulk edit's `__field_kit_no_change_
 and `__field_kit_clear__` sentinels. A site that filtered the old names, or
 targeted the old icon class, needs the new one.
 
+A Strauss prefix that itself starts `SugarCommerce\` keeps all its segments --
+`SugarCommerce\Playground\Vendor\` gives
+`sugarcommerce-playground-vendor-sugarcommerce-fields/v1` -- so a plugin of the
+family is never taken for an unprefixed copy.
+
 ## Requirements
 
 * PHP 8.3 or later
