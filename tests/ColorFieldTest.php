@@ -288,4 +288,88 @@ final class ColorFieldTest extends TestCase {
 		$this->assertStringContainsString( "querySelectorAll( '.field-kit__color-field' )", $js );
 		$this->assertStringContainsString( "swatch.addEventListener( 'input'", $js );
 	}
+	/**
+	 * The hex starts after the chip wherever the field is drawn.
+	 *
+	 * The chip sits over the start of the box and the box's 42px of
+	 * padding is what keeps the hex clear of it. A rule for every text
+	 * input of a context -- a settings card's `padding: 6px 12px` at two
+	 * classes, an attribute and an element -- that outranks the hex rule
+	 * takes that room back, and the chip covers "#e8" of "#e8a5c4". The
+	 * cascade is invisible in markup, so it is checked here: every rule
+	 * that pads a text input must lose to the hex rule, by specificity or,
+	 * at the same specificity, by coming first.
+	 */
+	public function test_no_text_input_rule_takes_the_chips_room(): void {
+		$css   = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+		$css   = (string) preg_replace( '#/\*.*?\*/#s', '', $css );
+		$rules = [];
+
+		preg_match_all( '/([^{}]+)\{([^{}]*)\}/', $css, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER );
+
+		foreach ( $matches as $match ) {
+			foreach ( explode( ',', $match[1][0] ) as $selector ) {
+				$rules[] = [ trim( $selector ), $match[2][0], $match[0][1] ];
+			}
+		}
+
+		$hex = null;
+
+		foreach ( $rules as $rule ) {
+			if ( str_ends_with( $rule[0], 'field-kit__color-hex' ) && str_contains( $rule[1], 'padding-inline-start: 42px' ) ) {
+				$hex = $rule;
+			}
+		}
+
+		$this->assertNotNull( $hex, 'the hex rule pads the box for the chip' );
+
+		$checked = 0;
+
+		foreach ( $rules as $rule ) {
+			if ( ! preg_match( '/input\[type="text"\](:[a-z-]+(\([^)]*\))?)*$/', $rule[0] ) || ! preg_match( '/(^|;)\s*padding(-left|-inline|-inline-start)?\s*:/', $rule[1] ) ) {
+				continue;
+			}
+
+			++$checked;
+			$theirs = $this->specificity( $rule[0] );
+			$ours   = $this->specificity( $hex[0] );
+
+			$this->assertTrue(
+				$ours > $theirs || ( $ours === $theirs && $hex[2] > $rule[2] ),
+				sprintf( '"%s" (%s) outranks the hex rule (%s)', $rule[0], implode( ',', $theirs ), implode( ',', $ours ) )
+			);
+		}
+
+		$this->assertGreaterThan( 0, $checked, 'the settings card pads its text inputs' );
+	}
+
+	/**
+	 * A selector's specificity, as ids, classes and elements.
+	 *
+	 * Enough of the rules for this stylesheet: `:not()` counts as its
+	 * argument, a pseudo-element as an element.
+	 *
+	 * @param string $selector The selector.
+	 *
+	 * @return int[]
+	 */
+	private function specificity( string $selector ): array {
+		$score    = [ 0, 0, 0 ];
+		$selector = (string) preg_replace_callback(
+			'/:not\(([^)]*)\)/',
+			function ( array $inner ) use ( &$score ): string {
+				$add   = $this->specificity( $inner[1] );
+				$score = [ $score[0] + $add[0], $score[1] + $add[1], $score[2] + $add[2] ];
+
+				return '';
+			},
+			$selector
+		);
+
+		$score[0] += preg_match_all( '/#[\w-]+/', $selector );
+		$score[1] += preg_match_all( '/\.[\w-]+|\[[^\]]*\]|(?<!:):[\w-]+/', $selector );
+		$score[2] += preg_match_all( '/::[\w-]+|(?:^|[\s>+~])[a-z][\w-]*/i', $selector );
+
+		return $score;
+	}
 }

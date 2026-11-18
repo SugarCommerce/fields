@@ -2832,9 +2832,11 @@ body.term-php .field-kit__accordion {
 
 /* Room for "#e8a5c4" and for the "No colour" that stands in for it, after
    the chip, and no more: a hex in a box as wide as a sentence reads as
-   unfinished. Three classes deep, so a panel's rule for every text input
-   -- two classes and an element -- does not take the chip's room back. */
-.field-kit__color-field .field-kit__color-control .field-kit__color-hex {
+   unfinished. Three classes, an attribute and an element deep, so no
+   context's rule for every text input -- a panel's two classes and an
+   element, a settings card's two classes, an attribute and an element --
+   takes the chip's room back. */
+.field-kit__color-field .field-kit__color-control input[type="text"].field-kit__color-hex {
 	box-sizing: border-box;
 	inline-size: calc(9ch + 56px);
 	min-inline-size: 0;
@@ -2849,7 +2851,7 @@ body.term-php .field-kit__accordion {
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-.field-kit__color-field .field-kit__color-control .field-kit__color-hex:invalid {
+.field-kit__color-field .field-kit__color-control input[type="text"].field-kit__color-hex:invalid {
 	border-color: #d63638;
 }
 
