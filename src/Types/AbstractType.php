@@ -1,0 +1,342 @@
+<?php
+/**
+ * Base Field Type
+ *
+ * @package     SugarCommerce\Fields
+ * @copyright   Copyright (c) 2026, ArrayPress Limited
+ * @license     GPL2+
+ * @since       1.0.0
+ */
+
+declare( strict_types=1 );
+
+namespace SugarCommerce\Fields\Types;
+
+use SugarCommerce\Fields\Attributes;
+use SugarCommerce\Fields\Contracts\FieldType;
+use SugarCommerce\Fields\Field;
+use SugarCommerce\Fields\Registry;
+use SugarCommerce\Fields\Support\Rules;
+
+/**
+ * Defaults every type inherits.
+ *
+ * Subclasses override only what differs, so a new type is a handful of lines
+ * rather than a copy of an existing one — which is how the predecessor
+ * libraries drifted into six sanitizers of the same name with six different
+ * bodies.
+ */
+abstract class AbstractType implements FieldType {
+
+	/**
+	 * The registry that produced this type.
+	 *
+	 * Nested types need it to resolve their children. Passing it in rather
+	 * than constructing one means a consumer's custom types are visible to
+	 * fields nested inside a repeater, which they would not be otherwise.
+	 *
+	 * @var Registry|null
+	 */
+	protected ?Registry $registry;
+
+	/**
+	 * Construct.
+	 *
+	 * @param Registry|null $registry The registry that produced this type.
+	 */
+	public function __construct( ?Registry $registry = null ) {
+		$this->registry = $registry;
+	}
+
+	/**
+	 * Render the control.
+	 *
+	 * @param Field      $field      The field.
+	 * @param Attributes $attributes Prepared attributes.
+	 *
+	 * @return string
+	 */
+	abstract public function render( Field $field, Attributes $attributes ): string;
+
+	/**
+	 * The type's identifier, derived from the class name.
+	 *
+	 * `SelectMultipleType` becomes `select_multiple`. Overriding is only
+	 * needed where the id does not follow from the name.
+	 *
+	 * @return string
+	 */
+	public function id(): string {
+		$short = substr( static::class, strrpos( static::class, '\\' ) + 1 );
+		$short = preg_replace( '/Type$/', '', $short ) ?? $short;
+
+		return strtolower( ltrim( (string) preg_replace( '/([A-Z])/', '_$1', $short ), '_' ) );
+	}
+
+	/**
+	 * Config defaults for this type.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function defaults(): array {
+		return [];
+	}
+
+	/**
+	 * Coerce a submitted value.
+	 *
+	 * Text is the safe default: a type that stores something structured says
+	 * so explicitly rather than inheriting a guess.
+	 *
+	 * @param mixed $value Raw submitted value.
+	 * @param Field $field The field.
+	 *
+	 * @return mixed
+	 */
+	public function sanitize( mixed $value, Field $field ): mixed {
+		return sanitize_text_field( $this->scalar( $value ) );
+	}
+
+	/**
+	 * A submitted value as text.
+	 *
+	 * An array where text was expected -- `field[]=x` in a request nobody
+	 * typed -- casts to the word "Array", with a warning. It is nothing.
+	 *
+	 * @param mixed $value Raw submitted value.
+	 *
+	 * @return string
+	 */
+	protected function scalar( mixed $value ): string {
+		return is_scalar( $value ) ? (string) $value : '';
+	}
+
+	/**
+	 * Whether a sanitized value is acceptable.
+	 *
+	 * The field's `validate` configuration, applied to the whole value. A
+	 * blank passes without being looked at: an optional field left empty is
+	 * not wrong, and whether it may be empty is what `required` decides. A
+	 * rule that had to guard against blank first would be a rule every
+	 * consumer forgets to guard once.
+	 *
+	 * A type that holds several values overrides this to check each — a
+	 * tags field given `email` means each tag, not the list.
+	 *
+	 * @param mixed $value The sanitized value.
+	 * @param Field $field The field.
+	 *
+	 * @return string An empty string when the value is acceptable, otherwise the message.
+	 * @since 1.2.0
+	 */
+	public function validate( mixed $value, Field $field ): string {
+		$rule = $this->rule( $field );
+
+		if ( null === $rule || null === $value || '' === $value || [] === $value ) {
+			return '';
+		}
+
+		return Rules::check( $rule, $value, $field );
+	}
+
+	/**
+	 * The field's `validate` rule, in a form Rules can be asked about.
+	 *
+	 * Null when there is none. Something that is neither a name nor a
+	 * callable — a list of two rules, say, which is a reasonable thing to
+	 * try — is passed on as the unknown rule it is, so it is reported under
+	 * WP_DEBUG rather than thrown on or silently dropped.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string|callable|null
+	 */
+	protected function rule( Field $field ): string|callable|null {
+		$rule = $field->get( 'validate' );
+
+		if ( null === $rule || '' === $rule ) {
+			return null;
+		}
+
+		if ( is_string( $rule ) || is_callable( $rule ) ) {
+			return $rule;
+		}
+
+		return is_scalar( $rule ) ? (string) $rule : gettype( $rule );
+	}
+
+	/**
+	 * Whether a placeholder is meaningful.
+	 *
+	 * @return bool
+	 */
+	public function supports_placeholder(): bool {
+		return false;
+	}
+
+	/**
+	 * Whether the type stores a value.
+	 *
+	 * @return bool
+	 */
+	public function stores_value(): bool {
+		return true;
+	}
+
+	/**
+	 * Whether the control labels itself.
+	 *
+	 * @return bool
+	 */
+	public function is_self_labelling(): bool {
+		return false;
+	}
+
+	/**
+	 * Whether the control is a group of inputs.
+	 *
+	 * @return bool
+	 */
+	public function is_grouped(): bool {
+		return false;
+	}
+
+	/**
+	 * Whether the field wants the whole row.
+	 *
+	 * False here, and true only where a type says so. It used to be derived
+	 * from `stores_value()`, which conflated two different questions: a
+	 * clipboard and an action button store nothing and are still controls
+	 * with a name — and they lost their label entirely, because the table
+	 * gave them a spanning cell with no header.
+	 *
+	 * @return bool
+	 */
+	public function spans_row(): bool {
+		return false;
+	}
+
+	/**
+	 * Whether this field opens a new section, and of what kind.
+	 *
+	 * A tab and an accordion are markers rather than controls: they store
+	 * nothing and render nothing of their own. What they do is divide the
+	 * fields that follow them, up to the next marker of the same kind. The
+	 * field set groups on this, because the grouping cannot be expressed by a
+	 * field that only knows about itself.
+	 *
+	 * An empty string -- almost every type -- means the field is just a field.
+	 *
+	 * @return string '', 'tab' or 'accordion'.
+	 * @since 1.1.0
+	 */
+	public function opens_section(): string {
+		return '';
+	}
+
+	/**
+	 * The shape this type stores.
+	 *
+	 * A string, which is what most controls sanitize to. Anything else says
+	 * so for itself.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		return [ 'type' => 'string' ];
+	}
+
+	/**
+	 * Script and style handles this type needs.
+	 *
+	 * @return array{scripts: string[], styles: string[]}
+	 */
+	public function dependencies(): array {
+		return [
+			'scripts' => [],
+			'styles'  => [],
+		];
+	}
+
+	/**
+	 * Render a `<label>` for one of several inputs the type emits itself.
+	 *
+	 * Types that draw more than one control — dimensions, link, date range —
+	 * still owe each one a programmatically associated label. This is the
+	 * only sanctioned way to write one, so none of them can quietly ship a
+	 * bare input.
+	 *
+	 * @param string $target   Target input id.
+	 * @param string $text  Label text.
+	 * @param bool   $visible Whether the label is visible or screen-reader only.
+	 *
+	 * @return string
+	 */
+	protected function sub_label( string $target, string $text, bool $visible = true ): string {
+		return sprintf(
+			'<label class="field-kit__sub-label%s" for="%s">%s</label>',
+			$visible ? '' : ' screen-reader-text',
+			esc_attr( $target ),
+			esc_html( $text )
+		);
+	}
+
+	/**
+	 * Build attributes for one of several inputs the type emits itself.
+	 *
+	 * Derives a distinct id and name per part and carries the parent's
+	 * accessibility associations onto the first part, so a description still
+	 * announces once rather than once per input.
+	 *
+	 * @param Attributes $source Attributes prepared by the renderer.
+	 * @param string     $part   Part suffix, e.g. "width".
+	 * @param bool       $first  Whether this is the part the label points at.
+	 *
+	 * @return Attributes
+	 */
+	protected function part_attributes( Attributes $source, string $part, bool $first = false ): Attributes {
+		$attributes = new Attributes();
+
+		$id   = (string) $source->get( 'id', '' );
+		$name = (string) $source->get( 'name', '' );
+
+		$attributes->set( 'id', $id . '_' . $part );
+		$attributes->set( 'name', $name . '[' . $part . ']' );
+
+		if ( $first && $source->has( 'aria-describedby' ) ) {
+			$attributes->set( 'aria-describedby', $source->get( 'aria-describedby' ) );
+		}
+
+		if ( $source->has( 'disabled' ) ) {
+			$attributes->set( 'disabled', $source->get( 'disabled' ) );
+		}
+
+		return $attributes;
+	}
+
+	/**
+	 * Whether the control can live in a quick edit or a bulk edit row.
+	 *
+	 * No, unless a type says otherwise. A new type appearing in quick edit
+	 * and breaking is worse than one not appearing until someone asks for it.
+	 *
+	 * @return bool
+	 */
+	public function supports_inline(): bool {
+		return false;
+	}
+
+	/**
+	 * Nothing beyond the common keys, unless a type says otherwise.
+	 *
+	 * A type that reads its own configuration overrides this and merges with
+	 * parent::config_keys(), so an abstract's keys are not lost.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return [];
+	}
+}

@@ -1,0 +1,108 @@
+<?php
+/**
+ * Textarea Field Type
+ *
+ * @package SugarCommerce\Fields
+ */
+
+declare( strict_types=1 );
+
+namespace SugarCommerce\Fields\Types;
+
+use SugarCommerce\Fields\Attributes;
+use SugarCommerce\Fields\Field;
+use SugarCommerce\Fields\Support\Markup;
+
+/**
+ * A multi-line text control.
+ */
+class TextareaType extends AbstractType {
+
+	/**
+	 * Config defaults.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function defaults(): array {
+		return [ 'rows' => 5 ];
+	}
+
+	/**
+	 * Render the textarea.
+	 *
+	 * @param Field      $field      The field.
+	 * @param Attributes $attributes Prepared attributes.
+	 *
+	 * @return string
+	 */
+	public function render( Field $field, Attributes $attributes ): string {
+		$attributes->add_class( 'large-text', 'field-kit__textarea' );
+		$attributes->set( 'rows', (int) $field->get( 'rows', 5 ) );
+		$attributes->set_if( $field->has( 'cols' ), 'cols', $field->get( 'cols' ) );
+		$attributes->set_if( $field->has( 'maxlength' ), 'maxlength', $field->get( 'maxlength' ) );
+
+		$value = (string) $field->value();
+
+		// A count against the limit, where there is one. A textarea is the
+		// control most likely to have a limit worth watching -- a meta
+		// description, an excerpt -- and the one where a person is furthest
+		// from the end of what they have typed.
+		return sprintf(
+			'<textarea%s>%s</textarea>',
+			$attributes->render(),
+			esc_textarea( $value )
+		) . Markup::counter(
+			mb_strlen( $value ),
+			(int) $field->get( 'maxlength', 0 ),
+			(bool) $field->get( 'counter', true ),
+			'large-text'
+		);
+	}
+
+	/**
+	 * Coerce a submitted value.
+	 *
+	 * sanitize_textarea_field() rather than sanitize_text_field(), which
+	 * collapses the newlines the control exists to accept.
+	 *
+	 * @param mixed $value Raw submitted value.
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	public function sanitize( mixed $value, Field $field ): string {
+		return sanitize_textarea_field( $this->scalar( $value ) );
+	}
+
+	/**
+	 * A textarea takes a placeholder.
+	 *
+	 * @return bool
+	 */
+	public function supports_placeholder(): bool {
+		return true;
+	}
+
+	/**
+	 * Fits an inline row.
+	 *
+	 * A plain textarea, which needs nothing started.
+	 *
+	 * @return bool
+	 */
+	public function supports_inline(): bool {
+		return true;
+	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'cols', 'counter', 'maxlength', 'rows' ]
+		);
+	}
+}

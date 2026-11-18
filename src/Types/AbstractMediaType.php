@@ -1,0 +1,377 @@
+<?php
+/**
+ * Base Media Type
+ *
+ * @package SugarCommerce\Fields
+ */
+
+declare( strict_types=1 );
+
+namespace SugarCommerce\Fields\Types;
+
+use SugarCommerce\Fields\Attributes;
+use SugarCommerce\Fields\Field;
+use SugarCommerce\Fields\Icons\Glyphs;
+
+/**
+ * Anything backed by the media library.
+ *
+ * The stored value is an attachment id, held in a hidden input, with a real
+ * button to open the picker and a real button to clear it. Buttons rather
+ * than clickable divs or anchors with `href="#"`: they are focusable and
+ * respond to Enter and Space without any of that being rebuilt.
+ */
+abstract class AbstractMediaType extends AbstractType {
+
+	/**
+	 * The media frame's title.
+	 *
+	 * @return string
+	 */
+	abstract protected function frame_title( ?Field $field = null ): string;
+
+	/**
+	 * The button that opens the picker.
+	 *
+	 * @return string
+	 */
+	abstract protected function choose_label( ?Field $field = null ): string;
+
+	/**
+	 * What the button says once something has been chosen.
+	 *
+	 * Nothing by default, which leaves the button saying what it always
+	 * said. A type whose button doubles as "change it" -- an image, where
+	 * the picture is on show and the button under it replaces it -- says so.
+	 *
+	 * @param Field|null $field The field.
+	 *
+	 * @return string
+	 */
+	protected function replace_label( ?Field $field = null ): string {
+		return '';
+	}
+
+	/**
+	 * What the button says now: choose, or replace when there is something
+	 * to replace.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	protected function button_label( Field $field ): string {
+		$replace = $this->replace_label( $field );
+
+		return '' !== $replace && '' !== (string) $field->value() && '0' !== (string) $field->value()
+			? $replace
+			: $this->choose_label( $field );
+	}
+
+	/**
+	 * Mime types the picker offers, or an empty string for all.
+	 *
+	 * @return string
+	 */
+	protected function mime_type(): string {
+		return '';
+	}
+
+	/**
+	 * Render the preview, the hidden value and the controls.
+	 *
+	 * @param Field      $field      The field.
+	 * @param Attributes $attributes Prepared attributes.
+	 *
+	 * @return string
+	 */
+	public function render( Field $field, Attributes $attributes ): string {
+		$attributes->set( 'type', 'hidden' );
+		$attributes->set( 'value', (string) $field->value() );
+		$attributes->add_class( 'field-kit__media-value' );
+
+		$wrapper = new Attributes();
+		$wrapper->add_class( 'field-kit__media', 'field-kit__media--' . $this->id() );
+		$wrapper->set( 'data-frame-title', $this->frame_title( $field ) );
+		$wrapper->set( 'data-choose-label', $this->choose_label( $field ) );
+		$wrapper->set_if( '' !== $this->replace_label( $field ), 'data-replace-label', $this->replace_label( $field ) );
+		$wrapper->set_if( '' !== $this->mime_type(), 'data-mime-type', $this->mime_type() );
+		$wrapper->set_if( $field->has( 'library' ), 'data-library', $field->get( 'library' ) );
+
+		return sprintf(
+			'<div%s>%s<input%s />%s</div>',
+			$wrapper->render(),
+			$this->render_preview( $field ),
+			$attributes->render(),
+			$this->render_controls( $field )
+		);
+	}
+
+	/**
+	 * The current selection, shown above the controls.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	abstract protected function render_preview( Field $field ): string;
+
+	/**
+	 * Whether a button that clears the whole field belongs here.
+	 *
+	 * It does for a field holding one thing: "Remove" beside a chosen image
+	 * means the image. It does not for a gallery, where every tile carries
+	 * its own remove and a second one at the bottom reads as "remove which?"
+	 * — its label said "Remove the selection for Screenshots", which does not
+	 * answer that either.
+	 *
+	 * @return bool
+	 */
+	protected function shows_clear(): bool {
+		return true;
+	}
+
+	/**
+	 * The choose and clear buttons.
+	 *
+	 * Each button names the field it acts on for assistive technology, since
+	 * a screen holding several media fields would otherwise present a list of
+	 * identical "Remove" buttons.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	protected function render_controls( Field $field ): string {
+		if ( ! $this->shows_clear() ) {
+			$choose = new Attributes();
+			$choose->set( 'type', 'button' );
+			$choose->add_class( 'button', 'field-kit__media-choose' );
+			$choose->set(
+				'aria-label',
+				sprintf(
+					/* translators: %s: field label */
+					__( 'Choose a file for %s', 'sugarcommerce' ),
+					$field->label()
+				)
+			);
+
+			return sprintf(
+				'<p class="field-kit__media-actions"><button%s>%s</button></p>',
+				$choose->render(),
+				esc_html( $this->button_label( $field ) )
+			);
+		}
+
+		// absint rather than a string comparison, so an id of 0 left behind
+		// by an older save is treated as nothing selected.
+		$has_value = $this->has_selection( $field );
+
+		$clear = new Attributes();
+		$clear->set( 'type', 'button' );
+		// Not .button-link-delete: that is core's red *link*, and putting it
+		// on a bordered .button gives red text inside a blue border. A
+		// bordered button that removes something is drawn the way the Site
+		// Icon's Remove is — see the stylesheet.
+		$clear->add_class( 'button', 'field-kit__button--delete', 'field-kit__media-clear' );
+		$clear->set_if( ! $has_value, 'hidden', true );
+		$clear->set(
+			'aria-label',
+			sprintf(
+				/* translators: %s: field label */
+				__( 'Remove the selection for %s', 'sugarcommerce' ),
+				$field->label()
+			)
+		);
+
+		$choose = new Attributes();
+		$choose->set( 'type', 'button' );
+		$choose->add_class( 'button', 'field-kit__media-choose' );
+		$choose->set(
+			'aria-label',
+			sprintf(
+				/* translators: %s: field label */
+				__( 'Choose a file for %s', 'sugarcommerce' ),
+				$field->label()
+			)
+		);
+
+		return sprintf(
+			'<p class="field-kit__media-actions"><button%s>%s</button> <button%s>%s</button></p>',
+			$choose->render(),
+			esc_html( $this->button_label( $field ) ),
+			$clear->render(),
+			esc_html__( 'Remove', 'sugarcommerce' )
+		);
+	}
+
+	/**
+	 * An icon-only control that sits inside the input.
+	 *
+	 * Modelled on the way EDD draws the file field on a download: the picker
+	 * lives at the right-hand end of the input it fills in, rather than as a
+	 * separate labelled button underneath it. Two full-width buttons stacked
+	 * below a URL made a single file look like a form of its own, and in the
+	 * table layout — where this field is a cell — they wrapped onto their own
+	 * line and doubled the height of every row.
+	 *
+	 * Icon-only, so it needs a real accessible name; it also names the field
+	 * it acts on, since a screen with several file fields would otherwise
+	 * present a list of identical "Choose" buttons.
+	 *
+	 * @param Field  $field  The field.
+	 * @param string $action Either `choose` or `clear`.
+	 * @param string $icon   A key of Glyphs::DEFAULTS.
+	 * @param string $label  Accessible name.
+	 * @param bool   $hidden Whether it starts hidden.
+	 *
+	 * @return string
+	 */
+	protected function inline_button( Field $field, string $action, string $icon, string $label, bool $hidden = false ): string {
+		$button = new Attributes();
+		$button->set( 'type', 'button' );
+		$button->add_class( 'field-kit__media-button', 'field-kit__media-' . $action );
+		$button->set_if( $hidden, 'hidden', true );
+		$button->set( 'aria-label', $label );
+
+		return sprintf(
+			'<button%s>%s</button>',
+			$button->render(),
+			Glyphs::get( $icon )
+		);
+	}
+
+	/**
+	 * The picker, for a field whose input it sits inside.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	protected function choose_button( Field $field ): string {
+		return $this->inline_button(
+			$field,
+			'choose',
+			'upload',
+			sprintf(
+				/* translators: %s: field label */
+				__( 'Choose a file for %s', 'sugarcommerce' ),
+				$field->label()
+			)
+		);
+	}
+
+	/**
+	 * The clear control, for a field whose input it sits inside.
+	 *
+	 * @param Field $field     The field.
+	 * @param bool  $has_value Whether anything is selected.
+	 *
+	 * @return string
+	 */
+	protected function clear_button( Field $field, bool $has_value ): string {
+		return $this->inline_button(
+			$field,
+			'clear',
+			'close',
+			sprintf(
+				/* translators: %s: field label */
+				__( 'Remove the selection for %s', 'sugarcommerce' ),
+				$field->label()
+			),
+			! $has_value
+		);
+	}
+
+	/**
+	 * An input with its controls tucked inside it.
+	 *
+	 * The count is a class rather than a runtime-built modifier because the
+	 * input's right-hand padding has to clear whatever sits on top of it,
+	 * and a stylesheet test here asserts that every rule targets a class
+	 * something actually writes out.
+	 *
+	 * @param string $input   The input's markup.
+	 * @param string $buttons The controls' markup.
+	 * @param int    $count   How many controls $buttons holds.
+	 *
+	 * @return string
+	 */
+	protected function input_group( string $input, string $buttons, int $count = 1 ): string {
+		return sprintf(
+			'<div class="field-kit__media-input%s">%s<span class="field-kit__media-buttons">%s</span></div>',
+			$count > 1 ? ' field-kit__media-input--pair' : '',
+			$input,
+			$buttons
+		);
+	}
+
+	/**
+	 * Whether anything is actually selected.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return bool
+	 */
+	protected function has_selection( Field $field ): bool {
+		return absint( $field->value() ) > 0;
+	}
+
+	/**
+	 * Coerce a submitted value to an attachment id.
+	 *
+	 * @param mixed $value Raw submitted value.
+	 * @param Field $field The field.
+	 *
+	 * Wide on purpose: most media fields store an attachment id, but
+	 * file_url stores a URL and gallery stores a list, and a narrowed type
+	 * here would stop either subclass declaring what it actually stores.
+	 *
+	 * @return mixed
+	 */
+	public function sanitize( mixed $value, Field $field ): mixed {
+		$id = absint( $value );
+
+		// An emptied field must come back as '' rather than 0. Zero is a
+		// value as far as the field set is concerned — an unticked checkbox
+		// deliberately stores it — so returning it here persisted a
+		// meaningless attachment id, and the Remove button reappeared on the
+		// next load because '0' is not ''.
+		return 0 === $id ? '' : $id;
+	}
+
+	/**
+	 * Scripts the media frame needs.
+	 *
+	 * @return array{scripts: string[], styles: string[]}
+	 */
+	public function dependencies(): array {
+		return [
+			'scripts' => [ 'media-upload', 'media-views' ],
+			'styles'  => [],
+		];
+	}
+
+	/**
+	 * An attachment id, or the empty string when nothing is chosen.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		return [ 'type' => [ 'integer', 'string' ] ];
+	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'library' ]
+		);
+	}
+}

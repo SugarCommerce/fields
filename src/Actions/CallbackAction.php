@@ -1,0 +1,144 @@
+<?php
+/**
+ * Callback Action
+ *
+ * @package SugarCommerce\Fields
+ */
+
+declare( strict_types=1 );
+
+namespace SugarCommerce\Fields\Actions;
+
+use SugarCommerce\Fields\Contracts\Action;
+use SugarCommerce\Fields\Contracts\RichPayload;
+use Throwable;
+
+/**
+ * An action backed by a consumer's own callable.
+ *
+ * The callable is invoked with the sanitized payload and may return either
+ * the full result shape or a bare string, which is taken as a success
+ * message — returning a string is the obvious thing to do and is not worth a
+ * support question.
+ *
+ * A throw is caught and reported as a failure rather than becoming a 500.
+ * These run from a button on an admin screen, and a consumer's licence
+ * server timing out should show a message, not an empty response the field
+ * cannot explain.
+ */
+final class CallbackAction implements Action, RichPayload {
+
+	/**
+	 * The name a field refers to this action by.
+	 *
+	 * @var string
+	 */
+	private string $name;
+
+	/**
+	 * The consumer's callable.
+	 *
+	 * @var callable
+	 */
+	private $callback;
+
+	/**
+	 * The capability required to run it.
+	 *
+	 * @var string
+	 */
+	private string $capability;
+
+	/**
+	 * The payload keys that carry markup.
+	 *
+	 * @var string[]
+	 */
+	private array $rich;
+
+	/**
+	 * Construct.
+	 *
+	 * @param string   $name       Action name.
+	 * @param callable $callback   The consumer's callable.
+	 * @param string   $capability Capability required to run it.
+	 * @param string[] $rich       The payload keys that carry markup.
+	 */
+	public function __construct( string $name, callable $callback, string $capability = 'manage_options', array $rich = [] ) {
+		$this->name       = $name;
+		$this->callback   = $callback;
+		$this->capability = $capability;
+		$this->rich       = array_values( array_map( 'strval', $rich ) );
+	}
+
+	/**
+	 * The payload keys that carry markup.
+	 *
+	 * @return string[]
+	 */
+	public function rich(): array {
+		return $this->rich;
+	}
+
+	/**
+	 * The name a field refers to this action by.
+	 *
+	 * @return string
+	 */
+	public function name(): string {
+		return $this->name;
+	}
+
+	/**
+	 * The capability required to run it.
+	 *
+	 * @return string
+	 */
+	public function capability(): string {
+		return $this->capability;
+	}
+
+	/**
+	 * Run the callable.
+	 *
+	 * @param array<string, mixed> $payload Sanitized payload.
+	 *
+	 * @return array{success: bool, message?: string, data?: array<string, mixed>}
+	 */
+	public function handle( array $payload ): array {
+		try {
+			$result = ( $this->callback )( $payload );
+		} catch ( Throwable $e ) {
+			// What the exception says is for the log. A database error names
+			// tables, an HTTP client quotes the response it got, and the
+			// button's capability is whatever the consumer set it to.
+			if ( function_exists( 'wp_trigger_error' ) ) {
+				wp_trigger_error( __METHOD__, $e->getMessage(), E_USER_WARNING );
+			}
+
+			return [
+				'success' => false,
+				'message' => defined( 'WP_DEBUG' ) && WP_DEBUG
+					? $e->getMessage()
+					: __( 'That did not work. The error has been logged.', 'sugarcommerce' ),
+			];
+		}
+
+		if ( is_string( $result ) ) {
+			return [
+				'success' => true,
+				'message' => $result,
+			];
+		}
+
+		if ( ! is_array( $result ) ) {
+			return [ 'success' => (bool) $result ];
+		}
+
+		return [
+			'success' => (bool) ( $result['success'] ?? true ),
+			'message' => (string) ( $result['message'] ?? '' ),
+			'data'    => (array) ( $result['data'] ?? [] ),
+		];
+	}
+}

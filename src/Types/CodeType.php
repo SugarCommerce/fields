@@ -1,0 +1,124 @@
+<?php
+/**
+ * Code Field Type
+ *
+ * @package SugarCommerce\Fields
+ */
+
+declare( strict_types=1 );
+
+namespace SugarCommerce\Fields\Types;
+
+use SugarCommerce\Fields\Attributes;
+use SugarCommerce\Fields\Field;
+
+/**
+ * A code editor, backed by CodeMirror.
+ *
+ * The underlying control stays a textarea, so the field still works — and
+ * stays keyboard accessible — if the editor script fails to load.
+ */
+final class CodeType extends TextareaType {
+
+	/**
+	 * Config defaults.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function defaults(): array {
+		return [
+			'rows'     => 10,
+			'language' => 'text/html',
+		];
+	}
+
+	/**
+	 * Render the editor.
+	 *
+	 * @param Field      $field      The field.
+	 * @param Attributes $attributes Prepared attributes.
+	 *
+	 * @return string
+	 */
+	public function render( Field $field, Attributes $attributes ): string {
+		$attributes->add_class( 'field-kit__code' );
+		$attributes->set( 'data-language', (string) $field->get( 'language', 'text/html' ) );
+
+		return parent::render( $field, $attributes );
+	}
+
+	/**
+	 * Coerce a submitted value.
+	 *
+	 * The same line core draws for post content: markup from someone
+	 * without `unfiltered_html` is filtered, and from someone with it is
+	 * stored as written. A code field is where custom CSS or a snippet of
+	 * script lives, which makes it precisely the field an author must not
+	 * be able to put a script into if the theme goes on to print it. That
+	 * is a stricter rule than the theme and plugin editors in core apply,
+	 * because those sit behind a capability of their own and a metabox
+	 * carrying this field sits behind whatever the screen asks for.
+	 *
+	 * @param mixed $value Raw submitted value.
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	public function sanitize( mixed $value, Field $field ): string {
+		$value = $this->scalar( $value );
+
+		return current_user_can( 'unfiltered_html' ) ? $value : wp_kses_post( $value );
+	}
+
+	/**
+	 * What this type needs enqueued.
+	 *
+	 * The editor is not a plain script handle: wp_enqueue_code_editor()
+	 * enqueues CodeMirror plus the mode and linter for a given type, and
+	 * returns the settings its initialiser needs. Naming the type here lets
+	 * the asset registrar make that call once per language actually used.
+	 *
+	 * @return array{scripts: string[], styles: string[], code_editors: string[]}
+	 */
+	public function dependencies(): array {
+		return [
+			'scripts'      => [],
+			'styles'       => [],
+			'code_editors' => [ 'text/html' ],
+		];
+	}
+
+	/**
+	 * The editor languages this field uses.
+	 *
+	 * @param \SugarCommerce\Fields\Field $field The field.
+	 *
+	 * @return string[]
+	 */
+	public function editor_types( $field ): array {
+		return [ (string) $field->get( 'language', 'text/html' ) ];
+	}
+
+	/**
+	 * Does not fit an inline row.
+	 *
+	 * CodeMirror has to be started in JavaScript, and quick edit clones its panel before anything runs in it — so the editor comes up as a bare textarea, or not at all.
+	 *
+	 * @return bool
+	 */
+	public function supports_inline(): bool {
+		return false;
+	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'language' ]
+		);
+	}
+}
