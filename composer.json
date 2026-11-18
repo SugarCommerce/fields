@@ -12,7 +12,9 @@
   ],
   "require": {
     "php": ">=8.3",
-    "sugarcommerce/geo": "dev-main"
+    "sugarcommerce/geo": "dev-main",
+    "sugarcommerce/plugin": "dev-main",
+    "sugarcommerce/security": "dev-main"
   },
   "require-dev": {
     "phpcompatibility/phpcompatibility-wp": "^2.1",
@@ -27,6 +29,27 @@
     {
       "type": "path",
       "url": "../geo",
+      "options": {
+        "symlink": false
+      }
+    },
+    {
+      "type": "path",
+      "url": "../security",
+      "options": {
+        "symlink": false
+      }
+    },
+    {
+      "type": "path",
+      "url": "../dates",
+      "options": {
+        "symlink": false
+      }
+    },
+    {
+      "type": "path",
+      "url": "../plugin",
       "options": {
         "symlink": false
       }

@@ -1,0 +1,56 @@
+{
+	"made_by": "SugarCommerce\\Fields\\Context\\EncryptedContext at fields 9e1d1a1, before it used sugarcommerce/security",
+	"key_material": "The salts tests/stubs.php defines: AUTH_KEY, SECURE_AUTH_KEY, LOGGED_IN_KEY and LOGGED_IN_SALT = 'test-salt-<lower-case name>-0123456789abcdef'. The old key was sha256 of LOGGED_IN_KEY . LOGGED_IN_SALT . AUTH_KEY . SECURE_AUTH_KEY.",
+	"scenario": "A",
+	"key_hex": "73b9e22d93dccaab534234c4a63543a94b9f94e598a0a52fb440c63facc51ece",
+	"json": {
+		"string": {
+			"value": "sk_example_DO-NOT-LEAK-1234567890",
+			"stored": "fkenc:j:6zmBdR+ET0jCCeM4myScOoTreSNi9OIcjXSs22RcQd+59qhptXoGXlQkc0dcabj35/4GR17jnooGDpoGQcoI"
+		},
+		"unicode": {
+			"value": "Pässwörd — £€ 日本",
+			"stored": "fkenc:j:7aLqREVFcHnqfd7raza4Ju38k/7FRvu5pvNeJ8VzRAW34MyE/h4In9Dt/JpkjdGAPrVLc4ip+RZWM6Ol8REN/8qlxhLYBeETWvZNgEE0aXeM"
+		},
+		"int": {
+			"value": 123,
+			"stored": "fkenc:j:mYxeq/bopsK0ciXSsTXyaVvUKqlpLeL99SVhIUiKIQ=="
+		},
+		"float": {
+			"value": 19.99,
+			"stored": "fkenc:j:nQa1t3Uqm2gLy8e9cYiX28YSG8n0m93fLK+Aus8vtWda"
+		},
+		"bool": {
+			"value": true,
+			"stored": "fkenc:j:MpZMCcRnN2qPXe9eqyTF2Uz2+I/f3tPi6OPjxwdPuOY="
+		},
+		"list": {
+			"value": [
+				"a",
+				"b",
+				3
+			],
+			"stored": "fkenc:j:MOGeaeGt3TUPSV7Xl7ZY5t8K0ipnHNtSlyi3P+20L0Vvw+ITHs2L"
+		},
+		"map": {
+			"value": {
+				"id": "x1",
+				"n": [
+					1,
+					2
+				]
+			},
+			"stored": "fkenc:j:CxVvimjhJjJ5QrFp4hqPmet6TgAdnUWT1YOcJDNOxkdMjJEyOI0pvaQQerb/J8UtbQ=="
+		}
+	},
+	"v0": {
+		"string": {
+			"value": "sk_example_DO-NOT-LEAK-1234567890",
+			"stored": "fkenc:fd2ENLbASnhB+60nzlMZdJfBd/hBb1nnJ6zqyF445f46l0NiFoBgKp2PJ7ex1LvnNDFhU5MPRUmr+qPHXg=="
+		},
+		"numeric": {
+			"value": "123",
+			"stored": "fkenc:EpSien8ZubKLOr075AOVsRPFrx6GVdVe5t5kOkd1Nw=="
+		}
+	}
+}

@@ -12,10 +12,12 @@ declare( strict_types=1 );
 
 namespace SugarCommerce\Fields\Context;
 
+use RuntimeException;
 use SugarCommerce\Fields\Contracts\Context;
 use SugarCommerce\Fields\Contracts\Flushable;
 use SugarCommerce\Fields\Contracts\Registrable;
 use SugarCommerce\Fields\Field;
+use SugarCommerce\Security\Encryption\Cipher;
 
 /**
  * Encrypts fields marked `encrypted` at rest, whatever they are stored in.
@@ -25,8 +27,14 @@ use SugarCommerce\Fields\Field;
  * the settings library having its own copy of this was the reason it was only
  * ever available there.
  *
- * The key is derived from the site's own salts. That has a consequence worth
- * stating plainly: values encrypted on one site cannot be read on another,
+ * The encryption is sugarcommerce/security's ({@see Cipher}): AES-256-GCM
+ * under the site's key -- `WP_ENCRYPTION_KEY`, or one derived from the salts
+ * in wp-config.php. This class keeps only its own marker, `fkenc:`, in front
+ * of the cipher's payload (base64 of nonce, tag and ciphertext), so values
+ * written before the move still read: their payload is the same shape, and
+ * the key they were written under is handed to the cipher to try as well.
+ *
+ * The key comes from the site. That has a consequence worth stating plainly: values encrypted on one site cannot be read on another,
  * and rotating salts makes existing values unreadable. That is the correct
  * trade for a credential — it is why a leaked database alone is not enough to
  * use one — but it means an encrypted field is not something to put in a
@@ -52,10 +60,20 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	private const PREFIX_JSON = 'fkenc:j:';
 
 	/**
-	 * The cipher. GCM authenticates as well as encrypts, so a tampered
-	 * value fails to decrypt rather than decrypting to something else.
+	 * The constants this class once made its own key from, in that order.
+	 *
+	 * Values written before the move to sugarcommerce/security are under
+	 * sha256 of these joined; the cipher tries that key when the site's
+	 * fails. Nothing is written under it.
 	 */
-	private const CIPHER = 'aes-256-gcm';
+	private const OLD_KEY_CONSTANTS = [ 'LOGGED_IN_KEY', 'LOGGED_IN_SALT', 'AUTH_KEY', 'SECURE_AUTH_KEY' ];
+
+	/**
+	 * The cipher, once made; false when it cannot be.
+	 *
+	 * @var Cipher|false|null
+	 */
+	private static Cipher|false|null $cipher = null;
 
 	/**
 	 * The context being decorated.
@@ -269,67 +287,64 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	 * @return bool
 	 */
 	public static function available(): bool {
-		return function_exists( 'openssl_encrypt' )
-			&& in_array( self::CIPHER, (array) openssl_get_cipher_methods(), true )
-			&& '' !== self::key();
+		return null !== self::cipher();
 	}
 
 	/**
-	 * The key, derived from the site's salts.
+	 * The cipher: the site's key, and the key this class used before.
+	 *
+	 * @return Cipher|null Null without OpenSSL's AES-256-GCM or any key
+	 *                     material.
+	 */
+	private static function cipher(): ?Cipher {
+		if ( null === self::$cipher ) {
+			try {
+				self::$cipher = ( new Cipher( 'fields' ) )->also_open( self::old_key_material() );
+			} catch ( RuntimeException ) {
+				self::$cipher = false;
+			}
+		}
+
+		return self::$cipher ?: null;
+	}
+
+	/**
+	 * Forget the cipher, so the next one is made from the salts as they
+	 * are now. For tests that change them.
+	 *
+	 * @return void
+	 */
+	public static function reset(): void {
+		self::$cipher = null;
+	}
+
+	/**
+	 * What this class hashed into its key before the move.
+	 *
+	 * The constants that are set, joined; or, on a site that defines none
+	 * of them, three of core's salts, as it used then. A site on the
+	 * wp-config-sample.php placeholders gets the placeholders, which is a
+	 * public key -- harmless to try, since the site's key is no longer made
+	 * from them, and it lets those values be read and saved again.
 	 *
 	 * @return string
 	 */
-	private static function key(): string {
-		$salt = '';
+	private static function old_key_material(): string {
+		$material = '';
 
-		$weak = false;
-
-		foreach ( [ 'LOGGED_IN_KEY', 'LOGGED_IN_SALT', 'AUTH_KEY', 'SECURE_AUTH_KEY' ] as $constant ) {
-			$part = defined( $constant ) ? (string) constant( $constant ) : '';
-
-			if ( '' === $part ) {
-				continue;
-			}
-
-			// The phrase wp-config-sample.php ships with is public, and a key
-			// derived from it is no key at all. It is still used: refusing
-			// to store anything left a Stripe key blank on every site and
-			// every test suite that never set its salts, with nothing on
-			// screen to say why. The site is warned instead, where warnings
-			// are shown, and its cookies are forgeable with those salts in
-			// any case.
-			if ( 'put your unique phrase here' === $part ) {
-				$weak = true;
-			}
-
-			$salt .= $part;
+		foreach ( self::OLD_KEY_CONSTANTS as $constant ) {
+			$material .= defined( $constant ) ? (string) constant( $constant ) : '';
 		}
 
-		if ( $weak && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			_doing_it_wrong(
-				__METHOD__,
-				esc_html__( 'The salts in wp-config.php are the placeholders from wp-config-sample.php, so the key that encrypts these fields is public. Set unique salts.', 'sugarcommerce' ),
-				'1.0.0'
-			);
+		if ( '' === $material && function_exists( 'wp_salt' ) ) {
+			$material = wp_salt( 'auth' ) . wp_salt( 'secure_auth' ) . wp_salt( 'logged_in' );
 		}
 
-		// No constants at all is how core itself runs when wp-config.php
-		// leaves them out, and how every test suite runs: wp_salt() then
-		// generates salts once and keeps them in the database. Used only
-		// when the constants are absent, so a value encrypted under them
-		// stays readable on a site that has them.
-		if ( '' === $salt && function_exists( 'wp_salt' ) ) {
-			$salt = wp_salt( 'auth' ) . wp_salt( 'secure_auth' ) . wp_salt( 'logged_in' );
-		}
-
-		return '' === $salt ? '' : hash( 'sha256', $salt, true );
+		return $material;
 	}
 
 	/**
 	 * Encrypt a value.
-	 *
-	 * The nonce and the authentication tag travel with the ciphertext,
-	 * because both are needed to decrypt and neither is a secret.
 	 *
 	 * @param string $prefix Marker to write it under.
 	 * @param string $value  Plain value.
@@ -337,21 +352,9 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	 * @return string|null Null when encryption failed.
 	 */
 	private function encrypt( string $prefix, string $value ): ?string {
-		$key = self::key();
+		$sealed = self::cipher()?->seal( $value );
 
-		if ( '' === $key ) {
-			return null;
-		}
-
-		$nonce  = openssl_random_pseudo_bytes( (int) openssl_cipher_iv_length( self::CIPHER ) );
-		$tag    = '';
-		$cipher = openssl_encrypt( $value, self::CIPHER, $key, OPENSSL_RAW_DATA, $nonce, $tag );
-
-		if ( false === $cipher ) {
-			return null;
-		}
-
-		return $prefix . base64_encode( $nonce . $tag . $cipher );
+		return is_string( $sealed ) ? $prefix . $sealed : null;
 	}
 
 	/**
@@ -376,29 +379,12 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 			return $value;
 		}
 
-		$key = self::key();
-		$raw = base64_decode( substr( $value, strlen( $prefix ) ), true );
+		// GCM authenticates: a payload that was cut short, changed, or made
+		// under neither key does not open, and nothing derived from it is
+		// returned.
+		$plain = self::cipher()?->open( substr( $value, strlen( $prefix ) ) );
 
-		if ( '' === $key || false === $raw ) {
-			return null;
-		}
-
-		$nonce_length = (int) openssl_cipher_iv_length( self::CIPHER );
-
-		// A GCM tag is sixteen bytes, and OpenSSL will accept a shorter one,
-		// which is a weaker check than this class relies on. Anything too
-		// short to carry the whole nonce and tag is treated as tampered.
-		if ( strlen( $raw ) < $nonce_length + 16 ) {
-			return null;
-		}
-
-		$nonce        = substr( $raw, 0, $nonce_length );
-		$tag          = substr( $raw, $nonce_length, 16 );
-		$cipher       = substr( $raw, $nonce_length + 16 );
-
-		$plain = openssl_decrypt( $cipher, self::CIPHER, $key, OPENSSL_RAW_DATA, $nonce, $tag );
-
-		return false === $plain ? null : $plain;
+		return is_string( $plain ) ? $plain : null;
 	}
 
 	/**

@@ -197,6 +197,22 @@ takes a `permission_callback`; a user field takes `own_capability` for when
 someone edits their own profile and `show_on_add` to keep it off the add-user
 screen. A value a rule refuses is not stored, and the post, term or profile
 screen says why when it reloads.
+## Encrypted fields
+
+`'encrypted' => true` on any field -- a string, a number, a group, a repeater --
+stores it encrypted, in an option or in post, term or user meta. The value is
+written as `fkenc:j:` and the payload of `sugarcommerce/security`'s
+`Encryption\Cipher` (AES-256-GCM, so a value altered in the database does not
+decrypt); the key is the site's, `WP_ENCRYPTION_KEY` or one made from the salts
+in `wp-config.php`. Encryption is the security package's: this one keeps only
+the `fkenc:` marker. A value that will not decrypt reads as empty and is never
+deleted by a blank save, and a field marked encrypted where encryption is not
+possible refuses to save rather than store plaintext.
+
+Values written before the move, under the key this package used to make from
+`LOGGED_IN_KEY`, `LOGGED_IN_SALT`, `AUTH_KEY` and `SECURE_AUTH_KEY`, still
+read exactly as they did (`tests/fixtures/fkenc` holds some, made by the old
+code); saving one writes it under the site's key.
 
 ## Colour
 
@@ -397,6 +413,7 @@ now `sugarcommerce`.
 | transient and key prefix `field_kit_` (save errors) | `sugarcommerce_fields_` (`Runtime::key()`) |
 | REST error codes `field_kit_forbidden`, `_unknown_source`, `_unknown_action`, `_unknown_icon_set` | `sugarcommerce_fields_…` |
 | `window.ArrayPressFieldKit`, `window.ArrayPressFieldKitModules` | `window.SugarCommerceFields`, `window.SugarCommerceFieldsModules` |
+| `EncryptedContext`'s own AES-256-GCM and key | `sugarcommerce/security`'s `Encryption\Cipher` (required); same `fkenc:` values, new ones under the site key |
 | `vendor/arraypress/wp-field-kit/bin/verify-docs.php` | `vendor/sugarcommerce/fields/bin/verify-docs.php`; `--calls=` also takes `PostFields::register` and the like |
 
 Kept as they were, because renaming them would only churn every stylesheet

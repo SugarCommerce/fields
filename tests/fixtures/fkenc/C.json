@@ -1,0 +1,56 @@
+{
+	"made_by": "SugarCommerce\\Fields\\Context\\EncryptedContext at fields 9e1d1a1, before it used sugarcommerce/security",
+	"key_material": "AUTH_KEY, SECURE_AUTH_KEY, LOGGED_IN_KEY, LOGGED_IN_SALT and NONCE_KEY all 'put your unique phrase here' (wp-config-sample.php); wp_salt( $scheme ) = 'fk-test-salt-' . $scheme. The old key was sha256 of the four placeholders joined.",
+	"scenario": "C",
+	"key_hex": "c7b695ee53a9fb939250b58a2fb1dea3117b6cf5d17f325c5714c4c7d7b31508",
+	"json": {
+		"string": {
+			"value": "sk_example_DO-NOT-LEAK-1234567890",
+			"stored": "fkenc:j:7qCce1Kbo3UKH8JR1314Mw052KU78PjoWTecFr3R8ygWobi0xztZJjFjJrr2KqG8kcEmb7JDR5/EfvOh5i6x"
+		},
+		"unicode": {
+			"value": "Pässwörd — £€ 日本",
+			"stored": "fkenc:j:sb0PsEllnGK/Ks3nVw/+6jedIxLAcQcymUwN7H77AWK90210b5Cci/DdmUfS2reDdKV5ORIe2wUHtIiXqOWPeAaiZVA/PLhDrQmfJCQi9Jt3"
+		},
+		"int": {
+			"value": 123,
+			"stored": "fkenc:j:DJ++yHWPVfhULwM5gfS8Mut+ETziQ8cRQxcX7LRW4g=="
+		},
+		"float": {
+			"value": 19.99,
+			"stored": "fkenc:j:Yvr2DuY/g4cJUiolDZ2Zee9zzQtNRllwxDK7YgoaWNIh"
+		},
+		"bool": {
+			"value": true,
+			"stored": "fkenc:j:e7eKLxjcOypcutgK3MeM3/PNy8+L1nFplgq2U9WH7Ss="
+		},
+		"list": {
+			"value": [
+				"a",
+				"b",
+				3
+			],
+			"stored": "fkenc:j:3U6lyZfVuKoVzcVyk3a5NpCoKeLj451ZDQSfUO3l/QJNx9ckGCyQ"
+		},
+		"map": {
+			"value": {
+				"id": "x1",
+				"n": [
+					1,
+					2
+				]
+			},
+			"stored": "fkenc:j:4+xzp5hFlW/yz3q6y9ATjh2Srir6cxUnU0zBfHxntD44k1m0TGZ18lUbT5z4WyBNBQ=="
+		}
+	},
+	"v0": {
+		"string": {
+			"value": "sk_example_DO-NOT-LEAK-1234567890",
+			"stored": "fkenc:Kc9nz8vapn+HMgmiod8JxhzAxOlR7DryC96tHUmJmqlrP2pLTjKLcpP/4Y/m8Or+5NDHeo8iRf4F4lNjjQ=="
+		},
+		"numeric": {
+			"value": "123",
+			"stored": "fkenc:5KK5E2BvOkmGfw3ieCEerB+klQBWYzv7uSLH3kPekQ=="
+		}
+	}
+}
