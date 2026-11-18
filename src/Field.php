@@ -85,6 +85,12 @@ final class Field {
 		'badge',
 		'tooltip',
 		'encrypted',
+		// A constant that wins over the stored value: named outright, or
+		// derived from the context's prefix when the field opts in. Read by
+		// ConstantContext, so a settings page's `use_constant` warned as a
+		// key nothing reads.
+		'constant',
+		'use_constant',
 		'show_in_rest',
 		'capability',
 		'meta_key',

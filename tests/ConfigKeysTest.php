@@ -210,4 +210,20 @@ final class ConfigKeysTest extends TestCase {
 			$this->assertSame( [], $field->unknown_keys(), sprintf( '%s rejects a common key.', $id ) );
 		}
 	}
+
+	/**
+	 * A constant that wins over the stored value is configuration the
+	 * constant context reads, not a mistake.
+	 */
+	public function test_the_constant_keys_are_accepted(): void {
+		$registry = new Registry();
+
+		foreach ( [ 'text', 'email', 'password', 'toggle' ] as $id ) {
+			foreach ( [ [ 'use_constant' => true ], [ 'constant' => 'MY_PLUGIN_KEY' ] ] as $config ) {
+				$field = new Field( 'demo', $registry->get( $id ), $config, null );
+
+				$this->assertSame( [], $field->unknown_keys(), sprintf( '%s rejects %s.', $id, (string) array_key_first( $config ) ) );
+			}
+		}
+	}
 }
