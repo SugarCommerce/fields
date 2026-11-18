@@ -145,6 +145,28 @@ final class EmailEditorTest extends TestCase {
 	}
 
 	/**
+	 * The header keeps the chevron's room at its end.
+	 *
+	 * Core places the chevron absolutely, 1.5em from the end, and pads the
+	 * header 3.5em there to keep the words clear of it. The modern card's
+	 * padding of 20px all round took that away, and on a phone an email's
+	 * summary ran under the chevron.
+	 */
+	public function test_the_header_keeps_room_for_the_chevron(): void {
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		preg_match( '/\.field-kit__settings--modern \.field-kit__email \.privacy-settings-accordion-trigger \{([^}]*)\}/', $css, $rule );
+
+		$this->assertNotEmpty( $rule, 'The header has no rule.' );
+		$this->assertMatchesRegularExpression( '/padding-inline-end:\s*(\d+)px/', $rule[1] );
+
+		preg_match( '/padding-inline-end:\s*(\d+)px/', $rule[1], $end );
+
+		// 1.5em to the chevron plus the chevron itself, at 14px.
+		$this->assertGreaterThanOrEqual( 44, (int) $end[1] );
+	}
+
+	/**
 	 * The panel has room at the top.
 	 *
 	 * The first control used to sit against the header's border; the
