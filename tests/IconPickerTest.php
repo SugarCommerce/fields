@@ -117,7 +117,7 @@ final class IconPickerTest extends TestCase {
 		$sets = json_decode( html_entity_decode( $match[1] ?? '', ENT_QUOTES ), true );
 
 		$this->assertSame( [ 'heroicons-solid', 'wordpress' ], array_column( (array) $sets, 'id' ) );
-		$this->assertSame( [ 324, 344 ], array_column( (array) $sets, 'count' ) );
+		$this->assertSame( [ 324, 88 ], array_column( (array) $sets, 'count' ) );
 
 		// A page with one icon field does not carry six hundred icons.
 		$this->assertLessThan( 4000, strlen( $html ) );

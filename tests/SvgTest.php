@@ -204,7 +204,7 @@ final class SvgTest extends TestCase {
 	public function test_the_shipped_icons_are_already_clean(): void {
 		$files = glob( dirname( __DIR__ ) . '/assets/icons/*/{,*/}*.svg', GLOB_BRACE ) ?: [];
 
-		$this->assertGreaterThan( 900, count( $files ) );
+		$this->assertSame( 648, count( $files ), 'Heroicons outline and solid, and nothing else.' );
 
 		foreach ( $files as $file ) {
 			$markup = (string) file_get_contents( $file );

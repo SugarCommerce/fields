@@ -48,7 +48,7 @@ final class IconSetsTest extends TestCase {
 
 		$this->assertSame( 324, $sets['heroicons-outline']->count() );
 		$this->assertSame( 324, $sets['heroicons-solid']->count() );
-		$this->assertSame( 344, $sets['wordpress']->count() );
+		$this->assertSame( 88, $sets['wordpress']->count(), 'Core\'s own collection, and not another plugin\'s.' );
 
 		$this->assertSame( 'outline', $sets['heroicons-outline']->style() );
 		$this->assertSame( 'solid', $sets['heroicons-solid']->style() );
@@ -60,14 +60,14 @@ final class IconSetsTest extends TestCase {
 	}
 
 	/**
-	 * The licences are beside the icons they cover.
+	 * The licences are beside the icons they cover. The WordPress set has
+	 * none of its own to ship: it is core's.
 	 */
 	public function test_the_licences_ship_with_the_icons(): void {
 		$icons = dirname( __DIR__ ) . '/assets/icons';
 
 		$this->assertStringContainsString( 'MIT License', (string) file_get_contents( $icons . '/heroicons/LICENSE' ) );
 		$this->assertStringContainsString( 'Tailwind Labs', (string) file_get_contents( $icons . '/heroicons/LICENSE' ) );
-		$this->assertStringContainsString( 'GNU General Public License', (string) file_get_contents( $icons . '/wordpress/LICENSE.md' ) );
 	}
 
 	/**
@@ -508,5 +508,33 @@ final class IconSetsTest extends TestCase {
 				$this->assertLessThanOrEqual( 64, strlen( $id . ':' . $name ), $id . ':' . $name );
 			}
 		}
+	}
+
+	/**
+	 * The WordPress set is core's icon library, drawn in currentColor.
+	 *
+	 * Core's registry hands out each icon through kses, which drops the
+	 * `fill` on the <svg>; the drawing puts currentColor back, or every icon
+	 * would be black whatever the text around it.
+	 */
+	public function test_the_wordpress_set_is_cores_icon_library(): void {
+		$svg = Icons::svg( 'wordpress:cart' );
+
+		$this->assertStringContainsString( 'M8.5 17c-.8 0-1.5.7-1.5 1.5', $svg, 'Not core\'s cart.' );
+		$this->assertStringContainsString( 'fill="currentColor"', $svg );
+		$this->assertTrue( Icons::exists( 'wordpress:star-filled' ) );
+		$this->assertFalse( Icons::exists( 'wordpress:extra-icon' ), 'Another collection\'s icon.' );
+	}
+
+	/**
+	 * Heroicons are not handed to core's registry, whose kses strips the
+	 * stroke attributes an outline icon is drawn with.
+	 */
+	public function test_an_outline_heroicon_keeps_its_stroke(): void {
+		$svg = Icons::svg( 'heroicons-outline:shopping-cart' );
+
+		$this->assertStringContainsString( 'stroke="currentColor"', $svg );
+		$this->assertStringContainsString( 'stroke-width="1.5"', $svg );
+		$this->assertStringContainsString( 'fill="none"', $svg );
 	}
 }

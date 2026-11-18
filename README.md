@@ -326,17 +326,20 @@ echo Glyphs::get( 'drag', [ 'size' => 16 ] ); // any Icons::render() argument
 | --- | --- | --- | --- | --- |
 | `heroicons-outline` | Heroicons, 24px outline | 2.2.0 | MIT, Tailwind Labs | 324 |
 | `heroicons-solid` | Heroicons, 24px solid | 2.2.0 | MIT, Tailwind Labs | 324 |
-| `wordpress` | The block editor's `@wordpress/icons` | 20.0.0 | GPL-2.0-or-later | 344 |
+| `wordpress` | Core's own icon library, read from WP 7.1's Icons API (`WP_Icons_Registry`, the `core` collection) | core's | GPL-2.0-or-later | 88 |
 | `dashicons` | Dashicons, read from core's own `wp-includes/fonts/dashicons.svg` | core's | GPL-2.0-or-later | 342 |
 
 Heroicons come from the v2.2.0 release with its MIT licence beside them in
-`assets/icons/heroicons/LICENSE`; the WordPress icons from the
-`@wordpress/icons` 20.0.0 package with Gutenberg's licence in
-`assets/icons/wordpress/LICENSE.md`. Every file was written through the same
+`assets/icons/heroicons/LICENSE`. Every file was written through the same
 cleaning an icon gets before it is printed, by `bin/build-icons.php`, which is
-also how a new release is brought in. Dashicons are not copied: a Dashicon is
-read from core's sprite as SVG, so it draws on a storefront with no icon font
-loaded.
+also how a new release is brought in. Heroicons are not registered with core's
+Icons API: its kses allow-list has no `stroke-*` attributes, so an outline icon
+would lose its lines and fill solid.
+
+Neither WordPress set is copied. The `wordpress` set is whatever core's
+`core` icon collection holds (`CoreIcons::icons()`), as core sanitised it, drawn
+in `currentColor` like the rest. A Dashicon is read from core's sprite as SVG,
+so it draws on a storefront with no icon font loaded.
 
 ### Registering a set
 
@@ -417,6 +420,7 @@ now `sugarcommerce`.
 | `Assets`' own path and URL guessing, `new Assets( $path, $url )` | `SugarCommerce\Plugin\Assets` (required), the family's one asset resolver; `new Assets()` keeps the handles and configuration, and the `$path` and `$url` arguments are gone (nothing passed them) |
 | field types `providers`, `flexible`, `gradient`, `dimensions`, `link`, `oembed`, `nav_menu`, `gallery` (and the JS modules `Providers`, `Gallery`, `Oembed`) | removed: nothing used them (SugarCart is Stripe-only, so no gateway list). Use `repeater` for rows, `files` for several attachments, `color`, `url`, `select` with your own options, or a `custom` field |
 | `Glyphs` key `link` | removed with the `link` type |
+| icon set `wordpress`: 344 bundled `@wordpress/icons` 20.0.0 files, `Icons::WORDPRESS_ICONS_VERSION` | core's own icon library (88 icons) from WP 7.1's Icons API. A stored `wordpress:name` outside core's set no longer validates or draws; `cart`, `star-filled` and the like are in it, drawn as core draws them |
 | `vendor/arraypress/wp-field-kit/bin/verify-docs.php` | `vendor/sugarcommerce/fields/bin/verify-docs.php`; `--calls=` also takes `PostFields::register` and the like |
 
 Kept as they were, because renaming them would only churn every stylesheet

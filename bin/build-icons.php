@@ -2,8 +2,9 @@
 /**
  * Bring an upstream icon release into assets/icons.
  *
- * The kit ships Heroicons and WordPress's block-editor icons as folders of
- * SVG files, one per icon. This copies them out of an upstream release,
+ * The kit ships Heroicons as folders of SVG files, one per icon. (The
+ * `wordpress` set is not shipped: it is core's own icon library, read from
+ * WP 7.1's Icons API by Icons\CoreIcons.) This copies them out of an upstream release,
  * each file put through the same cleaning every icon gets before it is
  * drawn (Icons\Svg::sanitize()) -- so what is committed is exactly what is
  * printed: no comments, no `aria-hidden`, no `data-slot`, no `style`, no
@@ -12,15 +13,10 @@
  * Usage, from the library's root, with the release unpacked somewhere:
  *
  *   php bin/build-icons.php heroicons /path/to/heroicons-2.2.0
- *   php bin/build-icons.php <block editor set's id> /path/to/package
- *
- * The second is the npm tarball's `package` folder; the id is the one
- * Icons\Icons registers that set under.
  *
  * Heroicons comes from https://github.com/tailwindlabs/heroicons/releases
- * (`optimized/24/outline` and `optimized/24/solid`), the WordPress icons
- * from the `@wordpress/icons` npm package (`src/library/*.svg`). Update the
- * version constants on Icons\Icons and the README's table when a release
+ * (`optimized/24/outline` and `optimized/24/solid`). Update
+ * Icons\Icons::HEROICONS_VERSION and the README's table when a release
  * changes.
  *
  * @package SugarCommerce\Fields
@@ -44,16 +40,10 @@ $fk_plans = [
 			'optimized/24/solid'   => 'heroicons/solid',
 		],
 	],
-	'wordpress' => [
-		'license' => [ 'LICENSE.md' ],
-		'folders' => [
-			'src/library' => 'wordpress',
-		],
-	],
 ];
 
 if ( ! isset( $fk_plans[ $fk_set ] ) || ! is_dir( $fk_source ) ) {
-	fwrite( STDERR, "Usage: php bin/build-icons.php heroicons|wordpress <unpacked release>\n" ); // phpcs:ignore WordPress.WP.CapitalPDangit -- the set's id.
+	fwrite( STDERR, "Usage: php bin/build-icons.php heroicons <unpacked release>\n" );
 	exit( 1 );
 }
 

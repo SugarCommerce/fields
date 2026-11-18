@@ -783,3 +783,13 @@ if ( ! class_exists( 'SugarCommerce\Money\Currencies' ) ) {
  * reason as the currencies: classes, not functions.
  */
 require_once __DIR__ . '/stubs/Rest.php';
+
+/*
+ * WP 7.1's icon registry, holding core's collection as core registers it on
+ * init: a copy of wp-includes/images/icon-library in tests/fixtures. Core
+ * puts each icon through kses, which drops the `fill` from the <svg>; the
+ * copy loses it here too, so the set is tested against what core hands out.
+ */
+if ( ! class_exists( 'WP_Icons_Registry' ) ) {
+	require_once __DIR__ . '/stubs/IconsRegistry.php';
+}

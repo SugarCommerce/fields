@@ -60,11 +60,6 @@ final class Icons {
 	public const HEROICONS_VERSION = '2.2.0';
 
 	/**
-	 * The @wordpress/icons release in assets/icons/wordpress.
-	 */
-	public const WORDPRESS_ICONS_VERSION = '20.0.0';
-
-	/**
 	 * Sets registered from code, as their arguments, by id.
 	 *
 	 * @var array<string, array<string, mixed>>
@@ -436,6 +431,11 @@ final class Icons {
 	private static function builtin(): array {
 		$icons = dirname( __DIR__, 2 ) . '/assets/icons';
 
+		// Heroicons stay files of this library's own, drawn through
+		// Svg::sanitize(), and are not registered with core's Icons API: the
+		// registry runs every icon through kses with an allow-list that has
+		// no stroke, stroke-width, stroke-linecap or stroke-linejoin, so an
+		// outline icon would lose its lines and fill solid.
 		return [
 			'heroicons-outline' => [
 				'label'   => 'Heroicons',
@@ -451,11 +451,12 @@ final class Icons {
 				'license' => 'Heroicons ' . self::HEROICONS_VERSION . ' · MIT · Tailwind Labs',
 				'version' => self::HEROICONS_VERSION,
 			],
+			// Core's own icon library, from WP 7.1's Icons API.
 			'wordpress'         => [
 				'label'   => 'WordPress',
-				'source'  => $icons . '/wordpress',
-				'license' => '@wordpress/icons ' . self::WORDPRESS_ICONS_VERSION . ' · GPL-2.0-or-later',
-				'version' => self::WORDPRESS_ICONS_VERSION,
+				'source'  => [ CoreIcons::class, 'icons' ],
+				'license' => 'WordPress icons · GPL-2.0-or-later · WordPress',
+				'version' => self::core_version(),
 			],
 			'dashicons'         => [
 				'label'      => 'Dashicons',
@@ -469,7 +470,8 @@ final class Icons {
 	}
 
 	/**
-	 * The running core's version, which is the Dashicons version.
+	 * The running core's version, which is the version of its Dashicons and
+	 * of its icon library.
 	 *
 	 * @return string
 	 */
