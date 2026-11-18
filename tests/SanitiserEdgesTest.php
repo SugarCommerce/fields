@@ -130,35 +130,6 @@ final class SanitiserEdgesTest extends TestCase {
 	}
 
 	/**
-	 * A dimension of zero is a measurement, not a blank.
-	 */
-	public function test_a_zero_dimension_is_kept(): void {
-		$this->assertSame( [ 'width' => 0.0, 'height' => '' ], $this->stored( [ 'type' => 'dimensions' ], [ 'width' => '0', 'height' => 'wide' ] ) );
-	}
-
-	/**
-	 * A gallery with no limit keeps every image.
-	 */
-	public function test_a_gallery_without_a_limit_keeps_every_image(): void {
-		$this->assertSame( [ 4, 5, 6 ], $this->stored( [ 'type' => 'gallery' ], '4,5,6' ) );
-		$this->assertSame( [ 4, 5 ], $this->stored( [ 'type' => 'gallery', 'max_items' => 2 ], '4,5,6' ) );
-		$this->assertSame( [ 4 ], $this->stored( [ 'type' => 'gallery', 'max_items' => 1 ], '4,5,6' ) );
-	}
-
-	/**
-	 * A link opens in a new tab only when it asks to.
-	 */
-	public function test_a_link_target_is_only_ever_blank_on_request(): void {
-		$plain = $this->stored( [ 'type' => 'link' ], [ 'url' => 'https://example.com', 'text' => 'Home' ] );
-		$blank = $this->stored( [ 'type' => 'link' ], [ 'url' => 'https://example.com', 'text' => 'Home', 'target' => '_blank' ] );
-		$odd   = $this->stored( [ 'type' => 'link' ], [ 'url' => 'https://example.com', 'target' => '_top' ] );
-
-		$this->assertSame( '', $plain['target'] );
-		$this->assertSame( '_blank', $blank['target'] );
-		$this->assertSame( '', $odd['target'] );
-	}
-
-	/**
 	 * A single creatable relational field keeps the one thing typed.
 	 */
 	public function test_a_single_creatable_relation_keeps_its_text(): void {

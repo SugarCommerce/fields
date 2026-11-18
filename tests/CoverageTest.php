@@ -115,21 +115,17 @@ final class CoverageTest extends TestCase {
 		'custom',
 		'date',
 		'datetime',
-		'dimensions',
 		'email',
 		'email_editor',
 		'file',
-		'gallery',
 		'group',
 		'heading',
 		'hidden',
 		'html',
 		'image',
 		'license',
-		'link',
 		'message',
 		'number',
-		'oembed',
 		'page',
 		'password',
 		'post',
@@ -192,16 +188,12 @@ final class CoverageTest extends TestCase {
 		'date',
 		'date_range',
 		'datetime',
-		'dimensions',
 		'email',
 		'file',
 		'file_url',
-		'gallery',
 		'group',
 		'image',
-		'link',
 		'number',
-		'oembed',
 		'password',
 		'post',
 		'post_ajax',
@@ -315,7 +307,6 @@ final class CoverageTest extends TestCase {
 		'datetime',
 		'email',
 		'icon',
-		'nav_menu',
 		'number',
 		'page',
 		'password',
@@ -343,7 +334,7 @@ final class CoverageTest extends TestCase {
 	 * Quick edit and bulk edit are not smaller edit screens. Quick edit
 	 * clones its panel from a hidden template before the values are in it, so
 	 * anything started in JavaScript comes up dead in the clone; and both are
-	 * one row of a list table, so a panel or a gallery does not fit however
+	 * one row of a list table, so a panel or a grid of files does not fit however
 	 * well it works.
 	 *
 	 * Both libraries used to keep their own whitelist, and they drifted —
@@ -383,7 +374,6 @@ final class CoverageTest extends TestCase {
 				'email_editor' => 'is a panel',
 				'repeater'     => 'is a stack of rows',
 				'group'        => 'is a stack of fields',
-				'gallery'      => 'is a grid',
 				'sortable'     => 'is a reorderable list',
 
 				// Nothing to edit, or nothing that means anything per row.

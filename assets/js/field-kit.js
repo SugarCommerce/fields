@@ -628,175 +628,7 @@
 		}
 	};
 
-	/**
-	 * A URL that resolves to an embed, previewed as it is typed.
-	 *
-	 * Through core's own `oembed/1.0/proxy`, which is what the block editor
-	 * uses: it fetches only from WordPress's provider allowlist and is gated
-	 * on `edit_posts`, so there is no second endpoint here and no way to aim
-	 * it at an arbitrary host.
-	 *
-	 * The request is debounced and the last one wins. Typing a URL fires an
-	 * input event per character, and without a sequence number a slow lookup
-	 * for half a URL can land after the fast one for the whole of it and
-	 * overwrite the right answer with the wrong one.
-	 */
-	var Oembed = {
-
-		/**
-		 * Wire the oembed fields.
-		 *
-		 * @param {Element} root Container.
-		 */
-		init: function ( root ) {
-			root.querySelectorAll( '.field-kit__oembed' ).forEach( function ( wrap ) {
-				if ( wrap.dataset.fkBound ) {
-					return;
-				}
-
-				wrap.dataset.fkBound = '1';
-
-				var input = wrap.querySelector( '.field-kit__oembed-input' );
-				var preview = wrap.querySelector( '.field-kit__oembed-preview' );
-
-				if ( ! input || ! preview ) {
-					return;
-				}
-
-				// What is on screen already, so a field that has not been
-				// touched is not re-fetched on every keystroke elsewhere.
-				var last = input.value.trim();
-				var timer = null;
-				var sequence = 0;
-
-				input.addEventListener( 'input', function () {
-					window.clearTimeout( timer );
-
-					timer = window.setTimeout( function () {
-						var url = input.value.trim();
-
-						if ( url === last ) {
-							return;
-						}
-
-						last = url;
-
-						if ( '' === url ) {
-							preview.innerHTML = '';
-
-							return;
-						}
-
-						Oembed.resolve( preview, url, ++sequence, function () {
-							return sequence;
-						} );
-					}, 500 );
-				} );
-			} );
-		},
-
-		/**
-		 * Fetch one URL and render whatever came back.
-		 *
-		 * @param {Element}  preview The preview region.
-		 * @param {string}   url     The URL to resolve.
-		 * @param {number}   ticket  This request's number.
-		 * @param {Function} current The latest request's number.
-		 */
-		resolve: function ( preview, url, ticket, current ) {
-			preview.textContent = t( 'embedResolving', 'Looking for an embed…' );
-
-			var endpoint = config.oembedUrl;
-
-			if ( ! endpoint ) {
-				return;
-			}
-
-			var query = endpoint + ( endpoint.indexOf( '?' ) === -1 ? '?' : '&' ) +
-				'url=' + encodeURIComponent( url ) + '&maxwidth=600';
-
-			request( query, {
-				credentials: 'same-origin',
-				headers: { 'X-WP-Nonce': config.restNonce }
-			} )
-				.then( function ( response ) {
-					return response.ok ? response.json() : null;
-				} )
-				.catch( function () {
-					return null;
-				} )
-				.then( function ( data ) {
-					// A later keystroke has already asked for something else.
-					if ( ticket !== current() ) {
-						return;
-					}
-
-					Oembed.render( preview, data );
-				} );
-		},
-
-		/**
-		 * Show an embed, a card, or a failure.
-		 *
-		 * @param {Element}     preview The preview region.
-		 * @param {Object|null} data    The oEmbed response.
-		 */
-		render: function ( preview, data ) {
-			if ( ! data || ! data.html ) {
-				preview.textContent = t( 'embedFailed', 'That URL could not be embedded.' );
-
-				return;
-			}
-
-			// Some providers answer with a script rather than an iframe —
-			// Twitter and Reddit among them — and innerHTML never executes
-			// one. Rendering it would leave an empty box that looks like a
-			// failure, so those get a card saying what was found instead.
-			if ( data.html.indexOf( '<iframe' ) === -1 ) {
-				preview.innerHTML = '';
-				preview.appendChild( Oembed.card( data ) );
-
-				return;
-			}
-
-			preview.innerHTML = data.html;
-		},
-
-		/**
-		 * What was found, for a provider that cannot be shown inline.
-		 *
-		 * @param {Object} data The oEmbed response.
-		 * @return {Element} The card.
-		 */
-		card: function ( data ) {
-			var card = document.createElement( 'div' );
-			card.className = 'field-kit__oembed-card';
-
-			if ( data.thumbnail_url ) {
-				var image = document.createElement( 'img' );
-				image.src = data.thumbnail_url;
-				image.alt = '';
-				card.appendChild( image );
-			}
-
-			var body = document.createElement( 'div' );
-
-			var title = document.createElement( 'strong' );
-			title.textContent = data.title || data.provider_name || '';
-			body.appendChild( title );
-
-			var note = document.createElement( 'p' );
-			note.className = 'description';
-			note.textContent = t( 'embedOnSave', 'This will render once saved.' );
-			body.appendChild( note );
-
-			card.appendChild( body );
-
-			return card;
-		}
-	};
-
-	window.SugarCommerceFieldsModules = { Conditions: Conditions, Range: Range, Toggle: Toggle, Clipboard: Clipboard, CodeGenerator: CodeGenerator, Oembed: Oembed, announce: announce, bound: bound, sibling: sibling, t: t, icon: icon, swapIcon: swapIcon, config: config, request: request };
+	window.SugarCommerceFieldsModules = { Conditions: Conditions, Range: Range, Toggle: Toggle, Clipboard: Clipboard, CodeGenerator: CodeGenerator, announce: announce, bound: bound, sibling: sibling, t: t, icon: icon, swapIcon: swapIcon, config: config, request: request };
 } )();
 
 /**
@@ -1655,7 +1487,7 @@
 		 * @param {Element} root Container.
 		 */
 		init: function ( root ) {
-			root.querySelectorAll( '.field-kit__gallery-items, .field-kit__sortable, .field-kit__repeater-rows, .field-kit__provider-list, .field-kit__combobox-chips[data-sortable]' ).forEach( function ( list ) {
+			root.querySelectorAll( '.field-kit__sortable, .field-kit__repeater-rows, .field-kit__combobox-chips[data-sortable]' ).forEach( function ( list ) {
 				if ( list.dataset.fkBound ) {
 					return;
 				}
@@ -1673,20 +1505,12 @@
 		 * @return {string} Selector.
 		 */
 		itemSelector: function ( list ) {
-			if ( list.classList.contains( 'field-kit__gallery-items' ) ) {
-				return '.field-kit__gallery-item';
-			}
-
 			if ( list.classList.contains( 'field-kit__sortable' ) ) {
 				return '.field-kit__sortable-item';
 			}
 
 			if ( list.classList.contains( 'field-kit__combobox-chips' ) ) {
 				return '.field-kit__combobox-chip';
-			}
-
-			if ( list.classList.contains( 'field-kit__provider-list' ) ) {
-				return '.field-kit__provider';
 			}
 
 			return '.field-kit__repeater-row';
@@ -1870,7 +1694,7 @@
 					down.disabled = index === total - 1;
 				}
 
-				var position = item.querySelector( '.field-kit__gallery-position, .field-kit__repeater-position' );
+				var position = item.querySelector( '.field-kit__repeater-position' );
 
 				if ( position ) {
 					position.textContent = t( 'position', 'Item' ) + ' ' + ( index + 1 ) + ' / ' + total;
@@ -1898,14 +1722,10 @@
 				Combobox.syncOrder( list );
 			}
 
-			if ( list.classList.contains( 'field-kit__gallery-items' ) ) {
-				Gallery.sync( list );
-			}
-
 			if ( list.classList.contains( 'field-kit__repeater-rows' ) ) {
 				// Looked up rather than closed over: Repeater is defined in a
 				// later block, so a direct reference would be a ReferenceError
-				// the first time a gallery or sortable is reordered.
+				// the first time a sortable is reordered.
 				var repeater = window.SugarCommerceFieldsModules.Repeater;
 
 				if ( repeater ) {
@@ -1987,11 +1807,11 @@
 				// dragged one belongs after it rather than before — but which
 				// halfway line depends on how the list is actually laid out.
 				//
-				// A gallery is a grid, so its tiles sit side by side and the
-				// question is left-or-right. Asking top-or-bottom there means
-				// two tiles in the same row give the same answer over most of
-				// their area, which is why a tile could not be dropped into
-				// the first position at all.
+				// Chips in a row sit side by side, so the question is
+				// left-or-right. Asking top-or-bottom there means two items in
+				// the same row give the same answer over most of their area,
+				// which is why one could not be dropped into the first
+				// position at all.
 				var box = over.getBoundingClientRect();
 
 				var past = Reorder.isHorizontal( over )
@@ -2027,276 +1847,7 @@
 		}
 	};
 
-	/* ====================================================================
-	 * Gallery
-	 * ================================================================= */
-
-	var Gallery = {
-
-		/**
-		 * Bind every gallery within a root.
-		 *
-		 * @param {Element} root Container.
-		 */
-		init: function ( root ) {
-			root.querySelectorAll( '.field-kit__gallery' ).forEach( function ( wrap ) {
-				if ( wrap.dataset.fkBound ) {
-					return;
-				}
-
-				wrap.dataset.fkBound = '1';
-
-				wrap.addEventListener( 'click', function ( event ) {
-					if ( event.target.closest( '.field-kit__media-choose' ) ) {
-						event.preventDefault();
-						Gallery.open( wrap );
-					}
-
-					var remove = event.target.closest( '.field-kit__gallery-remove' );
-
-					if ( remove ) {
-						event.preventDefault();
-						Gallery.remove( wrap, remove.closest( '.field-kit__gallery-item' ) );
-					}
-				} );
-			} );
-		},
-
-		/**
-		 * Open the media frame.
-		 *
-		 * @param {Element} wrap The gallery.
-		 */
-		open: function ( wrap ) {
-			if ( ! window.wp || ! window.wp.media ) {
-				return;
-			}
-
-			var frame = window.wp.media( {
-				title: wrap.dataset.frameTitle,
-				library: { type: wrap.dataset.mimeType || undefined },
-				multiple: 'add',
-				button: { text: wrap.dataset.chooseLabel }
-			} );
-
-			frame.on( 'select', function () {
-				frame.state().get( 'selection' ).forEach( function ( attachment ) {
-					Gallery.append( wrap, attachment.toJSON() );
-				} );
-
-				Reorder.sync( wrap.querySelector( '.field-kit__gallery-items' ) );
-			} );
-
-			frame.open();
-		},
-
-		/**
-		 * Add one attachment.
-		 *
-		 * @param {Element} wrap       The gallery.
-		 * @param {Object}  attachment Attachment data.
-		 */
-		append: function ( wrap, attachment ) {
-			var list = wrap.querySelector( '.field-kit__gallery-items' );
-
-			if ( list.querySelector( '[data-id="' + attachment.id + '"]' ) ) {
-				return;
-			}
-
-			// The frame is a multi-select, so a limit has to be checked per
-			// attachment as they arrive rather than once before it opens.
-			var max = parseInt( wrap.dataset.maxItems || '0', 10 );
-
-			if ( max > 0 && list.children.length >= max ) {
-				return;
-			}
-
-			// The server ships the tile to clone, so what the script adds is
-			// the tile it draws: a drag handle, the picture, a cross. The
-			// tile the script once built for itself had chevrons instead
-			// and no handle. A gallery from an older render has no
-			// template, and its first tile is the next best copy.
-			var template = wrap.querySelector( '.field-kit__gallery-template' );
-			var source = template && template.content ? template.content.firstElementChild : list.querySelector( '.field-kit__gallery-item' );
-
-			if ( ! source ) {
-				return;
-			}
-
-			var item = source.cloneNode( true );
-
-			item.dataset.id = attachment.id;
-
-			var image = item.querySelector( 'img' );
-			var sizes = attachment.sizes || {};
-			// Medium first, matching what the server renders. Picking the
-			// thumbnail here meant a freshly added tile was a 150px file in a
-			// 150px box — visibly softer than the ones beside it, in the same
-			// gallery.
-			var thumb = sizes.medium || sizes.thumbnail || {};
-
-			if ( image ) {
-				image.src = thumb.url || attachment.url;
-				image.alt = attachment.alt || '';
-			}
-
-			var name = attachment.title || attachment.filename || String( attachment.id );
-
-			// The template names its item {name}; a cloned tile names the
-			// one it was cloned from. Either way the label ends up naming
-			// this attachment.
-			item.querySelectorAll( '[aria-label], [data-label-template]' ).forEach( function ( button ) {
-				[ 'aria-label', 'data-label-template' ].forEach( function ( attribute ) {
-					var value = button.getAttribute( attribute );
-
-					if ( null !== value ) {
-						button.setAttribute( attribute, value.split( '{name}' ).join( name ).replace( /—.*$/, '' ) );
-					}
-				} );
-			} );
-
-			list.appendChild( item );
-		},
-
-		/**
-		 * Remove one item.
-		 *
-		 * @param {Element} wrap The gallery.
-		 * @param {Element} item The item.
-		 */
-		remove: function ( wrap, item ) {
-			var list = item.parentNode;
-			var next = item.nextElementSibling || item.previousElementSibling;
-
-			item.remove();
-			Reorder.sync( list );
-
-			// Focus would land on the body otherwise, which loses a keyboard
-			// user's place in the list entirely.
-			var target = next ? next.querySelector( 'button' ) : wrap.querySelector( '.field-kit__media-choose' );
-
-			if ( target ) {
-				target.focus();
-			}
-		},
-
-		/**
-		 * Write the current order back to the hidden input.
-		 *
-		 * @param {Element} list The item list.
-		 */
-		sync: function ( list ) {
-			var wrap = list.closest( '.field-kit__gallery' );
-			var input = wrap.querySelector( '.field-kit__media-value' );
-			var items = Array.from( list.querySelectorAll( '.field-kit__gallery-item' ) );
-
-			if ( input ) {
-				input.value = items.map( function ( item ) {
-					return item.dataset.id;
-				} ).join( ',' );
-			}
-
-			// A full gallery says so by disabling the button rather than by
-			// opening the frame and then quietly discarding the choice.
-			var max = parseInt( wrap.dataset.maxItems || '0', 10 );
-			var choose = wrap.querySelector( '.field-kit__media-choose' );
-
-			if ( choose && max > 0 ) {
-				choose.disabled = items.length >= max;
-			}
-		}
-	};
-
 	window.SugarCommerceFieldsModules.Reorder = Reorder;
-	window.SugarCommerceFieldsModules.Gallery = Gallery;
-} )();
-
-/**
- * SugarCommerce Fields — provider lists.
- *
- * Ordering is Reorder's, which the list is registered with above; this is
- * only the two ways a provider's own settings are reached.
- */
-( function () {
-	'use strict';
-
-	var Providers = {
-
-		/**
-		 * Bind every provider list within a root.
-		 *
-		 * @param {Element} root Container.
-		 */
-		init: function ( root ) {
-			root.querySelectorAll( '.field-kit__providers' ).forEach( function ( wrap ) {
-				if ( wrap.dataset.fkBound ) {
-					return;
-				}
-
-				wrap.dataset.fkBound = '1';
-
-				wrap.addEventListener( 'click', function ( event ) {
-					var open = event.target.closest( '.field-kit__provider-configure' );
-
-					if ( open ) {
-						event.preventDefault();
-						Providers.open( wrap, open );
-
-						return;
-					}
-
-					if ( event.target.closest( '.field-kit__provider-dialog-close' ) ) {
-						event.preventDefault();
-						var dialog = event.target.closest( 'dialog' );
-
-						if ( dialog ) {
-							dialog.close();
-						}
-					}
-				} );
-			} );
-		},
-
-		/**
-		 * Reveal a provider's settings.
-		 *
-		 * @param {Element} wrap   The list.
-		 * @param {Element} button The button that was pressed.
-		 */
-		open: function ( wrap, button ) {
-			var target = wrap.querySelector( '#' + CSS.escape( button.dataset.target ) );
-
-			if ( ! target ) {
-				return;
-			}
-
-			if ( 'flyout' === wrap.dataset.config ) {
-				// showModal(), not show(): the backdrop, the focus trap and
-				// Esc all come with it, and none of the three is worth
-				// writing again.
-				if ( 'function' === typeof target.showModal && ! target.open ) {
-					target.showModal();
-				}
-
-				// Focus goes to the first control rather than being left on
-				// the dialog, which is announced as an empty group.
-				var first = target.querySelector( 'input, select, textarea, button' );
-
-				if ( first ) {
-					first.focus();
-				}
-
-				return;
-			}
-
-			var expanded = 'true' === button.getAttribute( 'aria-expanded' );
-
-			button.setAttribute( 'aria-expanded', expanded ? 'false' : 'true' );
-			target.hidden = expanded;
-		}
-	};
-
-	window.SugarCommerceFieldsModules.Providers = Providers;
 } )();
 
 /**
@@ -2340,11 +1891,7 @@
 					if ( addButton && Repeater.owns( wrap, addButton ) ) {
 						event.preventDefault();
 
-						// Flexible content has a layout per row. The button
-						// either names one, or a select beside it does.
-						var picker = Repeater.own( wrap, '.field-kit__flexible-layout' );
-
-						Repeater.add( wrap, addButton.dataset.layout || ( picker ? picker.value : '' ) );
+						Repeater.add( wrap );
 					}
 
 					var remove = event.target.closest( '.field-kit__repeater-remove' );
@@ -2489,12 +2036,8 @@
 		 *
 		 * @param {Element} wrap The repeater.
 		 */
-		add: function ( wrap, layout ) {
-			// A flexible field has one template per layout; a plain repeater
-			// has exactly one and ignores the argument.
-			var template = layout
-				? Repeater.own( wrap, '.field-kit__repeater-template[data-layout="' + CSS.escape( layout ) + '"]' )
-				: Repeater.own( wrap, '.field-kit__repeater-template' );
+		add: function ( wrap ) {
+			var template = Repeater.own( wrap, '.field-kit__repeater-template' );
 
 			var list = Repeater.own( wrap, '.field-kit__repeater-rows' );
 
@@ -2608,7 +2151,7 @@
 		 * Point everything that referred to an old id at the new one.
 		 *
 		 * Labels and descriptions were moved; nothing else was. A combobox
-		 * names its listbox in aria-controls, a provider row its panel in
+		 * names its listbox in aria-controls, a toggle its panel in
 		 * data-target, a merge-tag button its modal and its editor -- and all
 		 * of them were left pointing at an id that stopped existing the
 		 * moment a row above them was removed.
@@ -2726,7 +2269,7 @@
 		 * @param {Element} root Container.
 		 */
 		init: function ( root ) {
-			root.querySelectorAll( '.field-kit__media:not(.field-kit__gallery)' ).forEach( function ( wrap ) {
+			root.querySelectorAll( '.field-kit__media' ).forEach( function ( wrap ) {
 				if ( wrap.dataset.fkBound ) {
 					return;
 				}
@@ -5684,7 +5227,7 @@
 	function init( root ) {
 		root = root || document;
 
-		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Oembed', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip', 'ColorField', 'IconPicker', 'Providers', 'Money', 'PasswordReveal', 'PasswordRemove', 'Counter', 'Region', 'Accordion', 'SettingsBar' ].forEach( function ( name ) {
+		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Combobox', 'Reorder', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip', 'ColorField', 'IconPicker', 'Money', 'PasswordReveal', 'PasswordRemove', 'Counter', 'Region', 'Accordion', 'SettingsBar' ].forEach( function ( name ) {
 			var module = window.SugarCommerceFieldsModules[ name ];
 
 			if ( module && typeof module.init === 'function' ) {

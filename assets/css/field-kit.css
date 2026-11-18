@@ -339,90 +339,12 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
  * -------------------------------------------------------------------- */
 
 /* Labelled parts on one line, bottom-aligned so the boxes share it whatever
-   the length of the label above each. Their own rule: a comment had crept
-   in between these two selectors and the gradient grid's, which merged all
-   three into one — a dimensions field was a four-column grid forty rems
-   wide, and the narrow-screen rule that stacks it was setting a flex
-   direction on a grid. */
-.field-kit__dimensions,
+   the length of the label above each. */
 .field-kit__range-pair {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: flex-end;
 	gap: .75rem;
-}
-
-/* Gradient swatches. A radio group underneath, exactly like the cards — the
-   input is hidden from sight but not from the accessibility tree or the tab
-   order, and the swatch is what a checked one looks like. */
-.field-kit__gradients {
-	display: grid;
-	grid-template-columns: repeat(var(--field-kit-gradient-columns, 4), minmax(0, 1fr));
-	gap: .75rem;
-	max-width: 40rem;
-}
-
-.field-kit__gradient {
-	display: flex;
-	flex-direction: column;
-	gap: .35rem;
-	cursor: pointer;
-}
-
-/* Off-screen rather than display:none, which would take it out of the tab
-   order and stop the arrow keys moving between the options. */
-.field-kit__gradient-input {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	margin: -1px;
-	overflow: hidden;
-	clip-path: inset(50%);
-}
-
-.field-kit__gradient-swatch {
-	display: block;
-	height: 3.5rem;
-	border: 1px solid #dcdcde;
-	border-radius: 2px;
-}
-
-/* The empty choice has no gradient to show, so it shows the absence of one —
-   core's own checkerboard shorthand for transparent. */
-.field-kit__gradient--none .field-kit__gradient-swatch {
-	background:
-		linear-gradient(45deg, #dcdcde 25%, transparent 25%, transparent 75%, #dcdcde 75%) 0 0 / 12px 12px,
-		linear-gradient(45deg, #dcdcde 25%, transparent 25%, transparent 75%, #dcdcde 75%) 6px 6px / 12px 12px,
-		#fff;
-}
-
-.field-kit__gradient-label {
-	font-size: 12px;
-	color: #50575e;
-}
-
-.field-kit__gradient-input:checked + .field-kit__gradient-swatch {
-	border-color: var(--wp-admin-theme-color, #2271b1);
-	box-shadow: 0 0 0 2px var(--wp-admin-theme-color, #2271b1);
-}
-
-/* Forced colours drop the shadow and repaint every border the same, so the
-   chosen swatch needs an edge of its own. Highlight, the system's selection
-   colour, rather than the CanvasText every plain border becomes: this is a
-   value that has been chosen, not a control that has focus. Before the
-   focus rule, so a focused swatch still shows its ring. */
-@media (forced-colors: active) {
-	.field-kit__gradient-input:checked + .field-kit__gradient-swatch {
-		outline: 2px solid Highlight;
-		outline-offset: -2px;
-	}
-}
-
-/* Focus is the keyboard's version of hover, and the input it belongs to is
-   off-screen — so the swatch has to show it instead. */
-.field-kit__gradient-input:focus-visible + .field-kit__gradient-swatch {
-	outline: var(--wp-admin-border-width-focus, 2px) solid var(--wp-admin-theme-color, #2271b1);
-	outline-offset: 2px;
 }
 
 /* A text field with a button that fills it in. Same shape as the clipboard
@@ -450,32 +372,6 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	min-width: 0;
 }
 
-/* A provider that answers with a script rather than an iframe cannot be shown
-   inline — innerHTML never executes one — so what was found is shown instead.
-   Twitter and Reddit are the common ones. */
-.field-kit__oembed-card {
-	display: flex;
-	gap: .75rem;
-	align-items: center;
-	max-width: 600px;
-	padding: .75rem;
-	border: 1px solid #dcdcde;
-	border-radius: 2px;
-	background: #fff;
-}
-
-.field-kit__oembed-card img {
-	flex: none;
-	width: 80px;
-	height: 80px;
-	object-fit: cover;
-	border-radius: 2px;
-}
-
-.field-kit__oembed-card p {
-	margin: .25rem 0 0;
-}
-
 /* The unit on the left instead, which is what a currency wants in most of
    the world's locales. */
 .field-kit__amount--prefix {
@@ -490,7 +386,6 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	color: #646970;
 }
 
-.field-kit__dimensions-part,
 .field-kit__range-pair-part {
 	display: flex;
 	flex-direction: column;
@@ -500,7 +395,6 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 
 /* Without this a column flex stretches its children to the container's
    width, which is what made every small-text box full width. */
-.field-kit__dimensions-part input,
 .field-kit__range-pair-part input,
 .field-kit__amount input[type="number"] {
 	width: auto;
@@ -511,67 +405,8 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	color: #646970;
 }
 
-/* Bottom-aligned with the boxes by the row's own align-items, then padded
-   up by the difference between a line of text and a 30px input, so the
-   unit sits on the input's centre line rather than on its baseline. Not
-   align-self: center — each part carries a label above its box, so the
-   row's centre is the join between label and box, not the box. */
-.field-kit__dimensions-unit {
-	padding-bottom: .4rem;
-	color: #646970;
-	white-space: nowrap;
-}
-
-/* A link is one control on one line: the address, with a link glyph in
-   its affix, the text beside it, and a switch for the new tab. The parts
-   share the width and wrap when there is not enough of it. */
-.field-kit__link {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: .5rem;
-	max-width: 40rem;
-}
-
-.field-kit__link .field-kit__link-url {
-	flex: 1 1 16rem;
-	width: auto;
-	max-width: none;
-}
-
-.field-kit__link-text {
-	flex: 1 1 10rem;
-}
-
-.field-kit__link .field-kit__link-url > input,
-.field-kit__link-text > input {
-	width: 100%;
-	max-width: none;
-}
-
-.field-kit__link-target {
-	display: inline-flex;
-	flex: 0 0 auto;
-	align-items: center;
-	gap: .5rem;
-	white-space: nowrap;
-}
-
-/* The glyph sits in the affix the way a currency symbol does, and the
-   input keeps clear of it: the affix padding rule is written for the
-   kit's own input class, which a composite's part does not carry. */
-.field-kit__link .field-kit__adornment .sugarcommerce-icon {
-	font-size: 18px;
-	width: 18px;
-	height: 18px;
-}
-
-.field-kit__link .field-kit__link-url > input {
-	padding-inline-start: 2.75rem;
-}
-
 /* -----------------------------------------------------------------------
- * Media, gallery, repeater, sortable
+ * Media, repeater, sortable
  * -------------------------------------------------------------------- */
 
 .field-kit__media-preview img {
@@ -673,114 +508,12 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	display: block;
 }
 
-.field-kit__gallery-items,
 .field-kit__repeater-rows,
 .field-kit__sortable {
 	margin: 0;
 	padding: 0;
 	list-style: none;
 	max-width: 30rem;
-}
-
-.field-kit__gallery-items {
-	display: flex;
-	flex-wrap: wrap;
-	gap: .5rem;
-}
-
-.field-kit__gallery-item {
-	position: relative;
-	width: 150px;
-	margin: 0;
-	border: 1px solid #dcdcde;
-	border-radius: 2px;
-	background: #fff;
-	overflow: hidden;
-	cursor: grab;
-}
-
-.field-kit__gallery-item:active {
-	cursor: grabbing;
-}
-
-.field-kit__gallery-item img {
-	display: block;
-	width: 100%;
-	height: 150px;
-	object-fit: cover;
-	pointer-events: none;
-}
-
-/* The span the renderer and the script put the button in generates no box
-   of its own — display: contents — so the button is positioned against the
-   tile rather than against a wrapper inside it. Nothing else can apply to
-   an element with no box, which is why this is its only declaration. */
-.field-kit__gallery-actions {
-	display: contents;
-}
-
-/* The cross: a small dark disc in the corner that shows when the tile is
-   hovered or something inside it takes focus, and turns red under the
-   pointer. Dark over the picture rather than white, because a white disc
-   vanished on a light photo and sat like a sticker on a dark one; a
-   translucent dark one reads on both. :focus-within is what keeps it
-   usable from a keyboard, where there is no hover to reveal it.
-   Everything about it is here, so nothing later in the sheet resizes it. */
-.wp-core-ui .field-kit__gallery-remove {
-	position: absolute;
-	top: .375rem;
-	inset-inline-end: .375rem;
-	z-index: 1;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 1.5rem;
-	height: 1.5rem;
-	padding: 0;
-	border: 0;
-	border-radius: 50%;
-	background: rgba(29, 35, 39, .7);
-	color: #fff;
-	box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
-	text-decoration: none;
-	opacity: 0;
-	transition: opacity .12s ease-in-out, background-color .12s ease-in-out;
-}
-
-.field-kit__gallery-item:hover .field-kit__gallery-remove,
-.field-kit__gallery-item:focus-within .field-kit__gallery-remove,
-.wp-core-ui .field-kit__gallery-remove:focus-visible {
-	opacity: 1;
-}
-
-.wp-core-ui .field-kit__gallery-remove:hover,
-.wp-core-ui .field-kit__gallery-remove:focus {
-	background: #d63638;
-	color: #fff;
-	text-decoration: none;
-}
-
-.wp-core-ui .field-kit__gallery-remove:focus-visible {
-	outline: 2px solid #fff;
-	outline-offset: 1px;
-	box-shadow: 0 0 0 4px rgba(29, 35, 39, .5);
-}
-
-.field-kit__gallery-remove svg {
-	display: block;
-}
-
-/* Nothing may be revealed by hover alone where hovering is not possible. */
-@media (hover: none) {
-	.wp-core-ui .field-kit__gallery-remove {
-		opacity: 1;
-	}
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.wp-core-ui .field-kit__gallery-remove {
-		transition: none;
-	}
 }
 
 /* A stacked row is a panel: a bordered block with its fields in a flex line.
@@ -872,8 +605,7 @@ li.field-kit__repeater-row {
 	cursor: pointer;
 }
 
-.field-kit__repeater-row.is-dragging,
-.field-kit__gallery-item.is-dragging {
+.field-kit__repeater-row.is-dragging {
 	opacity: .5;
 }
 
@@ -1052,8 +784,8 @@ li.field-kit__repeater-row {
 	box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #2271b1);
 }
 
-/* Highlight in forced colours, for the reasons the gradient swatch gives;
-   before the focus rule, so a focused card still shows its ring. */
+/* Highlight in forced colours, where a border colour or a shadow is not
+   drawn and the choice would not show; before the focus rule, so a focused card still shows its ring. */
 @media (forced-colors: active) {
 	.field-kit__card:has( .field-kit__card-input:checked ) {
 		outline: 2px solid Highlight;
@@ -1809,28 +1541,25 @@ li.field-kit__repeater-row {
 	/* Every composite that puts controls in a row: down the screen instead,
 	   each one filling the width. */
 	.field-kit__amount,
-	.field-kit__dimensions,
-	.field-kit__range-pair,
-	.field-kit__clipboard,
-	.field-kit__license-control,
-	.field-kit__code-generator,
-	.field-kit__media-actions {
+.field-kit__range-pair,
+.field-kit__clipboard,
+.field-kit__license-control,
+.field-kit__code-generator,
+.field-kit__media-actions {
 		flex-direction: column;
 		align-items: stretch;
 	}
 
 	.field-kit__amount > *,
-	.field-kit__dimensions > *,
-	.field-kit__range-pair > *,
-	.field-kit__clipboard > *,
-	.field-kit__license-control > *,
-	.field-kit__code-generator > * {
+.field-kit__range-pair > *,
+.field-kit__clipboard > *,
+.field-kit__license-control > *,
+.field-kit__code-generator > * {
 		width: 100%;
 	}
 
 	/* A unit belongs beside its number, not on a line of its own. */
-	.field-kit__amount-unit--fixed,
-	.field-kit__dimensions-unit {
+	.field-kit__amount-unit--fixed {
 		width: auto;
 		align-self: flex-start;
 	}
@@ -1874,16 +1603,6 @@ li.field-kit__repeater-row {
 		background: #fff;
 	}
 
-	/* Tiles small enough that two still fit, rather than one filling the
-	   screen. */
-	.field-kit__gallery-item {
-		width: 100px;
-	}
-
-	.field-kit__gallery-item img {
-		height: 100px;
-	}
-
 	/* A slider needs the width more than its readout does. */
 	.field-kit__range {
 		gap: .5rem;
@@ -1893,10 +1612,9 @@ li.field-kit__repeater-row {
 	   cross beside a chip is not something a thumb can find. The glyph
 	   stays its size, in the middle of a bigger target. */
 	.field-kit__combobox-chip-remove,
-	.wp-core-ui .field-kit__combobox-clear,
-	.wp-core-ui .field-kit__gallery-remove,
-	.wp-core-ui .field-kit__tooltip-toggle,
-	.field-kit__tooltip-toggle {
+.wp-core-ui .field-kit__combobox-clear,
+.wp-core-ui .field-kit__tooltip-toggle,
+.field-kit__tooltip-toggle {
 		min-width: 40px;
 		min-height: 40px;
 	}
@@ -2125,8 +1843,7 @@ li.field-kit__repeater-row {
 
 /* An empty preview should take no room, or every media field reserves a
    blank block above its buttons. */
-.field-kit__media-preview[data-empty="true"],
-.field-kit__gallery-items[data-empty="true"] {
+.field-kit__media-preview[data-empty="true"] {
 	display: none;
 }
 
@@ -2154,7 +1871,6 @@ select.field-kit__select[multiple] {
 
 /* Sub-labels inside composite fields are not field labels and should not
    inherit the field label's weight. */
-.field-kit__dimensions-part .field-kit__sub-label,
 .field-kit__range-pair-part .field-kit__sub-label {
 	display: block;
 	font-weight: 400;
@@ -2210,8 +1926,7 @@ select.field-kit__select[multiple] {
  *
  * Several field types stack a preview, a control and a row of buttons. Each
  * part was spaced on its own and the parts ended up flush against each
- * other — a "Choose file" button touching the input above it, an "Add
- * images" button touching the gallery.
+ * other — a "Choose file" button touching the input above it.
  *
  * Rather than chase each pair, every direct child of a media block gets the
  * same gap and the last one loses it. Declared late so it settles the
@@ -2224,30 +1939,23 @@ select.field-kit__select[multiple] {
    the button beside them and touching it. Flex already establishes a block
    formatting context, so there was nothing here for them to gain. */
 .field-kit__media,
-.field-kit__gallery,
 .field-kit__repeater,
 .field-kit__group,
-.field-kit__oembed,
 .field-kit__tags {
 	display: flow-root;
 }
 
-.field-kit__media > *,
-.field-kit__gallery > *,
-.field-kit__oembed > * {
+.field-kit__media > * {
 	margin: 0 0 .6rem;
 }
 
-.field-kit__media > :last-child,
-.field-kit__gallery > :last-child,
-.field-kit__oembed > :last-child {
+.field-kit__media > :last-child {
 	margin-bottom: 0;
 }
 
 /* The hidden input holding the value is not a visible part and must not
    contribute a gap of its own. */
-.field-kit__media > input[type="hidden"],
-.field-kit__gallery > input[type="hidden"] {
+.field-kit__media > input[type="hidden"] {
 	margin: 0;
 }
 
@@ -2268,7 +1976,6 @@ select.field-kit__select[multiple] {
 .field-kit__clipboard,
 .field-kit__license,
 .field-kit__amount,
-.field-kit__dimensions,
 .field-kit__range-pair,
 .field-kit__media-actions {
 	margin: 0;
@@ -2315,11 +2022,6 @@ select.field-kit__select[multiple] {
 .field-kit__amount select:focus {
 	position: relative;
 	z-index: 1;
-}
-
-/* Same treatment wherever a control and its unit are one value. */
-.field-kit__dimensions {
-	gap: .4rem;
 }
 
 /* -----------------------------------------------------------------------
@@ -3510,211 +3212,10 @@ body.term-php .field-kit__accordion {
 	width: 18px;
 }
 
-/* Flexible content
-   -------------------------------------------------------------------------
-   A row is a collapsible repeater row with the layout's name for a title,
-   so it shares that strip's rules. Only the add buttons are its own. */
-
-.field-kit__flexible-add {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
-}
-
-.field-kit__flexible-orphan {
-	margin: 0 0 8px;
-}
-
-/* Provider list
-   -------------------------------------------------------------------------
-   A registered thing, switched on, put in order, configured. Drawn as one
-   row per provider rather than as a card, because the list is read down the
-   left-hand edge -- which is on, and in what order -- and only one row at a
-   time is being configured. */
-
-.field-kit__provider-list {
-	list-style: none;
-	margin: 0;
-	max-width: 42rem;
-	padding: 0;
-}
-
-.field-kit__provider {
-	background: #fff;
-	border: 1px solid #dcdcde;
-	margin: 0 0 -1px;
-}
-
-.field-kit__provider:first-child {
-	border-radius: 2px 2px 0 0;
-}
-
-.field-kit__provider:last-child {
-	border-radius: 0 0 2px 2px;
-	margin-bottom: 0;
-}
-
-/* The row is one line; the settings body is not part of it, which is why the
-   flex is here rather than on the item. */
-.field-kit__provider-row {
-	align-items: center;
-	display: flex;
-	gap: .6rem;
-	padding: .6rem .75rem;
-}
-
-/* Sits at the trailing edge, and wants a column of its own to sit in.
-   Everything else about it is .field-kit__drag-handle. */
-.wp-core-ui .field-kit__provider-handle {
-	width: 1.75rem;
-}
-
 .field-kit__drag-handle .sugarcommerce-icon {
 	font-size: 20px;
 	height: 20px;
 	width: 20px;
-}
-
-.field-kit__provider.is-dragging {
-	opacity: .5;
-}
-
-/* Takes the slack, so the controls sit against the trailing edge whatever
-   the name's length. */
-.field-kit__provider-identity {
-	align-items: center;
-	display: flex;
-	flex: 1;
-	gap: .6rem;
-	min-width: 0;
-}
-
-.field-kit__provider-logo {
-	flex: 0 0 auto;
-	height: 24px;
-	object-fit: contain;
-	width: 24px;
-}
-
-/* A dashicon used as the mark rather than an image. */
-span.field-kit__provider-logo {
-	color: #50575e;
-	font-size: 24px;
-	line-height: 1;
-}
-
-.field-kit__provider-text {
-	display: flex;
-	flex-direction: column;
-	min-width: 0;
-}
-
-.field-kit__provider-label {
-	font-weight: 600;
-}
-
-.field-kit__provider-text .description {
-	font-size: 12px;
-	line-height: 1.4;
-}
-
-/* Everything that acts on the provider, together at the trailing end. */
-.field-kit__provider-controls {
-	align-items: center;
-	display: flex;
-	flex: 0 0 auto;
-	gap: .5rem;
-}
-
-/* The switch is the control, so it does not need the trailing gap it carries
-   when it sits in front of its own label. */
-.field-kit__provider-switch {
-	margin-inline-end: 0 !important;
-}
-
-/* Inside the row, so it reads as part of that provider rather than as a
-   separator between two of them. */
-.field-kit__provider-body {
-	background: #f6f7f7;
-	border-top: 1px solid #dcdcde;
-	padding: .75rem;
-}
-
-.field-kit__providers-empty {
-	margin: 0;
-}
-
-/* The dialog is the browser's, so the backdrop, the focus trap and Esc are
-   already handled; this is only how it is painted. */
-.field-kit__provider-dialog {
-	border: 1px solid #c3c4c7;
-	border-radius: 4px;
-	box-shadow: 0 4px 24px rgba( 0, 0, 0, .2 );
-	color: inherit;
-	max-height: 80vh;
-	max-width: min( 32rem, calc( 100vw - 2rem ) );
-	padding: 0;
-	width: 100%;
-}
-
-.field-kit__provider-dialog::backdrop {
-	background: rgba( 0, 0, 0, .4 );
-}
-
-.field-kit__provider-dialog-header {
-	align-items: center;
-	border-bottom: 1px solid #dcdcde;
-	display: flex;
-	justify-content: space-between;
-	padding: .75rem 1rem;
-}
-
-.field-kit__provider-dialog-header h2 {
-	font-size: 14px;
-	margin: 0;
-}
-
-.wp-core-ui .field-kit__provider-dialog-header .field-kit__provider-dialog-close {
-	background: none;
-	border: 0;
-	color: #50575e;
-	cursor: pointer;
-	padding: 0;
-}
-
-.field-kit__provider-dialog-body {
-	max-height: 60vh;
-	overflow-y: auto;
-	padding: 1rem;
-}
-
-.field-kit__provider-dialog-footer {
-	border-top: 1px solid #dcdcde;
-	display: flex;
-	justify-content: flex-end;
-	padding: .75rem 1rem;
-}
-
-@media ( max-width: 782px ) {
-	.field-kit__provider-row {
-		align-items: flex-start;
-		flex-wrap: wrap;
-	}
-
-	.field-kit__provider-identity {
-		flex: 1 1 100%;
-		order: -1;
-	}
-
-	.field-kit__provider-controls {
-		width: 100%;
-	}
-
-	/* The handle to the far edge, the switch and the button to the near one,
-	   rather than three controls bunched under a name. */
-	.field-kit__provider-handle {
-		margin-inline-start: auto;
-	}
 }
 
 /* A field may take a share of the line rather than all of it, so two short
@@ -4254,84 +3755,6 @@ li.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-indicator
 	transform: rotate(180deg);
 }
 
-/* A gallery of things that are not images is a list, not a grid of tiles:
-   there is nothing to show, so the name is the item and a row is the right
-   shape for it. Wrapping, because a player takes the row it is on, under
-   the name rather than beside it: a native audio control is about 300px
-   wide and squeezing it next to a filename leaves neither readable. */
-.field-kit__gallery-item--file {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: .25rem;
-	width: 100%;
-	padding: .35rem .5rem;
-	cursor: default;
-}
-
-.field-kit__gallery-name {
-	flex: 1 1 auto;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.field-kit__gallery-player {
-	flex: 1 1 100%;
-	width: 100%;
-	height: 2.25rem;
-}
-
-.field-kit__gallery-icon {
-	flex: 0 0 auto;
-	color: #646970;
-}
-
-/* A tile is dragged by any part of it, so the handle is for the keyboard
-   alone: the button that takes the arrow keys. Nobody with a pointer needs
-   to see it, so it is clipped away the way core hides screen-reader text
-   and comes back only when it is tabbed to -- over the picture on a tile,
-   beside the name in a row. */
-.field-kit__gallery-item .field-kit__gallery-handle {
-	position: absolute;
-	top: .375rem;
-	inset-inline-start: .375rem;
-	z-index: 1;
-	width: 1px;
-	height: 1px;
-	margin: -1px;
-	padding: 0;
-	overflow: hidden;
-	clip: rect( 1px, 1px, 1px, 1px );
-	clip-path: inset( 50% );
-	border: 0;
-	border-radius: 2px;
-	background: rgba( 255, 255, 255, .92 );
-	box-shadow: 0 1px 2px rgba( 0, 0, 0, .25 );
-}
-
-.field-kit__gallery-item .field-kit__gallery-handle:focus-visible {
-	width: auto;
-	height: auto;
-	margin: 0;
-	overflow: visible;
-	clip: auto;
-	clip-path: none;
-}
-
-.field-kit__gallery-item--file .field-kit__gallery-handle {
-	position: absolute;
-	inset-inline-start: .25rem;
-	top: 50%;
-	transform: translateY( -50% );
-}
-
-.field-kit__gallery-items:has( .field-kit__gallery-item--file ) {
-	display: flex;
-	flex-direction: column;
-	gap: .25rem;
-}
-
 /* -----------------------------------------------------------------------
  * Hooks for sibling libraries
  *
@@ -4344,10 +3767,9 @@ li.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-indicator
  * -------------------------------------------------------------------- */
 
 /* wp-register-flyouts. Its panel is already as narrow as a list is going
-   to get: the cap on a gallery, a repeater and a sortable is there so one
+   to get: the cap on a repeater and a sortable is there so one
    on a settings screen does not run the width of a desktop, and inside a
    flyout it just leaves a column of dead space down the end of every row. */
-.wp-flyout .field-kit__gallery-items,
 .wp-flyout .field-kit__repeater-rows,
 .wp-flyout .field-kit__sortable {
 	max-width: none;

@@ -122,7 +122,7 @@ class QuickEditFields {
 	 * hidden template before the values are in it, so anything that has to be
 	 * started in JavaScript — an editor, a colour picker's sibling — comes up
 	 * dead in the clone; and the panel is one row of a list table, so a
-	 * gallery or a stack of repeater rows has nowhere to go.
+	 * list of files or a stack of repeater rows has nowhere to go.
 	 *
 	 * The judgement is the kit's, not this library's: a type knows whether it
 	 * survives being cloned. Two libraries each keeping their own whitelist

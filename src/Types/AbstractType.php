@@ -263,7 +263,7 @@ abstract class AbstractType implements FieldType {
 	/**
 	 * Render a `<label>` for one of several inputs the type emits itself.
 	 *
-	 * Types that draw more than one control — dimensions, link, date range —
+	 * Types that draw more than one control — a date range, an amount and its type —
 	 * still owe each one a programmatically associated label. This is the
 	 * only sanctioned way to write one, so none of them can quietly ship a
 	 * bare input.

@@ -36,7 +36,7 @@ final class SubmittedShapeTest extends TestCase {
 	 * @return array<string, array{string}>
 	 */
 	public static function text_types(): array {
-		$types = [ 'text', 'email', 'url', 'tel', 'password', 'hidden', 'textarea', 'code', 'wysiwyg', 'date', 'time', 'datetime', 'color', 'oembed', 'file_url', 'license', 'money' ];
+		$types = [ 'text', 'email', 'url', 'tel', 'password', 'hidden', 'textarea', 'code', 'wysiwyg', 'date', 'time', 'datetime', 'color', 'file_url', 'license', 'money' ];
 
 		return array_combine( $types, array_map( static fn( string $type ) => [ $type ], $types ) );
 	}

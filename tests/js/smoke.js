@@ -136,7 +136,7 @@ if ( '<svg data-icon="close"></svg>' !== modules.icon( 'close' ) || '' !== modul
 
 /*
  * Read out of the script's own init list rather than kept by hand here. The
- * hand-written copy had drifted: IconPreview and Providers were both added to
+ * hand-written copy had drifted: IconPreview and another module were both added to
  * the script and never to this list, so neither was ever checked -- and a
  * module that is not on the list is exactly the one nobody notices is broken.
  */
@@ -507,70 +507,6 @@ try {
 } )();
 
 /*
- * An added gallery tile is the server's tile.
- *
- * The script cloned the first tile when there was one and built its own
- * when there was not -- a tile with chevrons and no drag handle. It clones
- * the template the server ships now, and names the attachment in the
- * labels the template left as {name}.
- */
-( function () {
-	const handle = Object.assign( makeElement(), { attributes: {} } );
-	handle.getAttribute = ( name ) => handle.attributes[ name ] ?? null;
-	handle.setAttribute = ( name, value ) => { handle.attributes[ name ] = value; };
-	handle.setAttribute( 'aria-label', 'Reorder {name}, 1 of 1' );
-	handle.setAttribute( 'data-label-template', 'Reorder {name}, {position} of {total}' );
-
-	const tile = makeElement();
-	tile.querySelectorAll = ( selector ) => ( selector.includes( 'aria-label' ) ? [ handle ] : [] );
-	tile.cloneNode = () => tile;
-
-	const template = makeElement();
-	template.content = { firstElementChild: tile };
-
-	const list = makeElement();
-	list.children = [];
-	list.querySelector = () => null;
-	list.appendChild = ( node ) => list.children.push( node );
-
-	const wrap = makeElement();
-	wrap.dataset = {};
-	wrap.querySelector = ( selector ) => {
-		if ( selector.includes( 'template' ) ) {
-			return template;
-		}
-
-		if ( selector.includes( 'items' ) ) {
-			return list;
-		}
-
-		return null;
-	};
-
-	try {
-		modules.Gallery.append( wrap, { id: 7, title: 'Kick drum', sizes: {} } );
-	} catch ( error ) {
-		console.error( `  Gallery.append threw: ${ error.message }` );
-		failures ++;
-	}
-
-	if ( 1 !== list.children.length ) {
-		console.error( '  Gallery: no tile was added from the template' );
-		failures ++;
-	}
-
-	if ( 'Reorder Kick drum, 1 of 1' !== handle.getAttribute( 'aria-label' ) ) {
-		console.error( `  Gallery: the template's {name} was not filled in: ${ handle.getAttribute( 'aria-label' ) }` );
-		failures ++;
-	}
-
-	if ( source.includes( 'field-kit__gallery-move' ) ) {
-		console.error( '  Gallery: the script still builds a tile with chevrons' );
-		failures ++;
-	}
-} )();
-
-/*
  * The email panel binds its merge tags; folding it is the accordion's job.
  *
  * It used to carry a toggle of its own, and on a metabox screen core's
@@ -712,10 +648,10 @@ try {
 	/*
 	 * Which halfway line a drop is measured against.
 	 *
-	 * A gallery is a grid, so its tiles sit side by side and the question is
-	 * left-or-right. Asking top-or-bottom there gives two tiles in the same
-	 * row the same answer over most of their area, and a tile could not be
-	 * dropped into the first position at all.
+	 * Chips in a row sit side by side, so the question is left-or-right.
+	 * Asking top-or-bottom there gives two items in the same row the same
+	 * answer over most of their area, and one could not be dropped into the
+	 * first position at all.
 	 *
 	 * The helper is pulled out of the source rather than restated, so this
 	 * cannot pass against a copy that has drifted.

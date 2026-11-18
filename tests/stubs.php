@@ -624,25 +624,6 @@ if ( ! function_exists( 'wp_get_global_settings' ) ) {
 	}
 }
 
-if ( ! function_exists( 'wp_get_nav_menus' ) ) {
-	/**
-	 * The site's navigation menus.
-	 *
-	 * No return type, because core has none: it returns
-	 * apply_filters( 'wp_get_nav_menus', get_terms( ... ) ), so a plugin can
-	 * make it return anything, and get_terms() itself returns a WP_Error for
-	 * a taxonomy that is not registered. A stub that promises an array cannot
-	 * exercise the guard that exists for exactly that.
-	 *
-	 * @param array $args Unused.
-	 *
-	 * @return mixed
-	 */
-	function wp_get_nav_menus( array $args = [] ) {
-		return $GLOBALS['fk_nav_menus'] ?? [];
-	}
-}
-
 if ( ! function_exists( 'sanitize_html_class' ) ) {
 	/**
 	 * Copied from core: the value is printed into a class attribute.
@@ -749,8 +730,8 @@ if ( ! function_exists( 'get_taxonomies' ) ) {
 
 if ( ! function_exists( 'get_pages' ) ) {
 	/**
-	 * No return type, as with wp_get_nav_menus(): core's returns false as
-	 * well as an array, and the guard for that has to be reachable.
+	 * No return type: core's returns false as well as an array, and the
+	 * guard for that has to be reachable.
 	 *
 	 * @param array $args Unused.
 	 *

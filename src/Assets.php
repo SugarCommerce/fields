@@ -199,11 +199,6 @@ final class Assets {
 			'restUrl'   => rest_url( Runtime::rest_namespace() . '/' ),
 			'restNonce' => wp_create_nonce( 'wp_rest' ),
 
-			// Core's own, which the block editor uses. It only fetches from
-			// WordPress's provider allowlist and is gated on `edit_posts`, so
-			// there is nothing here worth writing a second endpoint for.
-			'oembedUrl' => rest_url( 'oembed/1.0/proxy' ),
-
 			// The kit's own icons, drawn, for the controls the script builds.
 			'icons'     => Glyphs::markup(),
 			'i18n'      => [
@@ -218,9 +213,6 @@ final class Assets {
 				'removeItem'       => __( 'Remove', 'sugarcommerce' ),
 				'actionDone'       => __( 'Done.', 'sugarcommerce' ),
 				'actionFailed'     => __( 'That did not work.', 'sugarcommerce' ),
-				'embedResolving'   => __( 'Looking for an embed…', 'sugarcommerce' ),
-				'embedFailed'      => __( 'That URL could not be embedded.', 'sugarcommerce' ),
-				'embedOnSave'      => __( 'This will render once saved.', 'sugarcommerce' ),
 				'showPassword'     => __( 'Show password', 'sugarcommerce' ),
 				'hidePassword'     => __( 'Hide password', 'sugarcommerce' ),
 				'unsavedChanges'   => __( 'Unsaved changes', 'sugarcommerce' ),

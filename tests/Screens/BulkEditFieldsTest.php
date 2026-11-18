@@ -98,7 +98,7 @@ final class BulkEditFieldsTest extends TestCase {
 			[
 				'colour'  => [ 'type' => 'text' ],
 				'body'    => [ 'type' => 'wysiwyg' ],
-				'gallery' => [ 'type' => 'gallery' ],
+				'files'   => [ 'type' => 'files' ],
 				'rows'    => [ 'type' => 'repeater' ],
 				'email'   => [ 'type' => 'email_editor' ],
 				'status'  => [ 'type' => 'select' ],

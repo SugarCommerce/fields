@@ -46,7 +46,6 @@ final class Glyphs {
 		'down'     => 'heroicons-outline:chevron-down',
 		'trash'    => 'heroicons-outline:trash',
 		'upload'   => 'heroicons-outline:arrow-up-tray',
-		'link'     => 'heroicons-outline:link',
 		'show'     => 'heroicons-outline:eye',
 		'hide'     => 'heroicons-outline:eye-slash',
 		'active'   => 'heroicons-outline:check-circle',

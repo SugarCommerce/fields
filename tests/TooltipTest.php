@@ -149,10 +149,10 @@ final class TooltipTest extends TestCase {
 	public function test_a_group_puts_it_in_the_legend(): void {
 		$html = ( new FieldSet(
 			[
-				'size' => [
-					'type'    => 'dimensions',
-					'label'   => 'Size',
-					'tooltip' => 'In centimetres.',
+				'when' => [
+					'type'    => 'date_range',
+					'label'   => 'When',
+					'tooltip' => 'Both days included.',
 				],
 			],
 			new ArrayContext( [] ),

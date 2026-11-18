@@ -366,7 +366,6 @@ final class MetaRegistrarTest extends TestCase {
 			],
 			'checkbox'    => [ [ 'type' => 'checkbox' ], 'integer' ],
 			'tags'        => [ [ 'type' => 'tags' ], 'array' ],
-			'gallery'     => [ [ 'type' => 'gallery' ], 'array' ],
 			'group'       => [
 				[
 					'type'   => 'group',
@@ -381,7 +380,6 @@ final class MetaRegistrarTest extends TestCase {
 				],
 				'array',
 			],
-			'link'        => [ [ 'type' => 'link' ], 'object' ],
 			'post'        => [ [ 'type' => 'post' ], 'integer' ],
 			'posts'       => [
 				[

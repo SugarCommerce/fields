@@ -78,7 +78,6 @@ final class GlyphsTest extends TestCase {
 			[
 				'key'    => [ 'type' => 'text', 'label' => 'API key', 'tooltip' => 'From your account.' ],
 				'secret' => [ 'type' => 'password', 'label' => 'Secret', 'reveal' => true ],
-				'link'   => [ 'type' => 'link', 'label' => 'Link' ],
 				'order'  => [ 'type' => 'sortable', 'label' => 'Order', 'options' => [ 'a' => 'A', 'b' => 'B' ] ],
 				'file'   => [ 'type' => 'file_url', 'label' => 'File' ],
 				'rows'   => [
@@ -94,7 +93,7 @@ final class GlyphsTest extends TestCase {
 
 		$this->assertStringNotContainsString( 'dashicons', $html );
 
-		foreach ( [ 'help', 'show', 'link', 'up', 'down', 'drag', 'trash' ] as $key ) {
+		foreach ( [ 'help', 'show', 'up', 'down', 'drag', 'trash' ] as $key ) {
 			$this->assertStringContainsString( Glyphs::get( $key ), $html, $key );
 		}
 

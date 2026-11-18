@@ -39,7 +39,7 @@ use SugarCommerce\Fields\Registry;
  *
  * Which types can appear here at all is the kit's decision, not this
  * library's: `supports_inline()` knows that an editor cannot be started in a
- * cloned panel and that a gallery is not one row of a list table.
+ * cloned panel and that a stack of repeater rows is not one row of a list table.
  */
 class BulkEditFields {
 
@@ -123,7 +123,7 @@ class BulkEditFields {
 	 *
 	 * Dropped rather than rendered badly. A wysiwyg in a bulk edit panel is
 	 * not a smaller wysiwyg; it is a textarea that looks like a mistake, and
-	 * a gallery is a grid in a place with no room for one.
+	 * a stack of repeater rows has no room in one.
 	 *
 	 * @param array<string, array<string, mixed>> $fields Field configuration.
 	 *

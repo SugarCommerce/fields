@@ -61,8 +61,8 @@ final class QuickEditFieldsTest extends TestCase {
 	/**
 	 * Only types that survive being cloned are kept.
 	 *
-	 * An editor started in JavaScript comes up dead in a clone, and a gallery
-	 * is not one row of a list table. Dropped rather than rendered badly.
+	 * An editor started in JavaScript comes up dead in a clone, and a list of
+	 * files is not one row of a list table. Dropped rather than rendered badly.
 	 */
 	public function test_types_that_cannot_be_inline_are_dropped(): void {
 		$fields = $this->fields(
@@ -70,7 +70,7 @@ final class QuickEditFieldsTest extends TestCase {
 				'colour'  => [ 'type' => 'text' ],
 				'body'    => [ 'type' => 'wysiwyg' ],
 				'code'    => [ 'type' => 'code' ],
-				'gallery' => [ 'type' => 'gallery' ],
+				'files'   => [ 'type' => 'files' ],
 				'status'  => [ 'type' => 'select' ],
 			]
 		);

@@ -95,9 +95,8 @@ abstract class AbstractNestedType extends AbstractType {
 		$renderer = new Renderer();
 		$markup   = '';
 
-		// Flexible content hands its own list in: each of its rows has a
-		// different set of fields depending on the layout that row chose, so
-		// the owner's sub_fields() is not the answer for every row.
+		// A caller may hand its own list in, where the owner's sub_fields()
+		// is not the answer.
 		foreach ( $fields ?? $owner->sub_fields() as $key => $config ) {
 			$child = $this->child( $owner, (string) $key, (array) $config, $values[ $key ] ?? null, $prefix, $scope );
 
@@ -114,8 +113,7 @@ abstract class AbstractNestedType extends AbstractType {
 	 *
 	 * Each child is built around what it already holds, where the caller
 	 * knows. A type's sanitizer may consult its stored value -- a licence
-	 * refuses to write its own mask back over the real key, a gradient keeps
-	 * a stored preset the theme no longer offers -- and a child built with
+	 * refuses to write its own mask back over the real key -- and a child built with
 	 * nothing behind it lost both the first time its parent was saved.
 	 *
 	 * @param Field                $owner  Parent field.

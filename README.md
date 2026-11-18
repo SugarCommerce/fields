@@ -63,7 +63,7 @@ Text and numeric
 : `text` `email` `url` `tel` `password` `hidden` `number` `percentage` `range` `textarea` `code` `wysiwyg` `code_generator`
 
 Date, time and colour
-: `date` `time` `datetime` `color` `gradient` `date_range` `time_range`
+: `date` `time` `datetime` `color` `date_range` `time_range`
 
 Choice
 : `select` `enhanced_select` `select_multiple` `checkbox` `toggle` `radio` `checkbox_group` `button_group` `card_choice` `country` `region` `currency`
@@ -72,13 +72,13 @@ Relational — one search endpoint behind all of them
 : `post` `page` `user` `taxonomy` `ajax` `tags`
 
 Media
-: `image` `file` `file_url` `gallery` `files`
+: `image` `file` `file_url` `files`
 
 Compound
-: `group` `repeater` `list` `key_value` `sortable` `providers` `dimensions` `amount_type` `money` `flexible`
+: `group` `repeater` `list` `key_value` `sortable` `amount_type` `money`
 
 Layout and display
-: `heading` `separator` `message` `html` `link` `clipboard` `oembed` `custom` `tab` `accordion` `icon` `nav_menu`
+: `heading` `separator` `message` `html` `clipboard` `custom` `tab` `accordion` `icon`
 
 Purpose-built
 : `license` `email_editor` `action_button`
@@ -307,7 +307,7 @@ for a library that also accepts a URL or an emoji.
 
 The controls the engine draws itself -- a tooltip's "?", the "×" that clears a
 value or closes a dialog, a drag handle, a row's move and bin buttons, the
-password eye, a licence's state, a link field's mark, a gallery file's kind --
+password eye, a licence's state, a file's kind --
 are Heroicons outline, named once in `Glyphs::DEFAULTS` and drawn through
 `Icons::render()`, so the stylesheet does not depend on Dashicons. The script
 is handed every glyph already drawn (`Glyphs::markup()`), so no path is
@@ -415,6 +415,8 @@ now `sugarcommerce`.
 | `window.ArrayPressFieldKit`, `window.ArrayPressFieldKitModules` | `window.SugarCommerceFields`, `window.SugarCommerceFieldsModules` |
 | `EncryptedContext`'s own AES-256-GCM and key | `sugarcommerce/security`'s `Encryption\Cipher` (required); same `fkenc:` values, new ones under the site key |
 | `Assets`' own path and URL guessing, `new Assets( $path, $url )` | `SugarCommerce\Plugin\Assets` (required), the family's one asset resolver; `new Assets()` keeps the handles and configuration, and the `$path` and `$url` arguments are gone (nothing passed them) |
+| field types `providers`, `flexible`, `gradient`, `dimensions`, `link`, `oembed`, `nav_menu`, `gallery` (and the JS modules `Providers`, `Gallery`, `Oembed`) | removed: nothing used them (SugarCart is Stripe-only, so no gateway list). Use `repeater` for rows, `files` for several attachments, `color`, `url`, `select` with your own options, or a `custom` field |
+| `Glyphs` key `link` | removed with the `link` type |
 | `vendor/arraypress/wp-field-kit/bin/verify-docs.php` | `vendor/sugarcommerce/fields/bin/verify-docs.php`; `--calls=` also takes `PostFields::register` and the like |
 
 Kept as they were, because renaming them would only churn every stylesheet
@@ -429,10 +431,9 @@ targeted the old icon class, needs the new one.
 * PHP 8.3 or later
 * WordPress 7.1 or later
 
-The script's REST requests (searches, icon lists, oEmbed previews, action
-buttons, regions) go through `wp.apiFetch`, a dependency of the script, so a
-screen left open past its nonce's life renews the nonce and tries again
-instead of answering 403.
+The script's REST requests (searches, icon lists, action buttons, regions) go
+through `wp.apiFetch`, a dependency of the script, so a screen left open past
+its nonce's life renews the nonce and tries again instead of answering 403.
 
 ## License
 

@@ -99,7 +99,7 @@ interface FieldType {
 	 * Quick edit clones its panel from a hidden template *before* the values
 	 * are in it, so anything that has to be started in JavaScript — TinyMCE,
 	 * CodeMirror — comes up dead in the clone. Both are one row of a list
-	 * table, so anything that is a panel, a gallery or a stack of rows does
+	 * table, so anything that is a panel, a grid of files or a stack of rows does
 	 * not fit however well it works.
 	 *
 	 * The default is no. A type says it can, rather than every list-table

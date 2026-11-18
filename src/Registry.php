@@ -52,7 +52,6 @@ final class Registry {
 		'time'            => Types\TimeType::class,
 		'datetime'        => Types\DatetimeType::class,
 		'color'           => Types\ColorType::class,
-		'gradient'        => Types\GradientType::class,
 
 		// Choice.
 		'select'          => Types\SelectType::class,
@@ -71,16 +70,13 @@ final class Registry {
 		'image'           => Types\ImageType::class,
 		'file'            => Types\FileType::class,
 		'file_url'        => Types\FileUrlType::class,
-		'gallery'         => Types\GalleryType::class,
 
 		// Relational — one search endpoint behind all of them.
 		'post'            => Types\PostType::class,
 		'page'            => Types\PageType::class,
 		'user'            => Types\UserType::class,
 		'taxonomy'        => Types\TaxonomyType::class,
-		'nav_menu'        => Types\NavMenuType::class,
 		'icon'            => Types\IconType::class,
-		'flexible'        => Types\FlexibleType::class,
 		'ajax'            => Types\AjaxType::class,
 
 		// Nested — children go through this same registry and renderer.
@@ -92,16 +88,12 @@ final class Registry {
 		'card_choice'     => Types\CardChoiceType::class,
 
 		// Composite — several controls stored under one key.
-		'link'            => Types\LinkType::class,
-		'dimensions'      => Types\DimensionsType::class,
 		'date_range'      => Types\DateRangeType::class,
 		'time_range'      => Types\TimeRangeType::class,
 		'amount_type'     => Types\AmountType::class,
 		'money'           => Types\MoneyType::class,
-		'oembed'          => Types\OembedType::class,
 		'tags'            => Types\TagsType::class,
 		'sortable'        => Types\SortableType::class,
-		'providers'       => Types\ProvidersType::class,
 
 		'email_editor'    => Types\EmailEditorType::class,
 		'license'         => Types\LicenseType::class,
