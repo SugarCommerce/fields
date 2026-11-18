@@ -3489,6 +3489,24 @@ body.term-php .field-kit__accordion {
 	padding-inline-end: 2.25rem;
 }
 
+/* A small number keeps core's 65px for its digits and grows by the room its
+   affix takes, rather than giving that room up from inside the 65px: under a
+   prefix's 2.75rem a price had space for one digit, and 45.33 showed as 4. */
+.wp-core-ui .field-kit__adorned--prefix > input.small-text.field-kit__input,
+.field-kit__adorned--prefix > input.small-text.field-kit__input {
+	width: calc( 65px + 2.75rem );
+}
+
+.wp-core-ui .field-kit__adorned--suffix > input.small-text.field-kit__input,
+.field-kit__adorned--suffix > input.small-text.field-kit__input {
+	width: calc( 65px + 2.25rem );
+}
+
+.wp-core-ui .field-kit__adorned--prefix.field-kit__adorned--suffix > input.small-text.field-kit__input,
+.field-kit__adorned--prefix.field-kit__adorned--suffix > input.small-text.field-kit__input {
+	width: calc( 65px + 5rem );
+}
+
 /* A longer affix takes the room the money field gives a currency code, and
    the input reserves the same. */
 .wp-core-ui .field-kit__adorned--wide-prefix > input.field-kit__input,
@@ -4423,6 +4441,11 @@ li.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-indicator
 	align-items: center;
 	gap: 12px;
 	padding: 18px 20px;
+	/* Core keeps the chevron, which it places absolutely at 1.5em from the
+	   end, clear of the words with 3.5em of padding there. Twenty pixels
+	   all round put a summary that runs the full width -- any on a phone --
+	   under the chevron. */
+	padding-inline-end: 52px;
 	/* The top corners are the card's, less its border, and the bottom ones
 	   too while it is folded and the header is all there is: a hover tint
 	   or a focus ring drawn square inside a rounded card reads as a box

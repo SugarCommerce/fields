@@ -41,6 +41,25 @@ final class AdornmentTest extends TestCase {
 		);
 	}
 
+	/**
+	 * A small number with an affix is widened by the affix's room, so the
+	 * digits keep the 65px core gives them. Drawn inside the 65px, a prefix
+	 * left room for one digit.
+	 */
+	public function test_a_small_number_grows_by_its_affix(): void {
+		$this->assertStringContainsString( 'small-text', $this->render( 'number', [ 'prefix' => '$' ], '45.33' ) );
+
+		$css = (string) preg_replace( '#/\*.*?\*/#s', '', (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' ) );
+
+		foreach ( [ 'prefix' => '2.75rem', 'suffix' => '2.25rem' ] as $side => $room ) {
+			$this->assertMatchesRegularExpression(
+				'/\.field-kit__adorned--' . $side . ' > input\.small-text\.field-kit__input\s*\{\s*width:\s*calc\(\s*65px \+ ' . preg_quote( $room, '/' ) . '\s*\)/',
+				$css,
+				"A small number under a {$side} is not widened by the {$side}'s room."
+			);
+		}
+	}
+
 	public function test_a_suffix_follows_the_input(): void {
 		$html = $this->render( 'number', [ 'suffix' => '%' ], '10' );
 
