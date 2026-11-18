@@ -4902,3 +4902,30 @@ html:has(.field-kit__settings-savebar) {
 		grid-column: 1 / -1;
 	}
 }
+
+/* The phone rule near the top -- every composite down the screen, each
+   control the whole width -- loses to these composites' own rules, which
+   come later in the file at the same weight: the amount stayed an
+   inline-flex as narrow as its number box, the code generator stayed as
+   wide as its contents, the amount's number kept its 8rem, and the
+   clipboard's value kept an 18rem floor and sat off to one side. Last, so
+   it wins. */
+@media screen and (max-width: 782px) {
+
+	.field-kit__amount,
+	.field-kit__code-generator {
+		display: flex;
+		width: 100%;
+	}
+
+	.field-kit__clipboard .field-kit__clipboard-value,
+	.field-kit__amount input[type="number"].field-kit__amount-value {
+		min-width: 0;
+		width: 100%;
+	}
+
+	/* Core caps a small number box at 4.375em on a phone. */
+	.field-kit__amount input[type="number"].field-kit__amount-value {
+		max-width: none;
+	}
+}

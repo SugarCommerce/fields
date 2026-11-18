@@ -170,4 +170,45 @@ final class NarrowScreenTest extends TestCase {
 		// The amount field is the one that has such a label as a child.
 		$this->assertStringContainsString( 'field-kit__sub-label screen-reader-text', $this->render( 'amount_type' ) );
 	}
+
+	/**
+	 * On a phone a composite fills the line even though its own rule comes
+	 * later in the file.
+	 *
+	 * The phone rule and each composite's own rule have the same weight, so
+	 * the later one wins. Written above them, the phone rule lost: the amount
+	 * field stayed as narrow as its number box at 390px.
+	 *
+	 * @return void
+	 */
+	public function test_a_phone_composite_rule_comes_after_its_own_rule(): void {
+		$css = $this->css();
+
+		foreach (
+			[
+				'.field-kit__amount {'                                => 'display: flex',
+				'.field-kit__code-generator {'                        => 'width: 100%',
+				'.field-kit__clipboard .field-kit__clipboard-value {' => 'min-width: 0',
+				'.field-kit__amount input[type="number"].field-kit__amount-value {' => 'width: 100%',
+			] as $base => $wanted
+		) {
+			$own = strpos( $css, "\n" . $base );
+
+			$this->assertNotFalse( $own, $base . ' is not in the stylesheet.' );
+
+			preg_match_all( '/@media screen and \(max-width: 782px\) \{(.*?)\n\}/s', $css, $blocks, PREG_OFFSET_CAPTURE );
+
+			$found = false;
+
+			foreach ( $blocks[1] as [ $body, $offset ] ) {
+				$selector = rtrim( $base, ' {' );
+
+				if ( $offset > $own && str_contains( $body, $selector ) && preg_match( '/' . preg_quote( $selector, '/' ) . '[^{]*\{[^}]*' . preg_quote( $wanted, '/' ) . '/', $body ) ) {
+					$found = true;
+				}
+			}
+
+			$this->assertTrue( $found, 'No phone rule after ' . $base . ' sets ' . $wanted . '.' );
+		}
+	}
 }
