@@ -14,7 +14,8 @@
     "php": ">=8.3",
     "sugarcommerce/geo": "dev-main",
     "sugarcommerce/plugin": "dev-main",
-    "sugarcommerce/security": "dev-main"
+    "sugarcommerce/security": "dev-main",
+    "sugarcommerce/text": "dev-main"
   },
   "require-dev": {
     "phpcompatibility/phpcompatibility-wp": "^2.1",
@@ -53,6 +54,13 @@
       "options": {
         "symlink": false
       }
+    },
+    {
+      "type": "path",
+      "url": "../text",
+      "options": {
+        "symlink": false
+      }
     }
   ],
   "autoload": {
@@ -67,7 +75,8 @@
     "exclude-from-classmap": [
       "/tests/bootstrap.php",
       "/tests/stubs/",
-      "/tests/Screens/stubs.php"
+      "/tests/Screens/stubs.php",
+      "/tests/fixtures/"
     ]
   },
   "scripts": {

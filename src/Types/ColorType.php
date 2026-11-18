@@ -11,7 +11,7 @@ namespace SugarCommerce\Fields\Types;
 
 use SugarCommerce\Fields\Attributes;
 use SugarCommerce\Fields\Field;
-use SugarCommerce\Fields\Support\Color;
+use SugarCommerce\Text\Display\Color;
 
 /**
  * A colour: the browser's own picker, with the hex beside it.

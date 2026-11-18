@@ -12,7 +12,7 @@ namespace SugarCommerce\Fields\Tests;
 use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\Registry;
 use SugarCommerce\Fields\Renderer;
-use SugarCommerce\Fields\Support\Color;
+use SugarCommerce\Text\Display\Color;
 use SugarCommerce\Fields\Types\ColorType;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

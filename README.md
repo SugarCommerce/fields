@@ -232,7 +232,8 @@ adds a row of swatches, as a list or with names:
 
 The hex box is the field: it has the name and the label, so the form works
 with the script off. What is stored is `#rrggbb`, lowercase, or empty --
-`Color::hex()` is the rule, and any form of a hex is read. `'picker' =>
+`SugarCommerce\Text\Display\Color::hex()` (from `sugarcommerce/text`, the
+family's one colour helper) is the rule, and any form of a hex is read. `'picker' =>
 'wordpress'` gives core's Iris picker instead, for its look or its alpha
 channel; `alpha` alone implies it, and only then is an `rgba()` kept. Only a
 field that asks for Iris loads it.
@@ -421,6 +422,7 @@ now `sugarcommerce`.
 | field types `providers`, `flexible`, `gradient`, `dimensions`, `link`, `oembed`, `nav_menu`, `gallery` (and the JS modules `Providers`, `Gallery`, `Oembed`) | removed: nothing used them (SugarCart is Stripe-only, so no gateway list). Use `repeater` for rows, `files` for several attachments, `color`, `url`, `select` with your own options, or a `custom` field |
 | `Glyphs` key `link` | removed with the `link` type |
 | icon set `wordpress`: 344 bundled `@wordpress/icons` 20.0.0 files, `Icons::WORDPRESS_ICONS_VERSION` | core's own icon library (88 icons) from WP 7.1's Icons API. A stored `wordpress:name` outside core's set no longer validates or draws; `cart`, `star-filled` and the like are in it, drawn as core draws them |
+| `SugarCommerce\Fields\Support\Color` (`hex`, `rgb`, `contrast`, `ratio`, `readable`) | `SugarCommerce\Text\Display\Color` (required), same methods and WCAG rule; `##fff` with two hashes is no longer read as a colour |
 | `vendor/arraypress/wp-field-kit/bin/verify-docs.php` | `vendor/sugarcommerce/fields/bin/verify-docs.php`; `--calls=` also takes `PostFields::register` and the like |
 
 Kept as they were, because renaming them would only churn every stylesheet
