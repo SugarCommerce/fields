@@ -1550,11 +1550,14 @@ li.field-kit__repeater-row {
 		align-items: stretch;
 	}
 
-	.field-kit__amount > *,
-.field-kit__range-pair > *,
-.field-kit__clipboard > *,
-.field-kit__license-control > *,
-.field-kit__code-generator > * {
+	/* Not the labels kept for screen readers: one is absolutely placed, so
+	   at full width it reaches past the screen and the page scrolls sideways
+	   -- the amount field's "Unit" did, at 390px. */
+	.field-kit__amount > :not(.screen-reader-text),
+.field-kit__range-pair > :not(.screen-reader-text),
+.field-kit__clipboard > :not(.screen-reader-text),
+.field-kit__license-control > :not(.screen-reader-text),
+.field-kit__code-generator > :not(.screen-reader-text) {
 		width: 100%;
 	}
 

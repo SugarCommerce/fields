@@ -134,4 +134,40 @@ final class NarrowScreenTest extends TestCase {
 			);
 		}
 	}
+
+	/**
+	 * A rule that widens every child to fill a phone never widens a label
+	 * kept for screen readers.
+	 *
+	 * Core's .screen-reader-text is one pixel wide and absolutely placed. A
+	 * composite's `> * { width: 100% }` beat its width, so the amount field's
+	 * hidden "Unit" label became as wide as the screen, starting where it
+	 * stood, and the page scrolled sideways at 390px.
+	 *
+	 * @return void
+	 */
+	public function test_a_fill_rule_spares_screen_reader_labels(): void {
+		preg_match_all( '/([^{}]+)\{([^{}]*\bwidth:\s*100%[^{}]*)\}/', $this->css(), $rules, PREG_SET_ORDER );
+
+		$checked = 0;
+
+		foreach ( $rules as $rule ) {
+			foreach ( explode( ',', $rule[1] ) as $selector ) {
+				$selector = trim( $selector );
+
+				if ( ! preg_match( '/>\s*(\*|:not\(\.screen-reader-text\))$/', $selector ) ) {
+					continue;
+				}
+
+				++$checked;
+
+				$this->assertStringEndsWith( ':not(.screen-reader-text)', $selector, $selector . ' widens a screen-reader-only label too.' );
+			}
+		}
+
+		$this->assertGreaterThanOrEqual( 5, $checked, 'The phone fill rules were not found.' );
+
+		// The amount field is the one that has such a label as a child.
+		$this->assertStringContainsString( 'field-kit__sub-label screen-reader-text', $this->render( 'amount_type' ) );
+	}
 }
