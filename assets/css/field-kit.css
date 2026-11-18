@@ -67,6 +67,23 @@ input.field-kit__combobox-input,
 	border: 0;
 }
 
+/* Core's regular-text is a flat 25em, and a box sized to its contents will
+   not go narrower than a fixed width inside it. Quick and bulk edit are such
+   boxes on a phone -- core's row is a flex line and its fieldsets keep their
+   min-content -- so a text, URL or email field held the editor at 400px and
+   a 390px screen scrolled sideways. Core's own small-screen fix is a
+   max-width, which caps the drawn input but not the room it asks for. A
+   percentage inside the width is what lets the browser shrink it, and min()
+   keeps 25em wherever 25em fits. The field's own input only: inside a
+   composite that sizes itself to its contents (a licence key and its button,
+   a code and Generate) a percentage would have nothing to resolve against
+   and the input would shrink. :where() keeps it at core's specificity, so
+   every rule that already widens a control (a card, a form-table on a phone)
+   still wins. */
+:where(.field-kit__field) > .regular-text {
+	width: min(25em, 100%);
+}
+
 .field-kit__required {
 	margin-inline-start: .15rem;
 	color: #d63638;
@@ -996,7 +1013,15 @@ li.field-kit__repeater-row {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 	gap: .75rem;
-	max-width: 45rem;
+
+	/* Not a bare 45rem. auto-fit counts its columns from a definite max-width
+	   when the width itself is not known yet, which is exactly the question a
+	   table cell asks while it sizes itself: 45rem said three cards, three
+	   cards are 564px of min-content, and the post and profile tables grew to
+	   that on a 390px screen. With a percentage in the cap the browser has no
+	   number to count from while it measures, settles on one card, and lays
+	   out as many as fit once the cell has a width. */
+	max-width: min(45rem, 100%);
 }
 
 /* The configured column count, where the room allows it. */
