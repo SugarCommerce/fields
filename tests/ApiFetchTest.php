@@ -20,7 +20,7 @@ final class ApiFetchTest extends TestCase {
 	public function test_the_script_needs_api_fetch(): void {
 		$source = (string) file_get_contents( dirname( __DIR__ ) . '/src/Assets.php' );
 
-		$this->assertMatchesRegularExpression( "#'/js/field-kit\.js',\s*\[[^\]]*'wp-api-fetch'#", $source );
+		$this->assertMatchesRegularExpression( "#'js/field-kit\.js',\s*\[[^\]]*'wp-api-fetch'#", $source );
 	}
 
 	public function test_no_request_sends_the_page_nonce_through_fetch_itself(): void {

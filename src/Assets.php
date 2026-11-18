@@ -14,6 +14,7 @@ namespace SugarCommerce\Fields;
 
 use SugarCommerce\Fields\Icons\Glyphs;
 use SugarCommerce\Fields\Utils\Runtime;
+use SugarCommerce\Plugin\Assets as PackageAssets;
 
 /**
  * Registers the one script and the one stylesheet.
@@ -23,6 +24,12 @@ use SugarCommerce\Fields\Utils\Runtime;
  * Strauss-prefixed copy load two copies of this script, and a shared global
  * would leave whichever localised last owning the REST URL and nonce for
  * both.
+ *
+ * Where the files are, and their URL, is SugarCommerce\Plugin\Assets's
+ * job -- the family's one resolver, which finds this package in a plugin's
+ * vendor folder, a Strauss copy, a theme or a symlinked plugin. What stays
+ * here is what is this package's own: the handles, the script's dependencies
+ * and configuration, and code editors.
  */
 final class Assets {
 
@@ -32,31 +39,6 @@ final class Assets {
 	 * @var bool
 	 */
 	private static bool $registered = false;
-
-	/**
-	 * Directory the assets live in.
-	 *
-	 * @var string
-	 */
-	private string $path;
-
-	/**
-	 * URL the assets are served from.
-	 *
-	 * @var string
-	 */
-	private string $url;
-
-	/**
-	 * Construct.
-	 *
-	 * @param string $path Filesystem path to the assets directory.
-	 * @param string $url  URL of the assets directory.
-	 */
-	public function __construct( string $path = '', string $url = '' ) {
-		$this->path = '' !== $path ? $path : dirname( __DIR__ ) . '/assets';
-		$this->url  = '' !== $url ? $url : $this->guess_url();
-	}
 
 	/**
 	 * Register the script and stylesheet.
@@ -79,12 +61,10 @@ final class Assets {
 		// written with logical properties — margin-inline-start rather than
 		// margin-left — so the one file serves both directions and there is
 		// no second one to point core at.
-		wp_register_style(
-			$handle,
-			$this->url . '/css/field-kit.css',
-			[],
-			$this->version( 'css/field-kit.css' )
-		);
+		// Each file is versioned by its own modification time, so a
+		// stylesheet-only change is not served from the cache under the
+		// script's version.
+		PackageAssets::register_style( $handle, __FILE__, 'css/field-kit.css' );
 
 		// jquery is a base dependency even though the kit is vanilla: several
 		// of the core controls it drives — the colour picker above all — are
@@ -92,13 +72,7 @@ final class Assets {
 		// call and fails without a word. wp-api-fetch carries the REST
 		// requests, so a nonce that ran out while the screen was open is
 		// renewed rather than answered with a 403.
-		wp_register_script(
-			$handle,
-			$this->url . '/js/field-kit.js',
-			[ 'jquery', 'wp-api-fetch' ],
-			$this->version( 'js/field-kit.js' ),
-			true
-		);
+		PackageAssets::register_script( $handle, __FILE__, 'js/field-kit.js', [ 'jquery', 'wp-api-fetch' ] );
 
 		wp_add_inline_script(
 			$handle,
@@ -269,46 +243,5 @@ final class Assets {
 				'iconFailed'       => __( 'The icons could not be loaded.', 'sugarcommerce' ),
 			],
 		];
-	}
-
-	/**
-	 * A cache-busting version for one asset.
-	 *
-	 * The file's own modification time rather than a constant, so an edit
-	 * during development is picked up without bumping anything by hand.
-	 *
-	 * Per file, and that is the whole point. Both assets used to share the
-	 * script's mtime, so a stylesheet-only change kept the version it already
-	 * had and every browser went on serving the cached copy. A CSS fix then
-	 * looked like a CSS fix that did not work — repeatedly, and there is no
-	 * way to tell that apart from a rule that loses on specificity.
-	 *
-	 * @param string $relative Path under the assets directory.
-	 *
-	 * @return string
-	 */
-	private function version( string $relative ): string {
-		$file = $this->path . '/' . $relative;
-
-		return file_exists( $file ) ? (string) filemtime( $file ) : '1.0.0';
-	}
-
-	/**
-	 * Work out the URL this library is served from.
-	 *
-	 * Handles both a plugin's vendor directory and a theme's, since a library
-	 * inside vendor-prefixed cannot assume either.
-	 *
-	 * @return string
-	 */
-	private function guess_url(): string {
-		$path = wp_normalize_path( $this->path );
-		$root = wp_normalize_path( WP_CONTENT_DIR );
-
-		if ( str_starts_with( $path, $root ) ) {
-			return content_url( substr( $path, strlen( $root ) ) );
-		}
-
-		return plugins_url( 'assets', dirname( __DIR__ ) . '/placeholder.php' );
 	}
 }
