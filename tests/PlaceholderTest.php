@@ -202,7 +202,7 @@ final class PlaceholderTest extends TestCase {
 	 * fallback it replaces is still needed for a single local select.
 	 */
 	public function test_the_script_reads_the_attribute_first(): void {
-		$js = (string) file_get_contents( dirname( __DIR__ ) . '/assets/js/field-kit.js' );
+		$js = Scripts::source( 'fields/combobox' );
 
 		$this->assertMatchesRegularExpression(
 			'/placeholder\s*=\s*select\.dataset\.placeholder\s*\|\|/',

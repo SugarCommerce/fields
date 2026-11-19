@@ -281,7 +281,7 @@ final class ColorFieldTest extends TestCase {
 	 */
 	public function test_the_assets_drive_it(): void {
 		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
-		$js  = (string) file_get_contents( dirname( __DIR__ ) . '/assets/js/field-kit.js' );
+		$js  = Scripts::source( 'fields/color-field' );
 
 		$this->assertMatchesRegularExpression( '/\.field-kit__color-field\[data-empty="true"\] \.field-kit__color-swatch\s*\{/', $css );
 		$this->assertMatchesRegularExpression( '/\.field-kit__color-preset\[aria-pressed="true"\]/', $css );

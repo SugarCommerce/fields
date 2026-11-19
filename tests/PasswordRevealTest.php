@@ -63,7 +63,7 @@ final class PasswordRevealTest extends TestCase {
 	 * the translation.
 	 */
 	public function test_both_labels_are_localised(): void {
-		$js     = (string) file_get_contents( dirname( __DIR__ ) . '/assets/js/field-kit.js' );
+		$js     = Scripts::source( 'fields/password-reveal' );
 		$assets = (string) file_get_contents( dirname( __DIR__ ) . '/src/Assets.php' );
 
 		foreach ( [ 'showPassword', 'hidePassword' ] as $key ) {

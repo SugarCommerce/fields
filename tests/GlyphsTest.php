@@ -113,7 +113,7 @@ final class GlyphsTest extends TestCase {
 		$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $root . '/src', \FilesystemIterator::SKIP_DOTS ) );
 
 		foreach ( $files as $file ) {
-			if ( str_contains( $file->getPathname(), '/src/Icons/' ) || str_ends_with( $file->getPathname(), '/IconType.php' ) ) {
+			if ( str_contains( $file->getPathname(), '/src/Icons/' ) || str_contains( $file->getPathname(), '/src/js/' ) || str_ends_with( $file->getPathname(), '/IconType.php' ) ) {
 				continue;
 			}
 
@@ -124,7 +124,7 @@ final class GlyphsTest extends TestCase {
 
 		// The one Dashicon left in the script is a search result's own icon,
 		// handed over by whoever supplies the results.
-		$script = (string) file_get_contents( $root . '/assets/js/field-kit.js' );
+		$script = Scripts::source();
 
 		$this->assertSame( 1, preg_match_all( '/dashicons/', $script ), 'The script draws a Dashicon.' );
 		$this->assertSame( [], $found );

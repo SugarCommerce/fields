@@ -157,7 +157,7 @@ final class StylesheetTest extends TestCase {
 	private function emitted_classes(): array {
 		$found = [];
 
-		foreach ( [ '/src', '/assets/js' ] as $directory ) {
+		foreach ( [ '/src' ] as $directory ) {
 			$iterator = new RecursiveIteratorIterator(
 				new RecursiveDirectoryIterator( dirname( __DIR__ ) . $directory )
 			);
@@ -247,7 +247,7 @@ final class StylesheetTest extends TestCase {
 	public function test_runtime_classes_have_a_stem_in_source(): void {
 		$source = '';
 
-		foreach ( [ '/src', '/assets/js' ] as $directory ) {
+		foreach ( [ '/src' ] as $directory ) {
 			$iterator = new RecursiveIteratorIterator(
 				new RecursiveDirectoryIterator( dirname( __DIR__ ) . $directory )
 			);
@@ -364,7 +364,7 @@ final class StylesheetTest extends TestCase {
 			'A positioned arrow element is back; it will detach from the input again.'
 		);
 
-		$js = (string) file_get_contents( dirname( __DIR__ ) . '/assets/js/field-kit.js' );
+		$js = Scripts::source();
 
 		$this->assertStringNotContainsString(
 			'combobox-toggle',

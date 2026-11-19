@@ -982,6 +982,81 @@ text are dropped, and a `href` or `url()` may only point inside the icon.
 login and the set's capability, answers `{ set, total, page, pages, icons }`,
 best match first, with an ETag and `Cache-Control: private, max-age=86400`.
 
+## The scripts
+
+Plain JavaScript in ES modules (`src/js`), each with one job, built by
+`@wordpress/scripts` into `assets/build` -- one file per script, with an
+`.asset.php` naming the WordPress scripts it imports and a version that
+changes with its contents. `SugarCommerce\Plugin\Assets::register_built_script()`
+registers each from that file, in the footer. No jQuery: the kit is no
+jQuery script, and a public form loads none.
+
+| Entry | Handle, loaded by | Imports |
+|---|---|---|
+| `field-kit` | `{prefix}` (`Runtime::handle()`), wherever a set of fields is drawn: `Assets::enqueue()` on a settings page, a metabox, a term or profile screen, quick and bulk edit and a panel; `Assets::enqueue_front()` on a public form | `wp-api-fetch`, `wp-dom-ready` |
+| `block-editor` | `{prefix}-block-editor`, on the block editor for a metabox with `'block_editor' => true` (`BlockEditorPanel`) | `wp-components`, `wp-data`, `wp-editor`, `wp-element`, `wp-plugins` |
+
+A screen's fields add what they need and do not import -- core's colour
+picker, the media frame, a code editor -- as dependencies of the kit's
+handle, so they load first. The configuration is printed before the script,
+as it was: `window.SugarCommerceFields[ handle ]`, with `codeEditors` and
+`guard` added by the screens that need them.
+
+The field kit's modules: one per field type or behaviour in `fields/`
+(`conditions`, `range`, `toggle`, `clipboard`, `code-generator`, `combobox`,
+`reorder`, `repeater` -- flexible content too -- `media`, `gallery`, `tags`,
+`code-editor`, `wysiwyg`, `color-picker`, `color-field`, `icon-picker`,
+`panel-tabs`, `tag-modal`, `email-panel`, `action-button` -- a licence's state
+too -- `tooltip`, `money`, `region`, `password-reveal`, `password-remove`,
+`counter`, `accordion`, `settings-bar`, `slug`, `location`, `embed`,
+`address`), the unsaved-changes guard and public forms in `forms/`, and in
+`lib/`: `config` (the one reader of what PHP published, found from the
+script's own handle), `request` (apiFetch, read the way a fetch Response was),
+`lookups` (the lookup routes' addresses), `dom`, `kit` (the published
+modules), `lifecycle` (`init()` and `destroy()`) and `jquery`. The block
+editor's sidebar is `block-editor/conditions` (the metabox's conditions, read
+as PHP reads them), `block-editor/controls` and `block-editor/panel`.
+
+### Globals and events
+
+* `window.SugarCommerceFieldsModules` -- there as soon as the script has run,
+  every module by name in the order it has always had, with `init( root )`,
+  `destroy( root )`, `t()`, `icon()`, `config` and `request()`. A panel calls
+  `init()` on markup it has just put in the page and `destroy()` before it
+  takes it out; a plugin adds a repeater row with `Repeater.add()`, moves one
+  with `Reorder.move()` and starts its media buttons with `Media.init()`.
+* `window.sugarcommerceFileSources` -- read, never written: the places a file
+  can come from ("More places a file can come from").
+* `field-kit:change` -- fired, bubbling, on a colour input core's picker
+  changed, where a native `change` would reset the picker; conditions and the
+  guard listen for it beside `input` and `change`.
+* `field-kit:refresh` -- sent to a searchable select whose options changed
+  under it (a region list for a new country); its combobox reads them again.
+* `fieldkit:action-payload` -- fired, bubbling, on an action button before it
+  posts, `detail: { action, payload }`; a listener may add to the payload.
+* `wpflyout:dirty` -- listened for natively on the document. The flyouts
+  package fires it on a panel with `{ dirty }` as the detail; `dirty: false`
+  means the panel saved, and a guarded form in it starts again from what it
+  holds.
+
+`lib/jquery.js` is the one module that touches jQuery, and only to start core's
+colour picker (`wp-color-picker` is a jQuery plugin with no other way in) for a
+colour field that asked for it -- which brings jQuery as its own dependency.
+Without it the field is the plain input it was drawn as. The media frame is
+`wp.media`'s own API; the code editor, the visual editor and TinyMCE are
+core's, reached as core publishes them.
+
+```bash
+npm ci
+npm run build      # assets/build, committed
+npm run start      # rebuild on change
+npm run test:js    # Vitest (composer test:js runs it too)
+npm run lint:js
+```
+
+The build's files are what ship. CI builds again and fails when the result
+differs from what was committed.
+
 ## Moving from arraypress/wp-*
 
 `arraypress/wp-field-kit` is this package, and `arraypress/wp-register-fields`
@@ -1030,9 +1105,10 @@ now `sugarcommerce`.
 
 Kept as they were, because renaming them would only churn every stylesheet
 and script that targets them: the `field-kit__*` CSS classes, the
-`assets/css/field-kit.css` and `assets/js/field-kit.js` file names, the quick
-and bulk edit column `field-kit-inline`, and bulk edit's `__field_kit_no_change__`
-and `__field_kit_clear__` sentinels. A site that filtered the old names, or
+`assets/css/field-kit.css` file name (the script is built to
+`assets/build/field-kit.js` now), the quick and bulk edit column
+`field-kit-inline`, and bulk edit's `__field_kit_no_change__` and
+`__field_kit_clear__` sentinels. A site that filtered the old names, or
 targeted the old icon class, needs the new one.
 
 A Strauss prefix that itself starts `SugarCommerce\` keeps all its segments --
@@ -1046,7 +1122,7 @@ family is never taken for an unprefixed copy.
 * WordPress 7.1 or later
 
 The script's REST requests (searches, icon lists, action buttons, regions) go
-through `wp.apiFetch`, a dependency of the script, so a screen left open past
+through apiFetch (`wp-api-fetch`), a dependency of the script, so a screen left open past
 its nonce's life renews the nonce and tries again instead of answering 403.
 
 ## License

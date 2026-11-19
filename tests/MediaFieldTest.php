@@ -240,7 +240,7 @@ final class MediaFieldTest extends TestCase {
 	 * was saved and reloaded.
 	 */
 	public function test_the_script_updates_the_name_input(): void {
-		$js = (string) file_get_contents( dirname( __DIR__ ) . '/assets/js/field-kit.js' );
+		$js = Scripts::source( 'fields/media' );
 
 		$this->assertStringContainsString( 'input.field-kit__media-filename', $js );
 		$this->assertMatchesRegularExpression( '/filenameInput\.value = attachment\.filename/', $js );

@@ -153,7 +153,7 @@ final class IconPickerTest extends TestCase {
 	 * The script drives it, and the stylesheet draws the dialog.
 	 */
 	public function test_the_assets_drive_it(): void {
-		$js  = (string) file_get_contents( dirname( __DIR__ ) . '/assets/js/field-kit.js' );
+		$js  = Scripts::source( 'fields/icon-picker' );
 		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
 
 		// A native modal dialog, in the top layer over any flyout.

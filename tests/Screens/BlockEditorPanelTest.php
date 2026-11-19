@@ -582,7 +582,7 @@ final class BlockEditorPanelTest extends TestCase {
 
 		[ $src, $deps ] = $GLOBALS['fk_registered']['scripts'][ $handle ];
 
-		$this->assertStringEndsWith( '/assets/js/block-editor.js', $src );
+		$this->assertStringEndsWith( '/assets/build/block-editor.js', $src );
 		$this->assertSame( [ 'wp-components', 'wp-data', 'wp-editor', 'wp-element', 'wp-plugins' ], $deps );
 		$this->assertSame( [ $handle ], $GLOBALS['fk_registered']['enqueued'] );
 

@@ -17,7 +17,7 @@ use SugarCommerce\Fields\Utils\Runtime;
 use SugarCommerce\Plugin\Assets as PackageAssets;
 
 /**
- * Registers the one script and the one stylesheet.
+ * Registers the script and the stylesheets.
  *
  * Handles are derived, and the configuration is published into a registry
  * keyed by handle rather than to a bare global: two plugins each bundling a
@@ -75,13 +75,14 @@ final class Assets {
 		// theme. Nothing of wp-admin's.
 		PackageAssets::register_style( Runtime::handle( 'front' ), __FILE__, 'css/fields-front.css', [ Runtime::handle( 'controls' ) ] );
 
-		// jquery is a base dependency even though the kit is vanilla: several
-		// of the core controls it drives — the colour picker above all — are
-		// jQuery plugins, and a script that runs before them finds nothing to
-		// call and fails without a word. wp-api-fetch carries the REST
-		// requests, so a nonce that ran out while the screen was open is
-		// renewed rather than answered with a 403.
-		PackageAssets::register_script( $handle, __FILE__, 'js/field-kit.js', [ 'jquery', 'wp-api-fetch' ] );
+		// The script, from its build (assets/build/field-kit.js, from
+		// src/js): its manifest names what it imports -- wp-api-fetch, which
+		// carries the REST requests, so a nonce that ran out while the screen
+		// was open is renewed rather than answered with a 403, and
+		// wp-dom-ready. No jquery: the one jQuery plugin it drives, core's
+		// colour picker, is a field's own dependency (ColorType), and
+		// depend_on() puts a screen's before the kit. In the footer.
+		PackageAssets::register_built_script( $handle, __FILE__, 'field-kit' );
 
 		wp_add_inline_script(
 			$handle,

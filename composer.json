@@ -95,10 +95,7 @@
     "format": "phpcbf --standard=phpcs-format.xml.dist",
     "format:check": "phpcs --standard=phpcs-format.xml.dist",
     "docs:verify": "php bin/verify-docs.php --calls=FieldSet,PostFields::register,TermFields::register,UserFields::register,QuickEditFields::register,BulkEditFields::register README.md",
-    "test:js": [
-      "node tests/js/smoke.js",
-      "node tests/js/block-editor.js"
-    ],
+    "test:js": "npm run test:js",
     "test:all": [
       "@test",
       "@test:js"

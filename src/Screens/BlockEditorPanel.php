@@ -481,15 +481,13 @@ final class BlockEditorPanel {
 		$handle = Runtime::handle( 'block-editor' );
 
 		if ( ! wp_script_is( $handle, 'registered' ) ) {
-			// Every one a classic script in WordPress 7.1: wp-plugins is not
-			// a script module, and PluginDocumentSettingPanel is the editor's
-			// now -- edit-post's is a deprecated copy that warns.
-			PackageAssets::register_script(
-				$handle,
-				__FILE__,
-				'js/block-editor.js',
-				[ 'wp-components', 'wp-data', 'wp-editor', 'wp-element', 'wp-plugins' ]
-			);
+			// The build (assets/build/block-editor.js, from src/js), whose
+			// manifest names what it imports: wp-components, wp-data,
+			// wp-editor, wp-element and wp-plugins. Every one a classic script
+			// in WordPress 7.1: wp-plugins is not a script module, and
+			// PluginDocumentSettingPanel is the editor's now -- edit-post's is
+			// a deprecated copy that warns.
+			PackageAssets::register_built_script( $handle, __FILE__, 'block-editor' );
 		}
 
 		wp_add_inline_script(

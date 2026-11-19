@@ -147,12 +147,12 @@ final class LicenseStateTest extends TestCase {
 	 * while the field stops responding.
 	 */
 	public function test_the_script_reads_only_attributes_the_field_writes(): void {
-		$script = (string) file_get_contents( dirname( __DIR__ ) . '/assets/js/field-kit.js' );
+		$script = Scripts::source( 'fields/action-button' );
 
 		// applyState is the only function that reads them, so only its body
 		// is scanned — elsewhere in the script `dataset.action` belongs to
 		// other fields entirely.
-		preg_match( '/applyState: function \( wrap, state \) \{(.*?)\n\t\t\}/s', $script, $body );
+		preg_match( '/\n\tapplyState\( wrap, state \) \{(.*?)\n\t\}/s', $script, $body );
 
 		$this->assertNotEmpty( $body, 'applyState is gone from the script.' );
 

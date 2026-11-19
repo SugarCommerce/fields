@@ -37,13 +37,14 @@ final class AssetsTest extends TestCase {
 		[ $script, $deps, $script_version, $args ] = $GLOBALS['fk_registered']['scripts'][ $handle ];
 
 		$this->assertSame( $base . '/css/field-kit.css', $style );
-		$this->assertSame( $base . '/js/field-kit.js', $script );
-		$this->assertSame( [ 'jquery', 'wp-api-fetch' ], $deps );
+		$this->assertSame( $base . '/build/field-kit.js', $script );
+		$this->assertSame( [ 'wp-api-fetch', 'wp-dom-ready' ], $deps );
 		$this->assertSame( [ 'in_footer' => true ], $args );
 
-		// Each file is versioned by its own modification time.
+		// The stylesheet is versioned by its modification time, the script
+		// by the hash its build wrote.
 		$this->assertSame( (string) filemtime( dirname( __DIR__ ) . '/assets/css/field-kit.css' ), $style_version );
-		$this->assertSame( (string) filemtime( dirname( __DIR__ ) . '/assets/js/field-kit.js' ), $script_version );
+		$this->assertSame( PackageAssets::built_manifest( dirname( __DIR__ ) . '/src/Assets.php', 'field-kit' )['version'], $script_version );
 	}
 
 	public function test_registering_twice_registers_once(): void {

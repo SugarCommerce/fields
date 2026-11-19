@@ -1,0 +1,32 @@
+{
+  "name": "@sugarcommerce/fields",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The fields' scripts -- every field type's control, the unsaved-changes guard and public forms, and the block editor's sidebar -- built to assets/build with @wordpress/scripts.",
+  "license": "GPL-2.0-or-later",
+  "scripts": {
+    "build": "wp-scripts build field-kit=./src/js/field-kit.js block-editor=./src/js/block-editor.js --output-path=assets/build",
+    "start": "wp-scripts start field-kit=./src/js/field-kit.js block-editor=./src/js/block-editor.js --output-path=assets/build",
+    "test:js": "wp-scripts test-unit-js",
+    "lint:js": "wp-scripts lint-js src/js tests/js",
+    "format:js": "wp-scripts format src/js tests/js"
+  },
+  "devDependencies": {
+    "@wordpress/api-fetch": "^8.1.0",
+    "@wordpress/components": "^45.0.0",
+    "@wordpress/data": "^11.2.0",
+    "@wordpress/dom-ready": "^5.1.0",
+    "@wordpress/editor": "^16.2.0",
+    "@wordpress/element": "^10.2.0",
+    "@wordpress/plugins": "^8.2.0",
+    "@wordpress/scripts": "~37.1.0",
+    "globals": "^16.5.0",
+    "jquery": "~3.7.1",
+    "jsdom": "~30.1.3",
+    "vite": "~8.1.7",
+    "vitest": "~5.1.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
