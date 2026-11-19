@@ -105,8 +105,12 @@ final class RepeaterTest extends TestCase {
 		$html = $this->render( 'table' );
 
 		$this->assertStringContainsString( 'field-kit__repeater--table', $html );
-		$this->assertStringContainsString( 'wp-list-table widefat', $html );
+		$this->assertStringContainsString( 'widefat striped', $html );
 		$this->assertStringContainsString( '<thead>', $html );
+
+		// Not core's list-table class: under 782px it prints each cell's
+		// column name over the control in it.
+		$this->assertStringNotContainsString( 'wp-list-table', $html );
 	}
 
 	/**

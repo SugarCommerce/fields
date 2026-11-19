@@ -165,7 +165,7 @@ final class NarrowScreenTest extends TestCase {
 			}
 		}
 
-		$this->assertGreaterThanOrEqual( 5, $checked, 'The phone fill rules were not found.' );
+		$this->assertGreaterThanOrEqual( 4, $checked, 'The phone fill rules were not found.' );
 
 		// The amount field is the one that has such a label as a child.
 		$this->assertStringContainsString( 'field-kit__sub-label screen-reader-text', $this->render( 'amount_type' ) );
@@ -210,5 +210,29 @@ final class NarrowScreenTest extends TestCase {
 
 			$this->assertTrue( $found, 'No phone rule after ' . $base . ' sets ' . $wanted . '.' );
 		}
+	}
+
+	/**
+	 * On a phone an amount and its unit stay one row: the number takes the
+	 * room, the unit is as wide as its choice. Stacked, they were one box
+	 * twice the height of the field beside it.
+	 *
+	 * @return void
+	 */
+	public function test_an_amount_stays_a_row_on_a_phone(): void {
+		preg_match_all( '/@media screen and \(max-width: 782px\) \{(.*?)\n\}/s', $this->css(), $blocks );
+
+		$phone = implode( "\n", $blocks[1] );
+
+		preg_match_all( '/([^{}]+)\{([^{}]*flex-direction:\s*column[^{}]*)\}/', $phone, $columns, PREG_SET_ORDER );
+
+		foreach ( $columns as [ , $selector ] ) {
+			foreach ( explode( ',', $selector ) as $one ) {
+				$this->assertNotSame( '.field-kit__amount', trim( $one ), 'An amount is stacked into a column on a phone.' );
+			}
+		}
+
+		$this->assertMatchesRegularExpression( '/\.field-kit__amount select\.field-kit__amount-unit[^{]*\{[^}]*flex:\s*none[^}]*width:\s*auto/', $phone );
+		$this->assertMatchesRegularExpression( '/\.field-kit__amount input\[type="number"\]\.field-kit__amount-value\s*\{[^}]*flex:\s*1 1 auto/', $phone );
 	}
 }

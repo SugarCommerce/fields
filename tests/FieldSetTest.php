@@ -198,7 +198,7 @@ final class FieldSetTest extends TestCase {
 
 		$html = $set->render_field( $set->field( 'rates' ) );
 
-		$this->assertStringContainsString( 'wp-list-table', $html );
+		$this->assertStringContainsString( 'class="widefat striped field-kit__repeater-table"', $html );
 		$this->assertStringContainsString( '<th scope="col">Country</th>', $html );
 		$this->assertStringContainsString( '<th scope="col">Rate</th>', $html );
 

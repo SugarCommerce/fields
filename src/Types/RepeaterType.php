@@ -110,12 +110,18 @@ class RepeaterType extends AbstractNestedType {
 		if ( $this->is_table( $field ) ) {
 			$wrapper->add_class( 'field-kit__repeater--table' );
 
+			// `widefat striped` for the frame, and not `wp-list-table`: that
+			// class is core's list screens', and under 782px core turns its
+			// cells into label-and-value pairs -- each cell's data-colname
+			// printed over the left of the cell, absolutely -- so "Rate" sat
+			// on top of the number typed in it.
+			//
 			// The template goes inside the table. A <tr> inside a <template>
 			// that sits in a <div> is dropped by the HTML parser — template
 			// content is parsed in the context the template appears in — so
 			// the row to clone would simply not be there.
 			return sprintf(
-				'<div%s><table class="wp-list-table widefat striped field-kit__repeater-table">%s' .
+				'<div%s><table class="widefat striped field-kit__repeater-table">%s' .
 				'<tbody class="field-kit__repeater-rows" data-empty="%s">%s</tbody>%s%s</table>%s</div>',
 				$wrapper->render(),
 				$this->render_head( $field ),

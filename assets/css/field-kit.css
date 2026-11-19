@@ -1088,6 +1088,13 @@ li.field-kit__repeater-row {
 	color: #d63638;
 }
 
+/* The ring every other control has, not the browser's thin blue one. */
+.wp-core-ui .field-kit__combobox-clear:focus-visible {
+	outline: var(--wp-admin-border-width-focus, 2px) solid var(--wp-admin-theme-color, #2271b1);
+	outline-offset: 1px;
+	box-shadow: none;
+}
+
 .field-kit__combobox-clear .sugarcommerce-icon {
 	width: 16px;
 	height: 16px;
@@ -1539,9 +1546,10 @@ li.field-kit__repeater-row {
 	}
 
 	/* Every composite that puts controls in a row: down the screen instead,
-	   each one filling the width. */
-	.field-kit__amount,
-.field-kit__range-pair,
+	   each one filling the width. Not an amount: its number and its unit are
+	   one value, and stacked they were one box twice as tall as its
+	   neighbours. It stays a row, the number taking the room. */
+	.field-kit__range-pair,
 .field-kit__clipboard,
 .field-kit__license-control,
 .field-kit__code-generator,
@@ -1553,8 +1561,7 @@ li.field-kit__repeater-row {
 	/* Not the labels kept for screen readers: one is absolutely placed, so
 	   at full width it reaches past the screen and the page scrolls sideways
 	   -- the amount field's "Unit" did, at 390px. */
-	.field-kit__amount > :not(.screen-reader-text),
-.field-kit__range-pair > :not(.screen-reader-text),
+	.field-kit__range-pair > :not(.screen-reader-text),
 .field-kit__clipboard > :not(.screen-reader-text),
 .field-kit__license-control > :not(.screen-reader-text),
 .field-kit__code-generator > :not(.screen-reader-text) {
@@ -1604,6 +1611,19 @@ li.field-kit__repeater-row {
 		padding: .75rem;
 		border: 1px solid #dcdcde;
 		background: #fff;
+	}
+
+	/* With the headers hidden, each cell says what it is, above its control
+	   rather than over it. */
+	.field-kit__repeater--table td {
+		padding: 0 0 .5rem;
+	}
+
+	.field-kit__repeater--table td[data-colname]::before {
+		content: attr(data-colname);
+		display: block;
+		margin: 0 0 .25rem;
+		font-weight: 600;
 	}
 
 	/* A slider needs the width more than its readout does. */
@@ -2482,8 +2502,8 @@ select.field-kit__select[multiple] {
  * times — a tax rate, a price tier, a redirect — where the labels belong
  * once at the top and the rows want to line up under them.
  *
- * core's .wp-list-table does the frame, so this is only what a list table
- * does not expect: form controls in its cells.
+ * core's .widefat does the frame, so this is only what a table of text does
+ * not expect: form controls in its cells.
  * -------------------------------------------------------------------- */
 
 .field-kit__repeater-table {
@@ -4951,4 +4971,102 @@ html:has(.field-kit__settings-savebar) {
 	.field-kit__amount input[type="number"].field-kit__amount-value {
 		max-width: none;
 	}
+
+	/* The number takes the row; the unit is as wide as its choice. Core
+	   makes every select on a phone the full width and 40px tall, so both
+	   are said here. */
+	.field-kit__amount input[type="number"].field-kit__amount-value {
+		flex: 1 1 auto;
+	}
+
+	.field-kit__amount select.field-kit__amount-unit,
+	.field-kit__amount .field-kit__amount-unit--fixed {
+		flex: none;
+		width: auto;
+		max-width: 50%;
+	}
+}
+
+/* -----------------------------------------------------------------------
+ * One secondary button
+ *
+ * A button inside a field does something to the field -- choose a file,
+ * generate a code, add a row, copy, activate. It is not what the screen is
+ * for, so it is not in the screen's colour: white, with a grey edge, like
+ * the fields beside it. On a settings page these were core's blue-outlined
+ * buttons and in a panel the panel's white ones, so the same field looked
+ * like two things. A panel still sizes its controls to itself; the look is
+ * this one.
+ *
+ * Core's colour picker keeps its own widget, and the buttons inside a media
+ * input are icons in the input's edge, not buttons beside it.
+ * -------------------------------------------------------------------- */
+
+.wp-core-ui .field-kit__field .button:not(.button-primary):not(.button-link):not(.button-link-delete):not(:where(.wp-color-result, .wp-picker-clear, .field-kit__media-button, .field-kit__button--delete)) {
+	border-color: #c4c7cc;
+	background: #fff;
+	box-shadow: 0 1px 0 rgba(17, 18, 20, .05);
+	color: #1f2124;
+	font-weight: 500;
+}
+
+.wp-core-ui .field-kit__field .button:not(.button-primary):not(.button-link):not(.button-link-delete):not(:where(.wp-color-result, .wp-picker-clear, .field-kit__media-button, .field-kit__button--delete)):hover {
+	border-color: #a3a7ad;
+	background: #fafafa;
+	color: #1f2124;
+}
+
+.wp-core-ui .field-kit__field .button:not(.button-primary):not(.button-link):not(.button-link-delete):not(:where(.wp-color-result, .wp-picker-clear, .field-kit__media-button, .field-kit__button--delete)):focus-visible {
+	border-color: var(--wp-admin-theme-color, #2271b1);
+	outline: var(--wp-admin-border-width-focus, 2px) solid var(--wp-admin-theme-color, #2271b1);
+	outline-offset: 1px;
+	box-shadow: none;
+}
+
+/* Clear and Remove, beside a colour, an icon or a stored secret: the quiet
+   way back, so not a full button -- but a button, with room to press and a
+   shape under the pointer, not underlined text. Remove keeps its red. */
+.wp-core-ui .field-kit__color-clear,
+.wp-core-ui .field-kit__icon-clear,
+.wp-core-ui .field-kit__password-remove {
+	display: inline-flex;
+	align-items: center;
+	min-height: 30px;
+	margin-inline-start: .25rem;
+	padding: 0 .5rem;
+	border-radius: 4px;
+	font-size: 13px;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.wp-core-ui .field-kit__color-clear,
+.wp-core-ui .field-kit__icon-clear {
+	color: #50575e;
+}
+
+.wp-core-ui .field-kit__color-clear:hover,
+.wp-core-ui .field-kit__icon-clear:hover,
+.wp-core-ui .field-kit__password-remove:hover {
+	background: #f0f0f1;
+	text-decoration: none;
+}
+
+.wp-core-ui .field-kit__color-clear:hover,
+.wp-core-ui .field-kit__icon-clear:hover {
+	color: #1f2124;
+}
+
+.wp-core-ui .field-kit__color-clear:focus-visible,
+.wp-core-ui .field-kit__icon-clear:focus-visible,
+.wp-core-ui .field-kit__password-remove:focus-visible {
+	outline: var(--wp-admin-border-width-focus, 2px) solid var(--wp-admin-theme-color, #2271b1);
+	outline-offset: 1px;
+	box-shadow: none;
+	text-decoration: none;
+}
+
+.wp-core-ui .field-kit__color-clear[hidden],
+.wp-core-ui .field-kit__icon-clear[hidden] {
+	display: none;
 }
