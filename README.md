@@ -312,6 +312,10 @@ custom properties on the form:
 .sugarcommerce-form { --fk-accent: #0a7d5a; --fk-error: #b00020; --fk-radius: 0; }
 ```
 
+`tests/browser/front-form.js` drives the SugarCommerce Playground's demo
+page in a real browser, logged out, at a desktop's width and a phone's; see
+the top of the file for how to run it.
+
 `render()` enqueues what the form needs; call `$form->enqueue()` on
 `wp_enqueue_scripts` as well to have the stylesheet in the head.
 `Assets::enqueue_front( $needs )` does the same for markup of your own.
