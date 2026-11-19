@@ -87,27 +87,51 @@ final class Runtime {
 	 * @return string
 	 */
 	public static function prefix_for( string $under ): string {
-		$under = explode( '\\', trim( $under, '\\' ) );
+		$build = self::build_for( $under );
 
-		// What Strauss put in front of this package's own namespace. A plugin
-		// of the SugarCommerce family prefixes with a namespace that starts
-		// "SugarCommerce\" too -- "SugarCommerce\Playground\Vendor\" -- so
-		// the first segment alone cannot tell a prefixed build from an
-		// unprefixed one: it named both "sugarcommerce-fields", and that
-		// plugin's routes and handles were every unprefixed copy's.
-		$segments = array_slice( $under, 0, -self::OWN_SEGMENTS );
+		return '' === $build ? self::LIBRARY : $build . '-' . self::LIBRARY;
+	}
 
-		if ( [] === $segments || '' === $segments[0] ) {
-			return self::LIBRARY;
+	/**
+	 * The name of the build a namespace belongs to, as a hyphenated slug.
+	 *
+	 * Empty when the namespace is this package's own, unprefixed. Otherwise
+	 * what the build put around it, in one of two shapes:
+	 *
+	 * - A prefix in front of the whole namespace,
+	 *   "MyShop\SugarCommerce\…\Utils": the prefix's first segment, as it
+	 *   always was ("SugarCart\Vendor" is "sugarcart"), or all of it when it
+	 *   starts "SugarCommerce" too -- a family plugin's
+	 *   "SugarCommerce\Playground\Vendor" would otherwise be taken for the
+	 *   library itself.
+	 * - A plugin's own namespace with the vendor segment dropped,
+	 *   "ArrayPress\EDD\FraudFilter\Lib\…\Utils": every segment before "Lib".
+	 *   The first alone is the vendor every such plugin shares, and two of
+	 *   them would answer each other's routes and load each other's scripts.
+	 *
+	 * @param string $under The namespace this class is compiled under, prefixed or not.
+	 *
+	 * @return string
+	 */
+	public static function build_for( string $under ): string {
+		$under = array_values( array_filter( explode( '\\', $under ), 'strlen' ) );
+
+		// Everything in front of this class's own segments after the vendor
+		// one ("…\Utils" and the package segment before it).
+		$segments = array_slice( $under, 0, -( self::OWN_SEGMENTS - 1 ) );
+		$last     = end( $segments );
+
+		if ( 'SugarCommerce' === $last ) {
+			array_pop( $segments );
+
+			if ( [] !== $segments && 'SugarCommerce' !== $segments[0] ) {
+				$segments = [ $segments[0] ];
+			}
+		} elseif ( 'Lib' === $last ) {
+			array_pop( $segments );
 		}
 
-		// Only the first segment, as it always was, where that is enough:
-		// "SugarCart\Vendor" is "sugarcart". A family plugin's prefix needs
-		// all of its segments to be told apart from the library and from its
-		// siblings.
-		$name = 'SugarCommerce' === $segments[0] ? implode( '-', $segments ) : $segments[0];
-
-		return self::slug( $name ) . '-' . self::LIBRARY;
+		return strtolower( trim( (string) preg_replace( '/[^A-Za-z0-9]+/', '-', implode( '-', $segments ) ), '-' ) );
 	}
 
 	/**
@@ -169,21 +193,5 @@ final class Runtime {
 	 */
 	public static function hook( string $suffix ): string {
 		return self::key() . '_' . $suffix;
-	}
-
-	/**
-	 * Reduce a namespace segment to a lowercase slug.
-	 *
-	 * `sanitize_title()` is not used here: this runs from `__NAMESPACE__` at
-	 * class-load time, which can precede WordPress being fully loaded.
-	 *
-	 * @param string $value Value to slug.
-	 *
-	 * @return string
-	 */
-	private static function slug( string $value ): string {
-		$value = preg_replace( '/[^A-Za-z0-9]+/', '-', $value ) ?? '';
-
-		return strtolower( trim( $value, '-' ) );
 	}
 }

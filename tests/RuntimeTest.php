@@ -67,4 +67,19 @@ final class RuntimeTest extends TestCase {
 		$this->assertSame( 'SugarcommerceFields', Runtime::js_object() );
 		$this->assertSame( 'SugarcommerceFieldsConfig', Runtime::js_object( 'Config' ) );
 	}
+
+	/**
+	 * A plugin that loads the library under its own namespace, in Lib and
+	 * without the vendor segment, is named for every segment before Lib --
+	 * the first is the vendor its sibling plugins share.
+	 */
+	public function test_a_plugin_namespace_build_is_named_for_the_plugin(): void {
+		$fraud = Runtime::prefix_for( 'ArrayPress\EDD\FraudFilter\Lib\Fields\Utils' );
+
+		$this->assertSame( 'arraypress-edd-fraudfilter-sugarcommerce-fields', $fraud );
+		$this->assertNotSame( $fraud, Runtime::prefix_for( 'ArrayPress\EDD\SalePrices\Lib\Fields\Utils' ), 'Two plugins of one vendor share a name.' );
+		$this->assertSame( 'playground-sugarcommerce-fields', Runtime::prefix_for( 'Playground\Lib\Fields\Utils' ) );
+		$this->assertSame( 'arraypress-edd-fraudfilter', Runtime::build_for( 'ArrayPress\EDD\FraudFilter\Lib\Fields\Utils' ) );
+		$this->assertSame( '', Runtime::build_for( 'SugarCommerce\Fields\Utils' ) );
+	}
 }
