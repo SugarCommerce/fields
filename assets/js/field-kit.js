@@ -2643,9 +2643,15 @@
 			mce.selector = '#' + id;
 			mce.body_class = id;
 
+			// wp_editor()'s toolbars rather than the two-button row core's
+			// script defaults to, so the same field has the same editor
+			// wherever it is drawn.
 			if ( wrap.dataset.teeny ) {
 				mce.toolbar1 = 'bold,italic,underline,blockquote,strikethrough,bullist,numlist,alignleft,aligncenter,alignright,undo,redo,link,fullscreen';
 				mce.toolbar2 = '';
+			} else {
+				mce.toolbar1 = 'formatselect,bold,italic,bullist,numlist,blockquote,alignleft,aligncenter,alignright,link,wp_more,fullscreen,wp_adv';
+				mce.toolbar2 = 'strikethrough,hr,forecolor,pastetext,removeformat,charmap,outdent,indent,undo,redo,wp_help';
 			}
 
 			if ( wrap.dataset.height ) {
