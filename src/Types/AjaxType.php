@@ -53,7 +53,7 @@ final class AjaxType extends AbstractRelationalType {
 	 * A `label_callback` is preferred when supplied, since resolving a known
 	 * set of ids is usually a different query from searching for them.
 	 *
-	 * @param int[] $ids   Selected ids.
+	 * @param array<int, int|string> $ids Selected ids.
 	 * @param Field $field The field.
 	 *
 	 * @return array<string, string>
@@ -88,12 +88,31 @@ final class AjaxType extends AbstractRelationalType {
 
 			$id = (string) ( $result['id'] ?? '' );
 
-			if ( '' !== $id && in_array( (int) $id, $ids, true ) ) {
+			if ( '' !== $id && in_array( $id, array_map( 'strval', $ids ), true ) ) {
 				$labels[ $id ] = (string) ( $result['text'] ?? $id );
 			}
 		}
 
 		return $labels;
+	}
+
+	/**
+	 * The stored selection as its own search answered it: an id the
+	 * callback chose, which need not be a number.
+	 *
+	 * Kept as text, the same as sanitize() stores it. Read as integers, a
+	 * value like `small` became 0 and was dropped, so a saved choice opened
+	 * as nothing selected and the next save emptied it.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<int, string>
+	 * @since 1.6.0
+	 */
+	protected function selected_ids( Field $field ): array {
+		$values = array_map( 'strval', array_filter( (array) $this->selected_values( $field ), 'is_scalar' ) );
+
+		return array_values( array_filter( $values, static fn( string $value ): bool => '' !== $value ) );
 	}
 
 	/**

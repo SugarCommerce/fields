@@ -54,3 +54,44 @@ if ( ! function_exists( 'wp_add_inline_script' ) ) {
 		return true;
 	}
 }
+
+// What enqueue() calls, recorded for AssetsTest.
+if ( ! function_exists( 'wp_enqueue_script' ) ) {
+	function wp_enqueue_script( $handle ) {
+		$GLOBALS['fk_registered']['enqueued'][] = (string) $handle;
+	}
+}
+
+if ( ! function_exists( 'wp_enqueue_editor' ) ) {
+	function wp_enqueue_editor() {
+		$GLOBALS['fk_registered']['editor'] = ( $GLOBALS['fk_registered']['editor'] ?? 0 ) + 1;
+	}
+}
+
+if ( ! function_exists( 'wp_enqueue_media' ) ) {
+	function wp_enqueue_media() {
+		$GLOBALS['fk_registered']['media'] = true;
+	}
+}
+
+if ( ! function_exists( 'wp_enqueue_code_editor' ) ) {
+	function wp_enqueue_code_editor( $args ) {
+		return [ 'codemirror' => [ 'mode' => $args['type'] ] ];
+	}
+}
+
+if ( ! function_exists( 'wp_script_is' ) ) {
+	function wp_script_is( $handle, $status = 'enqueued' ) {
+		return false;
+	}
+}
+
+if ( ! function_exists( 'wp_scripts' ) ) {
+	function wp_scripts() {
+		return new class() {
+			public function query( $handle, $status = 'registered' ) {
+				return false;
+			}
+		};
+	}
+}

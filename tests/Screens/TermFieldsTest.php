@@ -525,4 +525,53 @@ final class TermFieldsTest extends TestCase {
 		$this->assertStringNotContainsString( 'notice-error', $this->edit( $fields ) );
 	}
 
+
+	/**
+	 * An amount's unit is written beside it, under its own key, when it is
+	 * one the field offers -- the two the select shows when it declares
+	 * none included.
+	 */
+	public function test_an_amounts_unit_is_written_beside_it(): void {
+		$this->submit(
+			[
+				'_sale_amount' => '5',
+				'_sale_type'   => 'flat',
+				'rate'         => '3',
+				'rate_type'    => 'flat',
+			]
+		);
+
+		$this->fields(
+			[
+				'_sale_amount' => [
+					'type'          => 'amount_type',
+					'type_meta_key' => '_sale_type',
+					'type_options'  => [
+						'percent' => '%',
+						'flat'    => '$',
+					],
+				],
+				'rate'         => [ 'type' => 'amount_type' ],
+			]
+		)->save( 5 );
+
+		$this->assertSame( 'flat', $GLOBALS['fk_meta']['term'][5]['_sale_type'] );
+		$this->assertSame( 'flat', $GLOBALS['fk_meta']['term'][5]['rate_type'] );
+	}
+
+	/**
+	 * One it does not offer is not written.
+	 */
+	public function test_a_unit_not_on_offer_is_not_written(): void {
+		$this->submit(
+			[
+				'rate'      => '3',
+				'rate_type' => 'bitcoin',
+			]
+		);
+
+		$this->fields( [ 'rate' => [ 'type' => 'amount_type' ] ] )->save( 5 );
+
+		$this->assertArrayNotHasKey( 'rate_type', $GLOBALS['fk_meta']['term'][5] ?? [] );
+	}
 }

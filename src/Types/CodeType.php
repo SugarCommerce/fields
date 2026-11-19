@@ -89,14 +89,24 @@ final class CodeType extends TextareaType {
 	}
 
 	/**
-	 * The editor languages this field uses.
+	 * What one field needs: an editor for its own language.
 	 *
-	 * @param \SugarCommerce\Fields\Field $field The field.
+	 * The language is the field's, not the type's, so a set with a CSS
+	 * field and an HTML field prepares both.
 	 *
-	 * @return string[]
+	 * @param array<string, mixed> $config The field's configuration.
+	 *
+	 * @return array{scripts: string[], styles: string[], code_editors: string[]}
+	 * @since 1.6.0
 	 */
-	public function editor_types( $field ): array {
-		return [ (string) $field->get( 'language', 'text/html' ) ];
+	public function dependencies_for( array $config ): array {
+		$language = (string) ( $config['language'] ?? '' );
+
+		return [
+			'scripts'      => [],
+			'styles'       => [],
+			'code_editors' => [ '' === $language ? 'text/html' : $language ],
+		];
 	}
 
 	/**

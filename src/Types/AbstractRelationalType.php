@@ -64,7 +64,7 @@ abstract class AbstractRelationalType extends SelectType {
 	 * Only the selection is rendered as options — the point of searching is
 	 * that the full list is too large to emit.
 	 *
-	 * @param int[] $ids Selected ids.
+	 * @param array<int, int|string> $ids Selected ids.
 	 * @param Field $field The field.
 	 *
 	 * @return array<string, string>
@@ -100,6 +100,23 @@ abstract class AbstractRelationalType extends SelectType {
 	}
 
 	/**
+	 * The stored selection, as the ids its labels are looked up by.
+	 *
+	 * Posts, terms and users key on an integer id. A source that keys on
+	 * something else -- a slug, a reference from another system -- says so
+	 * by overriding this, or every value it stored is thrown away before
+	 * it can be labelled and the control opens empty on a saved value.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<int, int|string>
+	 * @since 1.6.0
+	 */
+	protected function selected_ids( Field $field ): array {
+		return array_values( array_filter( array_map( 'absint', $this->selected_values( $field ) ) ) );
+	}
+
+	/**
 	 * Options are only ever the current selection.
 	 *
 	 * @param Field $field The field.
@@ -107,7 +124,7 @@ abstract class AbstractRelationalType extends SelectType {
 	 * @return string
 	 */
 	protected function render_options( Field $field ): string {
-		$ids    = array_values( array_filter( array_map( 'absint', $this->selected_values( $field ) ) ) );
+		$ids    = $this->selected_ids( $field );
 		$markup = '';
 
 		if ( ! $this->is_multiple( $field ) && ! $field->is_required() ) {

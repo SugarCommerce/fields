@@ -23,6 +23,7 @@ use SugarCommerce\Fields\Actions\CallbackAction;
 use SugarCommerce\Fields\Search\CallbackSource;
 use SugarCommerce\Fields\Search\Sources;
 use SugarCommerce\Fields\Support\Badge;
+use SugarCommerce\Fields\Support\Dependencies;
 use SugarCommerce\Fields\Support\Rules;
 use SugarCommerce\Fields\Support\Sections;
 
@@ -758,36 +759,13 @@ final class FieldSet {
 	}
 
 	/**
-	 * Script and style handles every field in the set needs.
+	 * Script and style handles every field in the set needs, the code
+	 * editor languages, and whether a visual editor is among them -- fields
+	 * inside groups and repeaters included.
 	 *
-	 * @return array{scripts: string[], styles: string[]}
+	 * @return array{scripts: string[], styles: string[], code_editors: string[], editor: bool}
 	 */
 	public function dependencies(): array {
-		$scripts = [];
-		$styles  = [];
-		$editors = [];
-
-		foreach ( $this->fields() as $field ) {
-			$type = $field->type();
-
-			// A type whose needs depend on how a field is configured -- a
-			// colour field wants core's picker only when it was asked for
-			// it -- says so per field.
-			$needs   = method_exists( $type, 'dependencies_for' ) ? $type->dependencies_for( $field->config() ) : $type->dependencies();
-			$scripts = array_merge( $scripts, $needs['scripts'] ?? [] );
-			$styles  = array_merge( $styles, $needs['styles'] ?? [] );
-
-			// A code field's language comes from its own config, not from the
-			// type, so it is asked per field rather than once per type.
-			if ( method_exists( $type, 'editor_types' ) ) {
-				$editors = array_merge( $editors, $type->editor_types( $field ) );
-			}
-		}
-
-		return [
-			'scripts'      => array_values( array_unique( $scripts ) ),
-			'styles'       => array_values( array_unique( $styles ) ),
-			'code_editors' => array_values( array_unique( $editors ) ),
-		];
+		return Dependencies::of( $this->configs, $this->registry );
 	}
 }

@@ -23,6 +23,7 @@ use SugarCommerce\Fields\Support\Badge;
 use SugarCommerce\Fields\Support\Markup;
 use SugarCommerce\Fields\Support\Sections;
 use SugarCommerce\Fields\Support\Tooltip;
+use SugarCommerce\Fields\Types\AmountType;
 use Exception;
 use WP_Term;
 
@@ -466,19 +467,18 @@ class TermFields {
 	 * @return void
 	 */
 	private function save_amount_units( int $term_id, array $input, array $fields ): void {
-		foreach ( $fields as $key => $config ) {
-			if ( 'amount_type' !== ( $config['type'] ?? '' ) ) {
+		foreach ( array_keys( $fields ) as $key ) {
+			$field = $this->set->field( (string) $key, $term_id );
+			$type  = $field ? $field->type() : null;
+
+			if ( ! $type instanceof AmountType ) {
 				continue;
 			}
 
-			$unit_key = (string) ( $config['type_meta_key'] ?? $key . '_type' );
-			$options  = $config['type_options'] ?? [];
-			$options  = is_callable( $options ) ? $options() : $options;
-			$allowed  = array_map( 'strval', array_keys( (array) $options ) );
-			$posted   = sanitize_text_field( wp_unslash( (string) ( $input[ $unit_key ] ?? '' ) ) );
+			$unit = $type->posted_unit( $field, $input );
 
-			if ( in_array( $posted, $allowed, true ) ) {
-				update_term_meta( $term_id, $unit_key, $posted );
+			if ( '' !== $unit ) {
+				update_term_meta( $term_id, $type->unit_key( $field ), $unit );
 			}
 		}
 	}

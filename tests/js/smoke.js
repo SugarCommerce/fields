@@ -1664,6 +1664,145 @@ const regionChecks = ( async function () {
 	}
 } )();
 
+/*
+ * A visual editor that arrived after the page loaded is started, once, and
+ * stopped when its markup goes; one core started is left alone.
+ *
+ * A panel fetched over REST brings wp_editor()'s markup without the settings
+ * wp_editor() prints in the footer, so nothing ever started it: no Visual
+ * tab, an empty Code toolbar. And the same panel opened twice brought the
+ * same editor id back while TinyMCE still held the first one. The PHP suite
+ * renders the markup and cannot see either.
+ */
+( function () {
+	const editors = {};
+	const started = [];
+	const removed = [];
+	const quicktags = [];
+
+	function editorFor( settings ) {
+		const id = settings.selector.slice( 1 );
+		const element = elements[ id ];
+
+		return {
+			id,
+			isHidden: () => false,
+			getElement: () => element,
+			save() {},
+			on() {},
+			remove() {
+				removed.push( id );
+				delete editors[ id ];
+			},
+		};
+	}
+
+	const elements = {};
+
+	function editorMarkup( id, extra ) {
+		const textarea = Object.assign( recorder(), { id, value: '<p>Hi</p>' } );
+		const toolbar = recorder();
+		const editorWrap = Object.assign( recorder(), { querySelector: ( s ) => ( '.quicktags-toolbar' === s ? toolbar : null ) } );
+		const wrap = Object.assign( recorder(), {
+			dataset: Object.assign( { editor: id }, extra || {} ),
+			contains: ( el ) => el === textarea,
+		} );
+
+		editorWrap.classList.add( 'tmce-active' );
+		elements[ id ] = textarea;
+		elements[ 'wp-' + id + '-wrap' ] = editorWrap;
+
+		return { wrap, textarea, root: Object.assign( makeElement(), { querySelectorAll: ( s ) => ( s.includes( 'wysiwyg-wrap' ) ? [ wrap ] : [] ) } ) };
+	}
+
+	const before = {
+		getElementById: documentStub.getElementById,
+		body: documentStub.body,
+	};
+
+	documentStub.getElementById = ( id ) => elements[ id ] || null;
+	documentStub.body = Object.assign( makeElement(), { contains: ( el ) => Object.values( elements ).includes( el ) } );
+	context.window.tinymce = {
+		init: ( settings ) => {
+			started.push( settings );
+			editors[ settings.selector.slice( 1 ) ] = editorFor( settings );
+		},
+		get: ( id ) => editors[ id ] || null,
+	};
+	context.window.wp = { editor: { getDefaultSettings: () => ( { tinymce: { wpautop: true, toolbar1: 'bold' }, quicktags: { buttons: 'strong,em' } } ) } };
+	context.window.quicktags = ( settings ) => quicktags.push( settings.id );
+	context.window.QTags = { instances: {}, _buttonsInit() {} };
+	delete context.window.tinyMCEPreInit;
+
+	try {
+		// Started from core's defaults on the markup that is there, with the
+		// field's own height and the short toolbar it asked for.
+		const first = editorMarkup( 'panel_body', { teeny: '1', height: '260' } );
+
+		modules.Wysiwyg.init( first.root );
+		modules.Wysiwyg.init( first.root );
+
+		if ( 1 !== started.length || '#panel_body' !== started[ 0 ].selector || 260 !== started[ 0 ].height || '' !== started[ 0 ].toolbar2 || typeof started[ 0 ].setup !== 'function' ) {
+			console.error( `  Wysiwyg: expected one editor started on #panel_body, got ${ JSON.stringify( started ) }` );
+			failures ++;
+		}
+
+		if ( 1 !== quicktags.length || ! context.window.tinyMCEPreInit || ! context.window.tinyMCEPreInit.mceInit.panel_body ) {
+			console.error( '  Wysiwyg: the Code toolbar, or the settings Visual switches back with, were not set up' );
+			failures ++;
+		}
+
+		// The panel closes: its editor goes with it.
+		modules.destroy( first.root );
+
+		if ( 1 !== removed.length || modules.Wysiwyg.ours.panel_body ) {
+			console.error( `  Wysiwyg: closing the panel did not stop its editor (${ removed.join( ',' ) })` );
+			failures ++;
+		}
+
+		// Opened again: the same id, new markup, a new editor.
+		const again = editorMarkup( 'panel_body' );
+
+		modules.Wysiwyg.init( again.root );
+
+		if ( 2 !== started.length || editors.panel_body.getElement() !== again.textarea ) {
+			console.error( '  Wysiwyg: a panel opened a second time did not get an editor of its own' );
+			failures ++;
+		}
+
+		// Closed without being told -- the markup simply replaced -- and
+		// opened again: the stale editor is stopped before the new one.
+		const third = editorMarkup( 'panel_body' );
+
+		modules.Wysiwyg.init( third.root );
+
+		if ( 3 !== started.length || 2 !== removed.length ) {
+			console.error( `  Wysiwyg: a stale editor was not stopped first (started ${ started.length }, removed ${ removed.length })` );
+			failures ++;
+		}
+
+		// One core printed with the page and started is core's.
+		const page = editorMarkup( 'content' );
+
+		context.window.tinyMCEPreInit.mceInit.content = { selector: '#content' };
+		editors.content = editorFor( { selector: '#content' } );
+		modules.Wysiwyg.init( page.root );
+
+		if ( 3 !== started.length || modules.Wysiwyg.ours.content ) {
+			console.error( '  Wysiwyg: restarted an editor core had already started' );
+			failures ++;
+		}
+	} finally {
+		documentStub.getElementById = before.getElementById;
+		documentStub.body = before.body;
+		delete context.window.tinymce;
+		delete context.window.wp;
+		delete context.window.quicktags;
+		delete context.window.QTags;
+		delete context.window.tinyMCEPreInit;
+	}
+} )();
+
 /**
  * The report, once the asynchronous checks have settled.
  */
@@ -1673,7 +1812,7 @@ function finish() {
 		process.exit( 1 );
 	}
 
-	console.log( `  ${ expected.length } modules loaded and initialised cleanly, colour picker signals correctly, a native colour keeps its swatch and box in step, an icon choice is written and escaped, an added repeater row is live and renumbered, chips reorder, a root binds once, a password reveals, a count counts, a region follows its country, an accordion opens and closes, a secret is marked for removal and unmarked, the save bar says what changed, requests go through apiFetch` );
+	console.log( `  ${ expected.length } modules loaded and initialised cleanly, colour picker signals correctly, a native colour keeps its swatch and box in step, an icon choice is written and escaped, an added repeater row is live and renumbered, chips reorder, a root binds once, a password reveals, a count counts, a region follows its country, an accordion opens and closes, a secret is marked for removal and unmarked, the save bar says what changed, a late visual editor starts once and stops with its markup, requests go through apiFetch` );
 }
 
 /*

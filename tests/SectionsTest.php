@@ -12,6 +12,7 @@ namespace SugarCommerce\Fields\Tests;
 use SugarCommerce\Fields\Context\OptionContext;
 use SugarCommerce\Fields\FieldSet;
 use SugarCommerce\Fields\Registry;
+use SugarCommerce\Fields\Support\Sections;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -271,5 +272,35 @@ final class SectionsTest extends TestCase {
 		$this->assertMatchesRegularExpression( '/\.field-kit__accordion-panel\[hidden\]\s*\{[^}]*display:\s*none/', $css );
 		$this->assertStringNotContainsString( 'field-kit__accordion-body', $css );
 		$this->assertStringNotContainsString( 'field-kit__accordion-summary', $css );
+	}
+
+	/**
+	 * A caller with more than fields to lay out -- a flyout draws its own
+	 * components between them -- passes those through as they are, and
+	 * they land in the section they fall in, never opening one.
+	 *
+	 * @return void
+	 */
+	public function test_what_is_not_a_field_is_carried_not_split_on(): void {
+		$set = new FieldSet(
+			[
+				'tab_a' => [ 'type' => 'tab', 'label' => 'A' ],
+				'tab_b' => [ 'type' => 'tab', 'label' => 'B' ],
+			],
+			new OptionContext( 'fk_test' ),
+			'fk_test'
+		);
+
+		$layout = Sections::split( [ '<p>lead</p>', $set->field( 'tab_a' ), '<p>first</p>', $set->field( 'tab_b' ), '<p>second</p>', '<p>more</p>' ] );
+
+		$this->assertSame( 'tab', $layout['kind'] );
+		$this->assertSame( [ '<p>lead</p>' ], $layout['lead'] );
+		$this->assertSame( [ '<p>first</p>' ], $layout['sections'][0]['fields'] );
+		$this->assertSame( [ '<p>second</p>', '<p>more</p>' ], $layout['sections'][1]['fields'] );
+
+		$markup = Sections::render( $layout, static fn( array $parts ): string => implode( '', $parts ), 'scope' );
+
+		$this->assertStringContainsString( 'role="tablist"', $markup );
+		$this->assertStringContainsString( '<p>second</p><p>more</p>', $markup );
 	}
 }

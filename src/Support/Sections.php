@@ -42,9 +42,14 @@ final class Sections {
 	 * One marker is not a division, so a single tab is treated as no tabs at
 	 * all -- a tab strip with one tab is furniture that does nothing.
 	 *
-	 * @param Field[] $fields The built fields.
+	 * A caller that lays out more than fields -- a flyout puts its own
+	 * components between them, already drawn -- passes those along as they
+	 * are: anything that is not a Field is never a marker, and lands in the
+	 * group it falls in for the render callback to draw.
 	 *
-	 * @return array{kind: string, lead: Field[], sections: array<int, array{field: Field, fields: Field[]}>}|array
+	 * @param array<int, Field|mixed> $fields The built fields, and anything drawn between them.
+	 *
+	 * @return array{kind: string, lead: array, sections: array<int, array{field: Field, fields: array}>}|array
 	 *         An empty array when there is nothing to divide.
 	 */
 	public static function split( array $fields ): array {
@@ -53,7 +58,7 @@ final class Sections {
 		$sections = [];
 
 		foreach ( $fields as $field ) {
-			$opens = $field->type()->opens_section();
+			$opens = $field instanceof Field ? $field->type()->opens_section() : '';
 
 			if ( '' !== $opens ) {
 				// The first marker decides the kind. Mixing tabs and

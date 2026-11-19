@@ -109,12 +109,48 @@ final class WysiwygType extends AbstractType {
 			);
 		}
 
+		// What the script needs to start the editor itself, where nothing
+		// else will: markup that arrived after the page loaded -- a panel
+		// fetched over REST -- comes without the settings wp_editor() prints
+		// in the footer, so its visual editor and its Code toolbar never
+		// start.
+		$start = new Attributes();
+		$start->set( 'class', 'field-kit__wysiwyg-wrap' );
+		$start->set( 'data-field-id', $field->input_id() );
+		$start->set( 'data-editor', $editor_id );
+		$start->set_if( (bool) $field->get( 'teeny', false ), 'data-teeny', '1' );
+		$start->set_if( (int) $field->get( 'height', 0 ) > 0, 'data-height', (string) (int) $field->get( 'height', 0 ) );
+
 		return sprintf(
-			'<div class="field-kit__wysiwyg-wrap" data-field-id="%s">%s%s</div>',
-			esc_attr( $field->input_id() ),
+			'<div%s>%s%s</div>',
+			$start->render(),
 			$editor,
 			MergeTags::modal( $modal_id, $tags )
 		);
+	}
+
+	/**
+	 * What one field needs: the editor's scripts, and the media frame when
+	 * it has an Add Media button.
+	 *
+	 * wp_editor() enqueues all of it itself, but only when it runs during
+	 * the page. An editor drawn later -- in a panel loaded over REST -- runs
+	 * it in a request that prints nothing, so the page has to have asked
+	 * for the editor up front.
+	 *
+	 * @param array<string, mixed> $config The field's configuration.
+	 *
+	 * @return array{scripts: string[], styles: string[], editor: bool}
+	 * @since 1.6.0
+	 */
+	public function dependencies_for( array $config ): array {
+		$media = (bool) ( $config['media_buttons'] ?? true );
+
+		return [
+			'scripts' => $media ? [ 'media-upload', 'media-views' ] : [],
+			'styles'  => [],
+			'editor'  => true,
+		];
 	}
 
 	/**

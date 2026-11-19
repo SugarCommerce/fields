@@ -139,7 +139,7 @@ final class AmountType extends AbstractType {
 	 * @return string
 	 */
 	private function unit_name( Field $field ): string {
-		$key  = (string) $field->get( 'type_meta_key', $field->key() . '_type' );
+		$key  = $this->unit_key( $field );
 		$name = $field->input_name();
 
 		// Nested: swap the last segment for the unit's key.
@@ -148,6 +148,44 @@ final class AmountType extends AbstractType {
 		}
 
 		return $key;
+	}
+
+	/**
+	 * The key the chosen unit is stored under.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 * @since 1.6.0
+	 */
+	public function unit_key( Field $field ): string {
+		return (string) $field->get( 'type_meta_key', $field->key() . '_type' );
+	}
+
+	/**
+	 * The unit a submission chose, when it is one the field offers.
+	 *
+	 * Only the surface knows where the unit goes -- a term's meta, the
+	 * record a panel saves -- so each writes it itself; what was chosen,
+	 * and whether it may be stored, is decided here once. A unit that is
+	 * not on offer is refused rather than stored, and a fixed unit has no
+	 * control and nothing to store.
+	 *
+	 * @param Field                $field The field.
+	 * @param array<string, mixed> $input The submission at the field's own level, slashed.
+	 *
+	 * @return string The unit, or '' when there is none to store.
+	 * @since 1.6.0
+	 */
+	public function posted_unit( Field $field, array $input ): string {
+		if ( '' !== (string) $field->get( 'unit', '' ) ) {
+			return '';
+		}
+
+		$posted = sanitize_text_field( wp_unslash( (string) ( $input[ $this->unit_key( $field ) ] ?? '' ) ) );
+		$offers = array_map( 'strval', array_keys( $this->unit_options( $field ) ) );
+
+		return in_array( $posted, $offers, true ) ? $posted : '';
 	}
 
 	/**

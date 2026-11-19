@@ -214,6 +214,27 @@ Values written before the move, under the key this package used to make from
 read exactly as they did (`tests/fixtures/fkenc` holds some, made by the old
 code); saving one writes it under the site's key.
 
+## Markup that arrives later
+
+`$set->dependencies()` is everything the set's fields need on the page --
+script and style handles, `code_editors` (a language per code field) and
+`editor` (a visual editor is among them) -- fields inside groups and
+repeaters included, and `Support\Dependencies::of( $configs )` answers the
+same for configuration that is not a set. `( new Assets() )->enqueue( $needs )`
+loads it. That matters to markup drawn after the page has loaded, a panel
+fetched over REST, where nothing a field would enqueue while rendering
+reaches the page.
+
+Such markup is started with `window.SugarCommerceFieldsModules.init( root )`
+and let go of with `window.SugarCommerceFieldsModules.destroy( root )` before
+it is removed. A visual editor core did not start is started from core's own
+defaults on the markup `wp_editor()` drew, and `destroy()` stops it, so the
+same editor drawn again is a new editor rather than the old one's ghost.
+
+`AmountType::posted_unit( $field, $input )` is the unit a submission chose,
+when it is one the field offers, and `unit_key( $field )` where it goes: the
+surface that stores the amount stores the unit beside it.
+
 ## Colour
 
 The `color` field is the browser's own colour input -- the operating

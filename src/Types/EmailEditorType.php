@@ -393,6 +393,20 @@ final class EmailEditorType extends AbstractNestedType {
 	}
 
 	/**
+	 * What it needs: the body is a visual editor with Add Media beside it.
+	 *
+	 * @return array{scripts: string[], styles: string[], editor: bool}
+	 * @since 1.6.0
+	 */
+	public function dependencies(): array {
+		return [
+			'scripts' => [ 'media-upload', 'media-views' ],
+			'styles'  => [],
+			'editor'  => true,
+		];
+	}
+
+	/**
 	 * The configuration keys this type reads.
 	 *
 	 * @return string[]

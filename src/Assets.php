@@ -88,7 +88,7 @@ final class Assets {
 	/**
 	 * Enqueue the kit and whatever a field set additionally needs.
 	 *
-	 * @param array{scripts: string[], styles: string[]} $dependencies Extra handles.
+	 * @param array{scripts?: string[], styles?: string[], code_editors?: string[], editor?: bool} $dependencies Extra handles.
 	 *
 	 * @return void
 	 */
@@ -104,6 +104,13 @@ final class Assets {
 		}
 
 		$this->enqueue_code_editors( $dependencies['code_editors'] ?? [] );
+
+		// The visual editor's scripts and the settings its script starts an
+		// editor from. wp_editor() asks for these itself while it renders on
+		// the page; one rendered later, in a panel fetched over REST, cannot.
+		if ( ! empty( $dependencies['editor'] ) ) {
+			wp_enqueue_editor();
+		}
 
 		// Whatever this screen's fields need has to load first, so it is
 		// added to the kit's own dependencies rather than merely enqueued

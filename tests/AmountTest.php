@@ -207,4 +207,70 @@ final class AmountTest extends TestCase {
 
 		$this->assertSame( 0.0, $context->values()['rate'] );
 	}
+
+	/**
+	 * The unit a submission chose is read in one place, for every surface
+	 * that stores it: what is offered is kept, what is not is refused.
+	 */
+	public function test_the_posted_unit_must_be_one_on_offer(): void {
+		$set   = new FieldSet(
+			[
+				'rate' => [
+					'type'         => 'amount_type',
+					'type_options' => [
+						'percent' => '%',
+						'flat'    => '£',
+					],
+				],
+			],
+			new ArrayContext(),
+			''
+		);
+		$field = $set->field( 'rate' );
+		$type  = $field->type();
+
+		$this->assertSame( 'rate_type', $type->unit_key( $field ) );
+		$this->assertSame( 'flat', $type->posted_unit( $field, [ 'rate_type' => 'flat' ] ) );
+		$this->assertSame( '', $type->posted_unit( $field, [ 'rate_type' => 'bitcoin' ] ) );
+		$this->assertSame( '', $type->posted_unit( $field, [] ) );
+	}
+
+	/**
+	 * With no units declared, the two the select shows are the two that
+	 * may be stored. They were refused, so a term's unit was never written.
+	 */
+	public function test_the_default_units_may_be_stored(): void {
+		$set   = new FieldSet( [ 'rate' => [ 'type' => 'amount_type' ] ], new ArrayContext(), '' );
+		$field = $set->field( 'rate' );
+
+		$this->assertSame( 'flat', $field->type()->posted_unit( $field, [ 'rate_type' => 'flat' ] ) );
+	}
+
+	/**
+	 * A unit under its own key, and none for a fixed unit, which has no
+	 * control to choose with.
+	 */
+	public function test_a_named_unit_key_and_a_fixed_unit(): void {
+		$set = new FieldSet(
+			[
+				'sale'  => [
+					'type'          => 'amount_type',
+					'type_meta_key' => '_sale_type',
+				],
+				'fixed' => [
+					'type' => 'amount_type',
+					'unit' => '%',
+				],
+			],
+			new ArrayContext(),
+			''
+		);
+
+		$sale  = $set->field( 'sale' );
+		$fixed = $set->field( 'fixed' );
+
+		$this->assertSame( '_sale_type', $sale->type()->unit_key( $sale ) );
+		$this->assertSame( 'percent', $sale->type()->posted_unit( $sale, [ '_sale_type' => 'percent' ] ) );
+		$this->assertSame( '', $fixed->type()->posted_unit( $fixed, [ 'fixed_type' => 'percent' ] ) );
+	}
 }

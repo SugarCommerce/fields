@@ -52,4 +52,27 @@ final class AssetsTest extends TestCase {
 
 		$this->assertCount( 1, $GLOBALS['fk_registered']['inline'][ Runtime::handle() ] );
 	}
+
+	/**
+	 * A visual editor among the fields asks for core's editor scripts.
+	 *
+	 * wp_editor() asks for them itself while it renders on the page; one
+	 * rendered later, in a panel fetched over REST, cannot -- and a page
+	 * without them has no TinyMCE and no defaults to start one from.
+	 */
+	public function test_a_visual_editor_enqueues_the_editor(): void {
+		( new Assets() )->enqueue( [ 'editor' => true ] );
+
+		$this->assertSame( 1, $GLOBALS['fk_registered']['editor'] ?? 0 );
+	}
+
+	/**
+	 * And a screen without one does not.
+	 */
+	public function test_no_visual_editor_enqueues_no_editor(): void {
+		( new Assets() )->enqueue( [ 'editor' => false ] );
+		( new Assets() )->enqueue( [] );
+
+		$this->assertArrayNotHasKey( 'editor', $GLOBALS['fk_registered'] );
+	}
 }

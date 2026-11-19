@@ -279,3 +279,9 @@ tf_reset_globals();
 uf_reset_globals();
 qe_reset_globals();
 be_reset_globals();
+
+if ( ! function_exists( 'update_term_meta' ) ) {
+	function update_term_meta( $term_id, $meta_key, $meta_value, $prev_value = '' ) {
+		return update_metadata( 'term', $term_id, $meta_key, $meta_value, $prev_value );
+	}
+}
