@@ -12,6 +12,7 @@ namespace SugarCommerce\Fields\Types;
 use SugarCommerce\Fields\Attributes;
 use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\Icons\Glyphs;
+use SugarCommerce\Fields\Contracts\AdminOnly;
 
 /**
  * Anything backed by the media library.
@@ -21,7 +22,7 @@ use SugarCommerce\Fields\Icons\Glyphs;
  * than clickable divs or anchors with `href="#"`: they are focusable and
  * respond to Enter and Space without any of that being rebuilt.
  */
-abstract class AbstractMediaType extends AbstractType {
+abstract class AbstractMediaType extends AbstractType implements AdminOnly {
 
 	/**
 	 * The media frame's title.

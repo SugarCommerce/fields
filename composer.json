@@ -1,6 +1,6 @@
 {
   "name": "sugarcommerce/fields",
-  "description": "Admin form fields for WordPress, written once: every field type with its markup, sanitising, rules and conditions, on a metabox, a term form, a profile or quick and bulk edit, stored in any meta or an option, with icon sets, a colour control and search over posts, users and terms.",
+  "description": "Form fields for WordPress, written once: every field type with its markup, sanitising, rules and conditions, on a metabox, a term form, a profile, quick and bulk edit or a public form, stored in any meta or an option, with icon sets, a colour control and search over posts, users and terms.",
   "homepage": "https://github.com/SugarCommerce/fields",
   "type": "library",
   "license": "GPL-2.0-or-later",
@@ -12,6 +12,7 @@
   ],
   "require": {
     "php": ">=8.3",
+    "sugarcommerce/embeds": "dev-main",
     "sugarcommerce/geo": "dev-main",
     "sugarcommerce/plugin": "dev-main",
     "sugarcommerce/security": "dev-main",
@@ -24,9 +25,17 @@
     "wp-coding-standards/wpcs": "^3.4"
   },
   "suggest": {
-    "sugarcommerce/money": "Supplies the currencies preset and the options of the currency field type."
+    "sugarcommerce/money": "Supplies the currencies preset and the options of the currency field type.",
+    "sugarcommerce/geocoding": "Finds the coordinates of an address for the location field type."
   },
   "repositories": [
+    {
+      "type": "path",
+      "url": "../embeds",
+      "options": {
+        "symlink": false
+      }
+    },
     {
       "type": "path",
       "url": "../geo",

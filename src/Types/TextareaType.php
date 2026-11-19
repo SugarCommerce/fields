@@ -55,8 +55,23 @@ class TextareaType extends AbstractType {
 			mb_strlen( $value ),
 			(int) $field->get( 'maxlength', 0 ),
 			(bool) $field->get( 'counter', true ),
-			'large-text'
+			'large-text',
+			(int) $field->get( 'soft_limit', 0 )
 		);
+	}
+
+	/**
+	 * Refuse a value longer than the field's `maxlength`, as the inputs do.
+	 *
+	 * @param mixed $value The sanitized value.
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	public function validate( mixed $value, Field $field ): string {
+		$message = Markup::too_long( $value, $field );
+
+		return '' === $message ? parent::validate( $value, $field ) : $message;
 	}
 
 	/**
@@ -102,7 +117,7 @@ class TextareaType extends AbstractType {
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),
-			[ 'cols', 'counter', 'maxlength', 'rows' ]
+			[ 'cols', 'counter', 'maxlength', 'rows', 'soft_limit' ]
 		);
 	}
 }

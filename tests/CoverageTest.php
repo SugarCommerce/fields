@@ -317,6 +317,7 @@ final class CoverageTest extends TestCase {
 		'select',
 		'enhanced_select',
 		'select_multiple',
+		'slug',
 		'tags',
 		'taxonomy',
 		'tel',

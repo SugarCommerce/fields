@@ -192,8 +192,29 @@ abstract class AbstractInputType extends AbstractType {
 			mb_strlen( $value ),
 			(int) $field->get( 'maxlength', 0 ),
 			(bool) $field->get( 'counter', true ),
-			$this->width_class( $field )
+			$this->width_class( $field ),
+			(int) $field->get( 'soft_limit', 0 )
 		);
+	}
+
+	/**
+	 * Refuse a value longer than the field's `maxlength`.
+	 *
+	 * The browser stops anybody typing past it, which is not the same as
+	 * nobody sending more: a request made without the form, a value pasted
+	 * by a script. The limit is the field's, so it holds on the server too
+	 * -- the same check whether the form is in wp-admin or on a storefront.
+	 * A `soft_limit` refuses nothing.
+	 *
+	 * @param mixed $value The sanitized value.
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	public function validate( mixed $value, Field $field ): string {
+		$message = Markup::too_long( $value, $field );
+
+		return '' === $message ? parent::validate( $value, $field ) : $message;
 	}
 
 	/**
@@ -271,7 +292,7 @@ abstract class AbstractInputType extends AbstractType {
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),
-			[ 'counter', 'maxlength', 'prefix', 'size', 'suffix' ]
+			[ 'counter', 'maxlength', 'prefix', 'size', 'soft_limit', 'suffix' ]
 		);
 	}
 }

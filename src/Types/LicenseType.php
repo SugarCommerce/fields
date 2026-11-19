@@ -13,6 +13,7 @@ use SugarCommerce\Fields\Attributes;
 use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\Icons\Glyphs;
 use SugarCommerce\Fields\Utils\Runtime;
+use SugarCommerce\Fields\Contracts\AdminOnly;
 
 /**
  * A licence key with an activate or deactivate action and a status.
@@ -25,7 +26,7 @@ use SugarCommerce\Fields\Utils\Runtime;
  * disabled — a disabled input cannot be focused, so its value could not be
  * read by keyboard at all.
  */
-final class LicenseType extends AbstractInputType {
+final class LicenseType extends AbstractInputType implements AdminOnly {
 
 	/**
 	 * The HTML input type.

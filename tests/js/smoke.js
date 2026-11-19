@@ -1923,7 +1923,34 @@ async function requestChecks() {
 	}
 }
 
-regionChecks.then( requestChecks ).then( finish, ( error ) => {
+/**
+ * The pure parts of the new modules: what a slug becomes, a count's words,
+ * and the map address the script writes, which must be the one PHP writes.
+ */
+function smallerChecks() {
+	const expect = ( ok, message ) => {
+		if ( ! ok ) {
+			console.error( `  ${ message }` );
+			failures ++;
+		}
+	};
+
+	expect( 'creme-brulee-2026' === modules.Slug.make( '  Crème Brûlée 2026! ' ), `Slug: ${ modules.Slug.make( '  Crème Brûlée 2026! ' ) }` );
+	expect( '' === modules.Slug.make( '---' ), 'Slug: hyphens alone are no slug' );
+	expect( '5 / 200' === modules.Counter.text( 5, 200, 0 ), 'Counter: a hard limit alone' );
+	expect( '5 / 60' === modules.Counter.text( 5, 0, 60 ), 'Counter: a soft limit alone' );
+	expect( '5 / 60 (up to 160)' === modules.Counter.text( 5, 160, 60 ), 'Counter: both limits' );
+	expect(
+		'https://www.openstreetmap.org/export/embed.html?bbox=-1.5541%2C53.7958%2C-1.5441%2C53.8058&layer=mapnik&marker=53.8008%2C-1.5491' === modules.Location.url( 53.8008, -1.5491 ),
+		`Location: the map is not LocationType::map_url()'s: ${ modules.Location.url( 53.8008, -1.5491 ) }`
+	);
+	expect( '53.8008' === modules.Location.number( 53.800800000000002 ), 'Location: a float keeps its binary tail' );
+	expect( '0' === modules.Location.number( -0.00000001 ), 'Location: minus nothing is nothing' );
+	expect( false === modules.Guard.dirty(), 'Guard: nothing guarded is dirty' );
+	expect( true === modules.Guard.confirm(), 'Guard: nothing to confirm asks nothing' );
+}
+
+regionChecks.then( requestChecks ).then( smallerChecks ).then( finish, ( error ) => {
 	console.error( `  Region: ${ error.message }` );
 	failures ++;
 	finish();

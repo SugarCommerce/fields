@@ -151,7 +151,7 @@ final class ConfigKeysTest extends TestCase {
 	 * @return string[]
 	 */
 	private static function keys_read_in( string $source ): array {
-		preg_match_all( '/\$field->(?:get|has)\(\s*\'([a-z_]+)\'/', $source, $matches );
+		preg_match_all( '/\$field->(?:get|has)\(\s*\'([a-z0-9_]+)\'/', $source, $matches );
 
 		return $matches[1];
 	}

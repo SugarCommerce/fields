@@ -1,0 +1,395 @@
+/**
+ * SugarCommerce Fields: the controls the engine draws itself
+ *
+ * Loaded in wp-admin under the field kit's own stylesheet, and on the front
+ * of the site under the public form's, so a rating or an address looks the
+ * same wherever it is. Colours come from custom properties, each with a
+ * fallback: in wp-admin the admin colour scheme's, on a storefront the
+ * theme's text colour, so a theme restyles them by setting a property
+ * rather than out-specifying a rule.
+ *
+ * Every directional property is logical, so the one file serves both
+ * directions.
+ */
+
+/* -----------------------------------------------------------------------
+ * Rating
+ *
+ * One painted strip of stars, filled to --fk-rating out of --fk-rating-max,
+ * under a row of labels that are the hit areas of the radio buttons. Which
+ * value is checked, and which label is under the pointer, set --fk-rating
+ * from the rules below, so it works before any script has run and without
+ * one. Halves are labels half a star wide.
+ * -------------------------------------------------------------------- */
+
+.field-kit__rating {
+	--fk-rating-size: 24px;
+	--fk-rating-fill: #e8a317;
+	--fk-rating-empty: #c3c4c7;
+	position: relative;
+	display: inline-flex;
+	vertical-align: middle;
+	line-height: 0;
+}
+
+.field-kit__rating-stars {
+	display: block;
+	width: calc(var(--fk-rating-size) * var(--fk-rating-max, 5));
+	height: var(--fk-rating-size);
+	background: linear-gradient(90deg, var(--fk-rating-fill) calc(var(--fk-rating, 0) / var(--fk-rating-max, 5) * 100%), var(--fk-rating-empty) 0);
+	-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z'/%3E%3C/svg%3E") 0 0 / var(--fk-rating-size) var(--fk-rating-size) repeat-x;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z'/%3E%3C/svg%3E") 0 0 / var(--fk-rating-size) var(--fk-rating-size) repeat-x;
+	pointer-events: none;
+}
+
+/* A mirrored page fills from the other end. */
+[dir="rtl"] .field-kit__rating-stars {
+	transform: scaleX(-1);
+}
+
+/* Over the strip: the stars are a picture, the labels are what is clicked. */
+.field-kit__rating:not(.field-kit__rating--display) .field-kit__rating-stars {
+	position: absolute;
+	inset-block-start: 0;
+	inset-inline-start: 0;
+}
+
+.field-kit__rating-input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: 0;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.field-kit__rating-star {
+	display: block;
+	width: var(--fk-rating-size);
+	height: var(--fk-rating-size);
+	cursor: pointer;
+}
+
+.field-kit__rating--half .field-kit__rating-star {
+	width: calc(var(--fk-rating-size) / 2);
+}
+
+.field-kit__rating-none {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+}
+
+.field-kit__rating:has(> input:disabled) .field-kit__rating-star {
+	cursor: default;
+}
+
+.field-kit__rating:has(> input:focus-visible) {
+	outline: 2px solid var(--fk-focus, var(--wp-admin-theme-color, #2271b1));
+	outline-offset: 3px;
+	border-radius: 2px;
+}
+
+.field-kit__rating:has(> input[value=""]:checked) { --fk-rating: 0; }
+.field-kit__rating:has(> input[value="0.5"]:checked) { --fk-rating: 0.5; }
+.field-kit__rating:has(> input[value="1"]:checked) { --fk-rating: 1; }
+.field-kit__rating:has(> input[value="1.5"]:checked) { --fk-rating: 1.5; }
+.field-kit__rating:has(> input[value="2"]:checked) { --fk-rating: 2; }
+.field-kit__rating:has(> input[value="2.5"]:checked) { --fk-rating: 2.5; }
+.field-kit__rating:has(> input[value="3"]:checked) { --fk-rating: 3; }
+.field-kit__rating:has(> input[value="3.5"]:checked) { --fk-rating: 3.5; }
+.field-kit__rating:has(> input[value="4"]:checked) { --fk-rating: 4; }
+.field-kit__rating:has(> input[value="4.5"]:checked) { --fk-rating: 4.5; }
+.field-kit__rating:has(> input[value="5"]:checked) { --fk-rating: 5; }
+.field-kit__rating:has(> input[value="5.5"]:checked) { --fk-rating: 5.5; }
+.field-kit__rating:has(> input[value="6"]:checked) { --fk-rating: 6; }
+.field-kit__rating:has(> input[value="6.5"]:checked) { --fk-rating: 6.5; }
+.field-kit__rating:has(> input[value="7"]:checked) { --fk-rating: 7; }
+.field-kit__rating:has(> input[value="7.5"]:checked) { --fk-rating: 7.5; }
+.field-kit__rating:has(> input[value="8"]:checked) { --fk-rating: 8; }
+.field-kit__rating:has(> input[value="8.5"]:checked) { --fk-rating: 8.5; }
+.field-kit__rating:has(> input[value="9"]:checked) { --fk-rating: 9; }
+.field-kit__rating:has(> input[value="9.5"]:checked) { --fk-rating: 9.5; }
+.field-kit__rating:has(> input[value="10"]:checked) { --fk-rating: 10; }
+
+/* The one under the pointer wins over the one chosen, so a hover previews. */
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="0.5"]:hover) { --fk-rating: 0.5; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="1"]:hover) { --fk-rating: 1; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="1.5"]:hover) { --fk-rating: 1.5; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="2"]:hover) { --fk-rating: 2; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="2.5"]:hover) { --fk-rating: 2.5; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="3"]:hover) { --fk-rating: 3; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="3.5"]:hover) { --fk-rating: 3.5; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="4"]:hover) { --fk-rating: 4; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="4.5"]:hover) { --fk-rating: 4.5; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="5"]:hover) { --fk-rating: 5; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="5.5"]:hover) { --fk-rating: 5.5; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="6"]:hover) { --fk-rating: 6; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="6.5"]:hover) { --fk-rating: 6.5; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="7"]:hover) { --fk-rating: 7; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="7.5"]:hover) { --fk-rating: 7.5; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="8"]:hover) { --fk-rating: 8; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="8.5"]:hover) { --fk-rating: 8.5; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="9"]:hover) { --fk-rating: 9; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="9.5"]:hover) { --fk-rating: 9.5; }
+.field-kit__rating:not(:has(> input:disabled)):has(> label[data-value="10"]:hover) { --fk-rating: 10; }
+
+/* -----------------------------------------------------------------------
+ * Dimension: a number and its unit, joined like an amount.
+ * -------------------------------------------------------------------- */
+
+.field-kit__dimension {
+	display: inline-flex;
+	align-items: stretch;
+	max-width: 100%;
+}
+
+.field-kit__dimension input.field-kit__dimension-value {
+	width: 7rem;
+	margin: 0;
+	border-start-end-radius: 0;
+	border-end-end-radius: 0;
+}
+
+.field-kit__dimension select.field-kit__dimension-unit {
+	margin: 0;
+	margin-inline-start: -1px;
+	border-start-start-radius: 0;
+	border-end-start-radius: 0;
+}
+
+.field-kit__dimension-unit--fixed {
+	display: inline-flex;
+	align-items: center;
+	padding: 0 .6em;
+	margin-inline-start: -1px;
+	border: 1px solid var(--fk-control-border, #8c8f94);
+	border-start-end-radius: 4px;
+	border-end-end-radius: 4px;
+	background: var(--fk-muted-surface, #f6f7f7);
+}
+
+.field-kit__dimension input:focus,
+.field-kit__dimension select:focus {
+	position: relative;
+	z-index: 1;
+}
+
+/* -----------------------------------------------------------------------
+ * Slug, embed and location: a line of status under the control.
+ * -------------------------------------------------------------------- */
+
+.field-kit__slug-line {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 2px 4px;
+	max-width: 100%;
+}
+
+.field-kit__slug-base {
+	color: var(--fk-muted, #646970);
+	overflow-wrap: anywhere;
+}
+
+.field-kit__slug-line > input.field-kit__slug {
+	flex: 1 1 12rem;
+	min-width: 0;
+	margin: 0;
+}
+
+.field-kit__slug-status:empty,
+.field-kit__embed-status:empty,
+.field-kit__location-status:empty {
+	display: none;
+}
+
+.field-kit__slug-status,
+.field-kit__embed-status,
+.field-kit__location-status {
+	display: block;
+	margin-top: 4px;
+}
+
+.field-kit__slug-status.is-free {
+	color: #007017;
+}
+
+.field-kit__slug-status.is-taken,
+.field-kit__embed-status {
+	color: #d63638;
+}
+
+.field-kit__embed-preview {
+	max-width: 560px;
+	margin-top: 8px;
+}
+
+.field-kit__embed-preview iframe {
+	display: block;
+	max-width: 100%;
+	border-radius: 4px;
+}
+
+.field-kit__location-search {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
+	max-width: 100%;
+}
+
+.field-kit__location-search .field-kit__location-address {
+	flex: 1 1 14rem;
+	min-width: 0;
+	margin: 0;
+}
+
+.field-kit__location-coordinates {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 16px;
+	margin-top: 8px;
+}
+
+.field-kit__location-coordinate {
+	display: inline-flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.field-kit__location .field-kit__location-coordinate input[type="number"] {
+	width: 9rem;
+	max-width: 100%;
+	margin: 0;
+}
+
+.field-kit__location-map {
+	max-width: 560px;
+	margin-top: 8px;
+}
+
+.field-kit__location-frame {
+	display: block;
+	width: 100%;
+	aspect-ratio: 16 / 9;
+	border: 1px solid var(--fk-control-border, #dcdcde);
+	border-radius: 4px;
+}
+
+.field-kit__location-link {
+	display: inline-block;
+	margin-top: 4px;
+	font-size: 12px;
+}
+
+/* -----------------------------------------------------------------------
+ * Address: lines of parts, as the country writes them.
+ * -------------------------------------------------------------------- */
+
+.field-kit__address {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	max-width: 36rem;
+}
+
+.field-kit__address-lines {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.field-kit__address-line {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.field-kit__address-part {
+	display: flex;
+	flex: 1 1 10rem;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+}
+
+.field-kit__address-part[hidden],
+.field-kit__address-spare[hidden],
+.field-kit__address-part [hidden] {
+	display: none;
+}
+
+.field-kit__address-part > label {
+	font-weight: 400;
+}
+
+.field-kit__address-part input,
+.field-kit__address-part select {
+	box-sizing: border-box;
+	width: 100%;
+	max-width: none;
+	margin: 0;
+}
+
+.field-kit__address-hint:empty {
+	display: none;
+}
+
+.field-kit__address-hint {
+	margin: 0;
+}
+
+.field-kit__address-hint.is-error {
+	color: #d63638;
+}
+
+/* -----------------------------------------------------------------------
+ * A count past its soft limit: a warning, not a refusal.
+ * -------------------------------------------------------------------- */
+
+.field-kit__count--soft {
+	color: #996800;
+	font-weight: 600;
+}
+
+/* -----------------------------------------------------------------------
+ * Unsaved changes: a bar beside each field that changed, and a word in
+ * its label that says so for anyone who does not see the bar.
+ * -------------------------------------------------------------------- */
+
+.field-kit__field--changed {
+	box-shadow: inset 3px 0 0 var(--fk-changed, var(--wp-admin-theme-color, #2271b1));
+	padding-inline-start: 12px;
+}
+
+[dir="rtl"] .field-kit__field--changed {
+	box-shadow: inset -3px 0 0 var(--fk-changed, var(--wp-admin-theme-color, #2271b1));
+}
+
+.field-kit__changed-flag {
+	display: inline-block;
+	margin-inline-start: 8px;
+	padding: 0 6px;
+	border-radius: 999px;
+	background: var(--fk-changed, var(--wp-admin-theme-color, #2271b1));
+	color: #fff;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 18px;
+	vertical-align: middle;
+}
+
+@media (max-width: 600px) {
+	.field-kit__address-part {
+		flex-basis: 100%;
+	}
+
+	.field-kit__location-coordinate,
+	.field-kit__location .field-kit__location-coordinate input[type="number"] {
+		flex: 1 1 0;
+		width: 100%;
+	}
+}

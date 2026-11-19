@@ -316,9 +316,14 @@
 			//
 			// A region field is two controls of one name, and the one
 			// standing down is hidden and disabled so that only the other
-			// posts. Showing the field must not switch it back on.
+			// posts. Showing the field must not switch it back on. An
+			// address is the same twice over: its region, and the parts its
+			// country has no place for, kept hidden for the next country.
 			field.querySelectorAll( 'input, select, textarea' ).forEach( function ( input ) {
-				input.disabled = ! met || ( input.hidden && !! input.closest( '.field-kit__region' ) );
+				var address = input.closest( '.field-kit__address' );
+				var standing = address && ( input.hidden || ( input.parentElement && input.parentElement.closest( '[hidden]' ) && address.contains( input.parentElement.closest( '[hidden]' ) ) ) );
+
+				input.disabled = ! met || ( input.hidden && !! input.closest( '.field-kit__region' ) ) || !! standing;
 			} );
 		},
 
@@ -4930,8 +4935,14 @@
 				return;
 			}
 
-			url.searchParams.set( 'source', 'region' );
-			url.searchParams.set( 'args[country]', country );
+			// On a public form there may be nobody logged in to search,
+			// so the regions come from the address route, which is open.
+			if ( wrap.closest && wrap.closest( '[data-sugarcommerce-form]' ) && /^[A-Za-z]{2}$/.test( country ) ) {
+				url = new URL( ( config.restUrl || '' ) + 'address/' + country.toUpperCase(), window.location.origin );
+			} else {
+				url.searchParams.set( 'source', 'region' );
+				url.searchParams.set( 'args[country]', country );
+			}
 
 			kit.request( url, {
 				credentials: 'same-origin',
@@ -4940,7 +4951,7 @@
 				return response.ok ? response.json() : { results: [] };
 			} ).then( function ( data ) {
 				if ( ticket === wrap.fieldKitTicket ) {
-					Region.apply( wrap, data.results || [] );
+					Region.apply( wrap, data.results || data.regions || [] );
 				}
 			} ).catch( function () {
 				if ( ticket === wrap.fieldKitTicket ) {
@@ -5301,10 +5312,32 @@
 		 */
 		update: function ( counter, control ) {
 			var max = parseInt( control.getAttribute( 'maxlength' ), 10 ) || 0;
+			var soft = parseInt( counter.dataset.soft, 10 ) || 0;
 			var length = Array.from( control.value || '' ).length;
 
-			counter.textContent = length + ' / ' + max;
-			counter.classList.toggle( 'field-kit__count--over', length > max );
+			counter.textContent = Counter.text( length, max, soft );
+			counter.classList.toggle( 'field-kit__count--over', max > 0 && length > max );
+			counter.classList.toggle( 'field-kit__count--soft', soft > 0 && length > soft );
+		},
+
+		/**
+		 * The words of a count, as Markup::count() writes them.
+		 *
+		 * @param {number} length Characters.
+		 * @param {number} max    The hard limit, or 0.
+		 * @param {number} soft   The length to aim for, or 0.
+		 * @return {string} The count.
+		 */
+		text: function ( length, max, soft ) {
+			if ( ! soft ) {
+				return length + ' / ' + max;
+			}
+
+			if ( ! max ) {
+				return length + ' / ' + soft;
+			}
+
+			return t( 'countUpTo', '%1$d / %2$d (up to %3$d)' ).replace( '%1$d', length ).replace( '%2$d', soft ).replace( '%3$d', max );
 		}
 	};
 
@@ -5446,6 +5479,1329 @@
 
 	window.SugarCommerceFieldsModules.SettingsBar = SettingsBar;
 
+	/* =================================================================
+	 * Requests to the lookup routes
+	 * ================================================================= */
+
+	/**
+	 * An address under the kit's REST namespace, with a query.
+	 *
+	 * Built with URL so a site on plain permalinks, whose REST root is
+	 * `?rest_route=/…/`, gets its parameters after the route rather than
+	 * inside it.
+	 *
+	 * @param {string} path   The route under the namespace.
+	 * @param {Object} params Query parameters; an array value repeats.
+	 * @return {URL|null} Null without a REST root.
+	 */
+	function endpoint( path, params ) {
+		var url;
+
+		if ( ! config.restUrl ) {
+			return null;
+		}
+
+		try {
+			url = new URL( config.restUrl + path, window.location.origin );
+		} catch ( error ) {
+			return null;
+		}
+
+		Object.keys( params || {} ).forEach( function ( key ) {
+			[].concat( params[ key ] ).forEach( function ( value ) {
+				url.searchParams.append( Array.isArray( params[ key ] ) ? key + '[]' : key, String( value ) );
+			} );
+		} );
+
+		return url;
+	}
+
+	/**
+	 * Ask a route and read its answer, whatever the status.
+	 *
+	 * @param {URL}    url  The address.
+	 * @param {Object} init Fetch options.
+	 * @return {Promise<{ok: boolean, json: Object}>} The answer.
+	 */
+	function ask( url, init ) {
+		return kit.request( url, Object.assign( { credentials: 'same-origin', headers: { 'X-WP-Nonce': config.restNonce || '' } }, init || {} ) ).then( function ( response ) {
+			return response.json().then( function ( json ) {
+				return { ok: response.ok, json: json || {} };
+			}, function () {
+				return { ok: false, json: {} };
+			} );
+		} );
+	}
+
+	/**
+	 * The closest field wrapper a control belongs to.
+	 *
+	 * @param {Element} el An element inside a field.
+	 * @return {Element|null} The field.
+	 */
+	function fieldOf( el ) {
+		return el && el.closest ? el.closest( '[data-field-key]' ) : null;
+	}
+
+	/* =================================================================
+	 * Slug
+	 * ================================================================= */
+
+	/**
+	 * A slug cleaned as it is typed, made from the field it names, and
+	 * checked against the caller's own idea of what is taken.
+	 */
+	var Slug = {
+		init: function ( root ) {
+			root.querySelectorAll( 'input[data-slug]' ).forEach( function ( input ) {
+				if ( input.dataset.fkBound ) {
+					return;
+				}
+
+				input.dataset.fkBound = '1';
+
+				var field = fieldOf( input );
+				var status = field ? field.querySelector( '.field-kit__slug-status' ) : null;
+				var source = input.dataset.slugSource ? kit.sibling( input, input.dataset.slugSource ) : null;
+				var timer = null;
+
+				// Following the source until somebody writes a slug of their own.
+				input.fkFollowing = '' === input.value;
+
+				if ( source ) {
+					source.addEventListener( 'input', function () {
+						if ( input.fkFollowing ) {
+							input.value = Slug.make( source.value );
+							input.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+							input.fkFollowing = true;
+						}
+					} );
+				}
+
+				input.addEventListener( 'input', function ( event ) {
+					if ( event.isTrusted ) {
+						input.fkFollowing = '' === input.value;
+					}
+
+					window.clearTimeout( timer );
+					timer = window.setTimeout( function () {
+						Slug.check( input, status );
+					}, 350 );
+				} );
+
+				input.addEventListener( 'blur', function () {
+					var clean = Slug.make( input.value );
+
+					if ( clean !== input.value ) {
+						input.value = clean;
+						input.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+					}
+				} );
+			} );
+		},
+
+		/**
+		 * Text as a slug: lower case, accents off, hyphens between words.
+		 *
+		 * @param {string} text The text.
+		 * @return {string} The slug.
+		 */
+		make: function ( text ) {
+			return String( text || '' )
+				.normalize( 'NFD' )
+				.replace( /[̀-ͯ]/g, '' )
+				.toLowerCase()
+				.replace( /[^a-z0-9_]+/g, '-' )
+				.replace( /^-+|-+$/g, '' );
+		},
+
+		/**
+		 * Ask whether the slug is free, and say so.
+		 *
+		 * @param {Element}      input  The slug.
+		 * @param {Element|null} status Where to say it.
+		 */
+		check: function ( input, status ) {
+			var slug = Slug.make( input.value );
+			var url = input.dataset.lookup ? endpoint( 'lookup', { name: input.dataset.lookup, q: slug } ) : null;
+			var ticket = ( input.fkTicket = ( input.fkTicket || 0 ) + 1 );
+
+			input.setCustomValidity( '' );
+
+			if ( ! url || '' === slug || slug === input.dataset.current ) {
+				Slug.say( status, '', '' );
+
+				return;
+			}
+
+			Slug.say( status, t( 'slugChecking', 'Checking…' ), '' );
+
+			ask( url ).then( function ( answer ) {
+				if ( ticket !== input.fkTicket || ! answer.ok ) {
+					Slug.say( status, '', '' );
+
+					return;
+				}
+
+				var free = !! answer.json.available;
+
+				input.setCustomValidity( free ? '' : String( answer.json.message || '' ) );
+				Slug.say( status, free ? t( 'slugFree', 'Available.' ) : String( answer.json.message || '' ), free ? 'free' : 'taken' );
+			} ).catch( function () {
+				Slug.say( status, '', '' );
+			} );
+		},
+
+		say: function ( status, text, state ) {
+			if ( ! status ) {
+				return;
+			}
+
+			status.textContent = text;
+			status.classList.toggle( 'is-free', 'free' === state );
+			status.classList.toggle( 'is-taken', 'taken' === state );
+		}
+	};
+
+	window.SugarCommerceFieldsModules.Slug = Slug;
+
+	/* =================================================================
+	 * Location
+	 * ================================================================= */
+
+	/**
+	 * An address found by the caller's geocoder, its coordinates, and an
+	 * OpenStreetMap that follows them.
+	 */
+	var Location = {
+		init: function ( root ) {
+			root.querySelectorAll( '.field-kit__location' ).forEach( function ( wrap ) {
+				if ( wrap.dataset.fkBound ) {
+					return;
+				}
+
+				wrap.dataset.fkBound = '1';
+
+				var address = wrap.querySelector( '.field-kit__location-address' );
+				var find = wrap.querySelector( '.field-kit__location-find' );
+				var timer = null;
+
+				if ( find && address ) {
+					find.addEventListener( 'click', function () {
+						Location.find( wrap );
+					} );
+
+					// Enter in the address box finds rather than sending the
+					// form a step before it is ready.
+					address.addEventListener( 'keydown', function ( event ) {
+						if ( 'Enter' === event.key ) {
+							event.preventDefault();
+							Location.find( wrap );
+						}
+					} );
+				}
+
+				wrap.querySelectorAll( '.field-kit__location-lat, .field-kit__location-lng' ).forEach( function ( input ) {
+					input.addEventListener( 'input', function () {
+						window.clearTimeout( timer );
+						timer = window.setTimeout( function () {
+							Location.preview( wrap );
+						}, 500 );
+					} );
+				} );
+			} );
+		},
+
+		find: function ( wrap ) {
+			var address = wrap.querySelector( '.field-kit__location-address' );
+			var status = wrap.querySelector( '.field-kit__location-status' );
+			var url = endpoint( 'lookup', { name: wrap.dataset.lookup || '', q: address ? address.value : '' } );
+
+			if ( ! url || ! address || '' === address.value.trim() ) {
+				return;
+			}
+
+			kit.announce( status, t( 'finding', 'Finding…' ) );
+
+			ask( url ).then( function ( answer ) {
+				if ( ! answer.ok ) {
+					kit.announce( status, String( answer.json.message || t( 'notFound', 'That address could not be found.' ) ) );
+
+					return;
+				}
+
+				Location.set( wrap, answer.json );
+				kit.announce( status, t( 'found', 'Found: %s' ).replace( '%s', String( answer.json.address || '' ) ) );
+			} ).catch( function () {
+				kit.announce( status, t( 'notFound', 'That address could not be found.' ) );
+			} );
+		},
+
+		set: function ( wrap, place ) {
+			var parts = { address: '.field-kit__location-address', lat: '.field-kit__location-lat', lng: '.field-kit__location-lng' };
+
+			Object.keys( parts ).forEach( function ( key ) {
+				var input = wrap.querySelector( parts[ key ] );
+
+				if ( input && undefined !== place[ key ] ) {
+					// A float out of JSON can carry its binary tail: 53.800800000000002.
+					input.value = 'address' === key ? String( place[ key ] ) : Location.number( place[ key ] );
+					input.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+				}
+			} );
+
+			Location.preview( wrap );
+		},
+
+		/**
+		 * Move the map to the coordinates in the boxes, or put it away
+		 * when they are not a place.
+		 *
+		 * @param {Element} wrap The field.
+		 */
+		preview: function ( wrap ) {
+			var map = wrap.querySelector( '.field-kit__location-map' );
+			var lat = parseFloat( ( wrap.querySelector( '.field-kit__location-lat' ) || {} ).value );
+			var lng = parseFloat( ( wrap.querySelector( '.field-kit__location-lng' ) || {} ).value );
+
+			if ( ! map ) {
+				return;
+			}
+
+			if ( isNaN( lat ) || isNaN( lng ) || Math.abs( lat ) > 90 || Math.abs( lng ) > 180 ) {
+				map.hidden = true;
+
+				return;
+			}
+
+			var frame = map.querySelector( 'iframe' );
+			var link = map.querySelector( 'a' );
+
+			if ( ! frame ) {
+				frame = document.createElement( 'iframe' );
+				frame.className = 'field-kit__location-frame';
+				frame.setAttribute( 'loading', 'lazy' );
+				frame.setAttribute( 'referrerpolicy', 'no-referrer' );
+				frame.title = wrap.dataset.mapTitle || t( 'mapTitle', 'Map' );
+				map.appendChild( frame );
+
+				link = document.createElement( 'a' );
+				link.className = 'field-kit__location-link';
+				link.target = '_blank';
+				link.rel = 'noopener noreferrer';
+				link.textContent = t( 'openMap', 'Open in OpenStreetMap' );
+				map.appendChild( link );
+			}
+
+			frame.src = Location.url( lat, lng );
+			link.href = 'https://www.openstreetmap.org/?mlat=' + Location.number( lat ) + '&mlon=' + Location.number( lng ) + '#map=16/' + Location.number( lat ) + '/' + Location.number( lng );
+			map.hidden = false;
+		},
+
+		/**
+		 * OpenStreetMap's embedded map of a point, as LocationType::map_url()
+		 * writes it.
+		 *
+		 * @param {number} lat Latitude.
+		 * @param {number} lng Longitude.
+		 * @return {string} The address.
+		 */
+		url: function ( lat, lng ) {
+			var d = 0.005;
+			var box = [ Math.max( -180, lng - d ), Math.max( -90, lat - d ), Math.min( 180, lng + d ), Math.min( 90, lat + d ) ];
+
+			return 'https://www.openstreetmap.org/export/embed.html?bbox=' + box.map( Location.number ).join( '%2C' ) + '&layer=mapnik&marker=' + Location.number( lat ) + '%2C' + Location.number( lng );
+		},
+
+		number: function ( value ) {
+			var written = Number( value ).toFixed( 7 ).replace( /\.?0+$/, '' );
+
+			return '-0' === written ? '0' : written;
+		}
+	};
+
+	window.SugarCommerceFieldsModules.Location = Location;
+
+	/* =================================================================
+	 * Embed
+	 * ================================================================= */
+
+	/**
+	 * The player a pasted link becomes, beside the link, as it is typed.
+	 */
+	var Embed = {
+		init: function ( root ) {
+			root.querySelectorAll( '.field-kit__embed' ).forEach( function ( wrap ) {
+				if ( wrap.dataset.fkBound ) {
+					return;
+				}
+
+				wrap.dataset.fkBound = '1';
+
+				var input = wrap.querySelector( '.field-kit__embed-url' );
+				var timer = null;
+
+				if ( ! input ) {
+					return;
+				}
+
+				wrap.fkShown = input.value.trim();
+
+				input.addEventListener( 'input', function () {
+					window.clearTimeout( timer );
+					timer = window.setTimeout( function () {
+						Embed.load( wrap, input );
+					}, 400 );
+				} );
+			} );
+		},
+
+		load: function ( wrap, input ) {
+			var link = input.value.trim();
+			var preview = wrap.querySelector( '.field-kit__embed-preview' );
+			var status = wrap.querySelector( '.field-kit__embed-status' );
+			var ticket = ( wrap.fkTicket = ( wrap.fkTicket || 0 ) + 1 );
+			var platforms = ( wrap.dataset.embedPlatforms || '' ).split( ',' ).filter( Boolean );
+			var url = endpoint( 'embed', { url: link, title: wrap.dataset.embedTitle || '', platforms: platforms } );
+
+			if ( link === wrap.fkShown ) {
+				return;
+			}
+
+			wrap.fkShown = link;
+
+			if ( ! preview || ! url || '' === link ) {
+				Embed.show( preview, status, '', '' );
+
+				return;
+			}
+
+			ask( url ).then( function ( answer ) {
+				if ( ticket !== wrap.fkTicket ) {
+					return;
+				}
+
+				Embed.show( preview, status, answer.ok ? String( answer.json.html || '' ) : '', answer.ok ? '' : String( answer.json.message || '' ) );
+			} ).catch( function () {
+				Embed.show( preview, status, '', '' );
+			} );
+		},
+
+		/**
+		 * Put the player in, or take it out and say why.
+		 *
+		 * The markup is the embed route's: an iframe the embeds package
+		 * built from the platform's id, never from what was typed.
+		 *
+		 * @param {Element|null} preview Where the player goes.
+		 * @param {Element|null} status  Where a refusal is said.
+		 * @param {string}       html    The player.
+		 * @param {string}       message Why there is none.
+		 */
+		show: function ( preview, status, html, message ) {
+			if ( preview ) {
+				preview.innerHTML = html;
+				preview.hidden = '' === html;
+			}
+
+			if ( status ) {
+				status.textContent = message;
+			}
+		}
+	};
+
+	window.SugarCommerceFieldsModules.Embed = Embed;
+
+	/* =================================================================
+	 * Address
+	 * ================================================================= */
+
+	/**
+	 * An address laid out as its country writes one, again whenever the
+	 * country changes.
+	 */
+	var Address = {
+		layouts: {},
+
+		/**
+		 * The layout of a country nothing is known about: every part.
+		 */
+		unknown: {
+			country: '',
+			lines: [ [ 'name' ], [ 'company' ], [ 'line1' ], [ 'line2' ], [ 'city' ], [ 'state' ], [ 'postcode' ] ],
+			required: { line1: true, city: true, state: false, postcode: false },
+			regions: [],
+			postcode_pattern: '',
+			postcode_example: ''
+		},
+
+		init: function ( root ) {
+			root.querySelectorAll( '.field-kit__address[data-address]' ).forEach( function ( wrap ) {
+				if ( wrap.dataset.fkBound ) {
+					return;
+				}
+
+				wrap.dataset.fkBound = '1';
+
+				var country = wrap.querySelector( '.field-kit__address-country' );
+				var postcode = wrap.querySelector( '.field-kit__address-input--postcode' );
+				var layout = null;
+
+				try {
+					layout = JSON.parse( wrap.dataset.layout || 'null' );
+				} catch ( error ) {
+					layout = null;
+				}
+
+				if ( layout ) {
+					Address.layouts[ layout.country || '' ] = layout;
+					wrap.fkLayout = layout;
+				}
+
+				if ( country ) {
+					country.addEventListener( 'change', function () {
+						Address.load( wrap, country.value );
+					} );
+				}
+
+				if ( postcode ) {
+					postcode.addEventListener( 'blur', function () {
+						Address.check( wrap );
+					} );
+
+					postcode.addEventListener( 'input', function () {
+						if ( postcode.validationMessage ) {
+							Address.check( wrap );
+						}
+					} );
+				}
+			} );
+		},
+
+		load: function ( wrap, code ) {
+			var ticket = ( wrap.fkTicket = ( wrap.fkTicket || 0 ) + 1 );
+			var url = /^[A-Za-z]{2}$/.test( code ) ? endpoint( 'address/' + code.toUpperCase() ) : null;
+
+			if ( Address.layouts[ code ] ) {
+				Address.apply( wrap, Address.layouts[ code ] );
+
+				return;
+			}
+
+			if ( ! url ) {
+				Address.apply( wrap, Object.assign( {}, Address.unknown, { labels: ( wrap.fkLayout || {} ).labels || {} } ) );
+
+				return;
+			}
+
+			ask( url ).then( function ( answer ) {
+				if ( answer.ok && answer.json.lines ) {
+					Address.layouts[ code ] = answer.json;
+				}
+
+				if ( ticket === wrap.fkTicket ) {
+					Address.apply( wrap, answer.ok && answer.json.lines ? answer.json : Object.assign( {}, Address.unknown, { labels: ( wrap.fkLayout || {} ).labels || {} } ) );
+				}
+			} ).catch( function () {} );
+		},
+
+		/**
+		 * Lay the parts out for a country: move them into its lines, rename
+		 * them, mark what it requires, swap the region list, and start the
+		 * region and the postcode's check again.
+		 *
+		 * @param {Element} wrap   The field.
+		 * @param {Object}  layout The country's layout.
+		 */
+		apply: function ( wrap, layout ) {
+			var lines = wrap.querySelector( '.field-kit__address-lines' );
+			var spare = wrap.querySelector( '.field-kit__address-spare' );
+			var required = 'true' === wrap.dataset.required;
+			var parts = {};
+			var used = {};
+
+			if ( ! lines || ! spare ) {
+				return;
+			}
+
+			wrap.querySelectorAll( '.field-kit__address-part[data-part]' ).forEach( function ( part ) {
+				if ( 'country' !== part.dataset.part ) {
+					parts[ part.dataset.part ] = part;
+				}
+			} );
+
+			Object.keys( parts ).forEach( function ( name ) {
+				spare.appendChild( parts[ name ] );
+			} );
+
+			lines.textContent = '';
+
+			( layout.lines || [] ).forEach( function ( line ) {
+				var row = document.createElement( 'div' );
+
+				row.className = 'field-kit__address-line';
+
+				line.forEach( function ( name ) {
+					if ( parts[ name ] ) {
+						row.appendChild( parts[ name ] );
+						used[ name ] = true;
+					}
+				} );
+
+				if ( row.children.length ) {
+					lines.appendChild( row );
+				}
+			} );
+
+			Object.keys( parts ).forEach( function ( name ) {
+				var part = parts[ name ];
+				var on = !! used[ name ];
+				var must = on && required && !! ( layout.required || {} )[ name ];
+				var label = part.querySelector( 'label' );
+				var marker = part.querySelector( '.field-kit__address-marker' );
+
+				part.hidden = ! on;
+
+				if ( label && label.firstChild && 3 === label.firstChild.nodeType && ( layout.labels || {} )[ name ] ) {
+					label.firstChild.nodeValue = layout.labels[ name ];
+				}
+
+				if ( marker ) {
+					marker.innerHTML = must ? '<span class="field-kit__required" aria-hidden="true">*</span><span class="screen-reader-text">' + Address.escape( t( 'requiredWord', '(required)' ) ) + '</span>' : '';
+				}
+
+				if ( 'state' === name ) {
+					Address.state( part, layout.regions || [], on, must, layout.country !== ( wrap.fkLayout || {} ).country );
+
+					return;
+				}
+
+				part.querySelectorAll( 'input, select, textarea' ).forEach( function ( control ) {
+					control.disabled = ! on;
+					control.required = must;
+				} );
+			} );
+
+			var postcode = wrap.querySelector( '.field-kit__address-input--postcode' );
+
+			if ( postcode ) {
+				postcode.dataset.pattern = layout.postcode_pattern || '';
+				postcode.placeholder = String( layout.postcode_example || '' ).split( ',' )[ 0 ];
+				postcode.setCustomValidity( '' );
+			}
+
+			Address.hint( wrap, '' );
+			wrap.fkLayout = layout;
+		},
+
+		/**
+		 * The region: the country's list, or a box where it has none.
+		 *
+		 * @param {Element} part     The region's part.
+		 * @param {Array}   regions  The country's regions.
+		 * @param {boolean} on       Whether the country has the part.
+		 * @param {boolean} must     Whether it is required.
+		 * @param {boolean} fresh    Whether the country changed, so what
+		 *                           was chosen for the last one goes.
+		 */
+		state: function ( part, regions, on, must, fresh ) {
+			var select = part.querySelector( '.field-kit__address-state-select' );
+			var text = part.querySelector( '.field-kit__address-state-text' );
+			var label = part.querySelector( 'label' );
+			var id = label ? label.htmlFor : '';
+
+			if ( ! select || ! text ) {
+				return;
+			}
+
+			var current = fresh ? '' : ( select.disabled ? text.value : select.value );
+			var listed = regions.length > 0;
+			var first = select.options.length ? select.options[ 0 ] : null;
+
+			select.textContent = '';
+
+			if ( first && '' === first.value ) {
+				select.appendChild( first );
+			}
+
+			regions.forEach( function ( region ) {
+				var option = document.createElement( 'option' );
+
+				option.value = String( region.id );
+				option.textContent = String( region.text );
+				option.selected = option.value === current;
+				select.appendChild( option );
+			} );
+
+			if ( fresh ) {
+				text.value = '';
+			}
+
+			select.disabled = ! on || ! listed;
+			select.hidden = ! listed;
+			select.required = must && listed;
+			text.disabled = ! on || listed;
+			text.hidden = listed;
+			text.required = must && ! listed;
+
+			// The label points at whichever is live.
+			select.removeAttribute( 'id' );
+			text.removeAttribute( 'id' );
+			( listed ? select : text ).id = id;
+		},
+
+		/**
+		 * Check the postcode against the country's pattern, as the server
+		 * will, and say what one looks like when it does not match.
+		 *
+		 * @param {Element} wrap The field.
+		 */
+		check: function ( wrap ) {
+			var postcode = wrap.querySelector( '.field-kit__address-input--postcode' );
+			var layout = wrap.fkLayout || {};
+			var pattern = postcode ? postcode.dataset.pattern : '';
+			var value = postcode ? postcode.value.trim().replace( /\s+/g, ' ' ) : '';
+			var message = '';
+
+			if ( ! postcode ) {
+				return;
+			}
+
+			if ( pattern && value ) {
+				var valid = true;
+
+				try {
+					valid = new RegExp( '^(?:' + pattern + ')$', 'i' ).test( value );
+				} catch ( error ) {
+					valid = true;
+				}
+
+				if ( ! valid ) {
+					message = t( 'postcodeInvalid', '%1$s is not in the form used here, such as %2$s.' )
+						.replace( '%1$s', String( ( layout.labels || {} ).postcode || '' ) )
+						.replace( '%2$s', String( layout.postcode_example || '' ).split( ',' )[ 0 ] );
+				}
+			}
+
+			postcode.setCustomValidity( message );
+
+			if ( message ) {
+				postcode.setAttribute( 'aria-invalid', 'true' );
+			} else {
+				postcode.removeAttribute( 'aria-invalid' );
+			}
+
+			Address.hint( wrap, message );
+		},
+
+		hint: function ( wrap, message ) {
+			var hint = wrap.querySelector( '.field-kit__address-hint' );
+			var postcode = wrap.querySelector( '.field-kit__address-input--postcode' );
+
+			if ( ! hint ) {
+				return;
+			}
+
+			hint.textContent = message;
+			hint.classList.toggle( 'is-error', '' !== message );
+
+			if ( postcode && hint.id ) {
+				var ids = ( postcode.getAttribute( 'aria-describedby' ) || '' ).split( ' ' ).filter( function ( id ) {
+					return id && id !== hint.id;
+				} );
+
+				if ( message ) {
+					ids.push( hint.id );
+				}
+
+				if ( ids.length ) {
+					postcode.setAttribute( 'aria-describedby', ids.join( ' ' ) );
+				} else {
+					postcode.removeAttribute( 'aria-describedby' );
+				}
+			}
+		},
+
+		escape: function ( text ) {
+			var holder = document.createElement( 'span' );
+
+			holder.textContent = text;
+
+			return holder.innerHTML;
+		}
+	};
+
+	window.SugarCommerceFieldsModules.Address = Address;
+
+	/* =================================================================
+	 * Unsaved-changes guard
+	 * ================================================================= */
+
+	/**
+	 * A warning before leaving a form with changes, and a mark on each
+	 * field that changed. Only where asked for: `data-fk-guard` on a form or
+	 * its container, or a selector given to Guard::enable().
+	 *
+	 * Changed means the form would now send something other than it would
+	 * have when it was drawn -- asked of the form, not counted from events,
+	 * so a letter typed and deleted is no change and a repeater row added by
+	 * a click is one.
+	 */
+	var Guard = {
+		forms: [],
+		listening: false,
+
+		init: function ( root ) {
+			var selectors = [ '[data-fk-guard]' ].concat( config.guard || [] );
+
+			selectors.forEach( function ( selector ) {
+				var found = [];
+
+				try {
+					if ( root.matches && root.matches( selector ) ) {
+						found.push( root );
+					}
+
+					root.querySelectorAll( selector ).forEach( function ( el ) {
+						found.push( el );
+					} );
+				} catch ( error ) {
+					return;
+				}
+
+				found.forEach( Guard.watch );
+			} );
+
+			if ( ! Guard.listening && Guard.forms.length ) {
+				Guard.listening = true;
+				window.addEventListener( 'beforeunload', Guard.unload );
+
+				// A flyouts panel says when it has been saved: what it holds
+				// now is what is stored.
+				if ( window.jQuery ) {
+					window.jQuery( document ).on( 'wpflyout:dirty', function ( event, dirty ) {
+						var form = event.target && event.target.querySelector ? event.target.querySelector( 'form' ) : null;
+
+						if ( false === dirty && form && form.fkGuard ) {
+							Guard.reset( form );
+						}
+					} );
+				}
+			}
+		},
+
+		/**
+		 * The form a guarded element is or holds.
+		 *
+		 * @param {Element} el The element.
+		 * @return {Element|null} The form.
+		 */
+		form: function ( el ) {
+			if ( ! el ) {
+				return null;
+			}
+
+			if ( 'FORM' === el.tagName ) {
+				return el;
+			}
+
+			return ( el.closest && el.closest( 'form' ) ) || ( el.querySelector && el.querySelector( 'form' ) ) || null;
+		},
+
+		watch: function ( el ) {
+			var form = Guard.form( el );
+			var timer = null;
+
+			if ( ! form || form.fkGuard ) {
+				return;
+			}
+
+			form.fkGuard = { initial: Guard.snapshot( form ), dirty: false, sending: false, touched: false };
+			Guard.forms.push( form );
+
+			var look = function () {
+				window.clearTimeout( timer );
+				timer = window.setTimeout( function () {
+					Guard.refresh( form );
+				}, 80 );
+			};
+
+			form.addEventListener( 'input', look );
+			form.addEventListener( 'change', look );
+			form.addEventListener( 'field-kit:change', look );
+
+			form.addEventListener( 'submit', function () {
+				form.fkGuard.sending = true;
+			} );
+
+			[ 'keydown', 'pointerdown' ].forEach( function ( type ) {
+				form.addEventListener( type, function () {
+					form.fkGuard.touched = true;
+				}, { once: true } );
+			} );
+
+			// A control that finishes setting itself up a moment after it is
+			// drawn has not been changed by anybody.
+			window.addEventListener( 'load', function () {
+				if ( ! form.fkGuard.touched ) {
+					Guard.reset( form );
+				}
+			} );
+
+			if ( window.MutationObserver ) {
+				new window.MutationObserver( look ).observe( form, { childList: true, subtree: true } );
+			}
+		},
+
+		/**
+		 * What the form would send, by name.
+		 *
+		 * @param {Element} form The form.
+		 * @return {Object} Values by name.
+		 */
+		snapshot: function ( form ) {
+			var data = {};
+
+			if ( window.tinymce && typeof window.tinymce.triggerSave === 'function' ) {
+				try {
+					window.tinymce.triggerSave();
+				} catch ( error ) {}
+			}
+
+			Array.prototype.forEach.call( form.elements || [], function ( el ) {
+				if ( ! el.name || /^(submit|button|reset|file)$/.test( el.type ) || /(^_wpnonce$|^_wp_http_referer$|_nonce$|^_sugarcommerce_form$)/.test( el.name ) ) {
+					return;
+				}
+
+				var list = data[ el.name ] || ( data[ el.name ] = [] );
+
+				if ( el.disabled || ( ( 'checkbox' === el.type || 'radio' === el.type ) && ! el.checked ) ) {
+					return;
+				}
+
+				if ( 'select-multiple' === el.type ) {
+					Array.prototype.forEach.call( el.options, function ( option ) {
+						if ( option.selected ) {
+							list.push( option.value );
+						}
+					} );
+
+					return;
+				}
+
+				list.push( el.value );
+			} );
+
+			return data;
+		},
+
+		/**
+		 * The names whose values are not what they were.
+		 *
+		 * @param {Element} form The form.
+		 * @return {string[]} Names.
+		 */
+		changed: function ( form ) {
+			var now = Guard.snapshot( form );
+			var was = form.fkGuard.initial;
+			var names = {};
+
+			Object.keys( now ).concat( Object.keys( was ) ).forEach( function ( name ) {
+				if ( JSON.stringify( now[ name ] || [] ) !== JSON.stringify( was[ name ] || [] ) ) {
+					names[ name ] = true;
+				}
+			} );
+
+			return Object.keys( names );
+		},
+
+		refresh: function ( form ) {
+			if ( ! form.fkGuard ) {
+				return;
+			}
+
+			var names = Guard.changed( form );
+			var fields = [];
+
+			names.forEach( function ( name ) {
+				var el = null;
+
+				Array.prototype.some.call( form.elements || [], function ( control ) {
+					if ( control.name === name ) {
+						el = control;
+
+						return true;
+					}
+
+					return false;
+				} );
+
+				var field = Guard.top( form, fieldOf( el ) );
+
+				if ( field && -1 === fields.indexOf( field ) ) {
+					fields.push( field );
+				}
+			} );
+
+			form.querySelectorAll( '.field-kit__field--changed' ).forEach( function ( field ) {
+				if ( -1 === fields.indexOf( field ) ) {
+					Guard.unmark( field );
+				}
+			} );
+
+			fields.forEach( Guard.mark );
+
+			form.fkGuard.dirty = names.length > 0;
+			form.dispatchEvent( new CustomEvent( 'field-kit:dirty', { bubbles: true, detail: { dirty: form.fkGuard.dirty, count: fields.length } } ) );
+		},
+
+		/**
+		 * The outermost field in the form a field is inside: a repeater,
+		 * not the row's own text box.
+		 *
+		 * @param {Element}      form  The form.
+		 * @param {Element|null} field A field.
+		 * @return {Element|null} The outermost one.
+		 */
+		top: function ( form, field ) {
+			var parent = field && field.parentElement ? fieldOf( field.parentElement ) : null;
+
+			while ( parent && form.contains( parent ) ) {
+				field = parent;
+				parent = field.parentElement ? fieldOf( field.parentElement ) : null;
+			}
+
+			return field;
+		},
+
+		mark: function ( field ) {
+			if ( field.classList.contains( 'field-kit__field--changed' ) ) {
+				return;
+			}
+
+			var flag = document.createElement( 'span' );
+			var label = field.querySelector( ':scope > label, :scope > .field-kit__label-row > label, :scope > fieldset > legend > span' );
+
+			field.classList.add( 'field-kit__field--changed' );
+			flag.className = 'field-kit__changed-flag';
+			flag.textContent = t( 'changed', 'Changed' );
+
+			if ( label ) {
+				label.appendChild( flag );
+			} else {
+				field.insertBefore( flag, field.firstChild );
+			}
+		},
+
+		unmark: function ( field ) {
+			field.classList.remove( 'field-kit__field--changed' );
+			field.querySelectorAll( '.field-kit__changed-flag' ).forEach( function ( flag ) {
+				if ( Guard.top( field.closest( 'form' ) || field, fieldOf( flag ) ) === field || fieldOf( flag ) === field ) {
+					flag.remove();
+				}
+			} );
+		},
+
+		/**
+		 * Take what the form holds now as its saved state.
+		 *
+		 * @param {Element} form The form.
+		 */
+		reset: function ( form ) {
+			if ( ! form || ! form.fkGuard ) {
+				return;
+			}
+
+			form.fkGuard.initial = Guard.snapshot( form );
+			form.fkGuard.sending = false;
+			Guard.refresh( form );
+		},
+
+		/**
+		 * Whether a guarded form on the page, or the one given, has changes.
+		 *
+		 * @param {Element} [el] A form or an element holding one.
+		 * @return {boolean} Whether it has.
+		 */
+		dirty: function ( el ) {
+			var form = el ? Guard.form( el ) : null;
+
+			if ( form ) {
+				return !! ( form.fkGuard && form.fkGuard.dirty && ! form.fkGuard.sending );
+			}
+
+			return Guard.forms.some( function ( each ) {
+				return document.contains( each ) && each.fkGuard.dirty && ! each.fkGuard.sending;
+			} );
+		},
+
+		unload: function ( event ) {
+			if ( ! Guard.dirty() ) {
+				return undefined;
+			}
+
+			event.preventDefault();
+			event.returnValue = '';
+
+			return '';
+		},
+
+		/**
+		 * Ask before throwing away changes inside the page -- for code about
+		 * to remove or replace a guarded form.
+		 *
+		 * @param {Element} [el] The form, or what holds it.
+		 * @return {boolean} True to go ahead.
+		 */
+		confirm: function ( el ) {
+			return ! Guard.dirty( el ) || window.confirm( t( 'leaveChanges', 'You have changes that have not been saved. Leave anyway?' ) );
+		}
+	};
+
+	window.SugarCommerceFieldsModules.Guard = Guard;
+
+	/* =================================================================
+	 * Public forms
+	 * ================================================================= */
+
+	/**
+	 * A form on the front of the site: the refusals at the top lead to
+	 * their fields, and a form registered for REST is sent without leaving
+	 * the page, its answer drawn where the server would have drawn it.
+	 */
+	var FrontForm = {
+		init: function ( root ) {
+			var forms = [];
+
+			if ( root.matches && root.matches( 'form[data-sugarcommerce-form]' ) ) {
+				forms.push( root );
+			}
+
+			root.querySelectorAll( 'form[data-sugarcommerce-form]' ).forEach( function ( form ) {
+				forms.push( form );
+			} );
+
+			forms.forEach( function ( form ) {
+				if ( form.dataset.fkBound ) {
+					return;
+				}
+
+				form.dataset.fkBound = '1';
+
+				form.addEventListener( 'click', function ( event ) {
+					var link = event.target && event.target.closest ? event.target.closest( '.sugarcommerce-form__notice a[data-field]' ) : null;
+					var target = link ? FrontForm.target( form, link.dataset.field, ( link.getAttribute( 'href' ) || '' ).slice( 1 ) ) : null;
+
+					if ( target ) {
+						event.preventDefault();
+						target.focus();
+					}
+				} );
+
+				var notice = form.querySelector( '.sugarcommerce-form__notice' );
+
+				if ( notice && ! notice.hidden ) {
+					notice.focus();
+				}
+
+				if ( form.dataset.rest ) {
+					form.addEventListener( 'submit', function ( event ) {
+						FrontForm.submit( event, form );
+					} );
+				}
+			} );
+		},
+
+		/**
+		 * The control a refusal is about.
+		 *
+		 * @param {Element} form The form.
+		 * @param {string}  key  The field's key.
+		 * @param {string}  id   The control's id.
+		 * @return {Element|null} Something to focus.
+		 */
+		target: function ( form, key, id ) {
+			var byId = id ? document.getElementById( id ) : null;
+			var field = FrontForm.field( form, key );
+
+			if ( byId && ! byId.disabled && 'hidden' !== byId.type ) {
+				return byId;
+			}
+
+			return field ? field.querySelector( 'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])' ) : null;
+		},
+
+		/**
+		 * One of the form's own fields, not a field of the same key inside
+		 * a group.
+		 *
+		 * @param {Element} form The form.
+		 * @param {string}  key  The key.
+		 * @return {Element|null} The field.
+		 */
+		field: function ( form, key ) {
+			var found = null;
+
+			form.querySelectorAll( '[data-field-key]' ).forEach( function ( field ) {
+				if ( ! found && field.dataset.fieldKey === key && ! ( field.parentElement && fieldOf( field.parentElement ) ) ) {
+					found = field;
+				}
+			} );
+
+			return found;
+		},
+
+		submit: function ( event, form ) {
+			if ( event.defaultPrevented ) {
+				return;
+			}
+
+			event.preventDefault();
+
+			if ( form.fkSending ) {
+				return;
+			}
+
+			var button = form.querySelector( '.sugarcommerce-form__submit' );
+			var label = button ? button.textContent : '';
+			var body = new URLSearchParams();
+
+			if ( window.tinymce && typeof window.tinymce.triggerSave === 'function' ) {
+				window.tinymce.triggerSave();
+			}
+
+			new FormData( form ).forEach( function ( value, name ) {
+				if ( typeof value === 'string' ) {
+					body.append( name, value );
+				}
+			} );
+
+			form.fkSending = true;
+			form.setAttribute( 'aria-busy', 'true' );
+
+			if ( button ) {
+				button.disabled = true;
+				button.textContent = t( 'sending', 'Sending…' );
+			}
+
+			ask( new URL( form.dataset.rest, window.location.origin ), {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'X-WP-Nonce': config.restNonce || '' },
+				body: body.toString()
+			} ).then( function ( answer ) {
+				FrontForm.show( form, answer.json && 'string' === typeof answer.json.message ? answer.json : { ok: false, message: t( 'sendFailed', 'That could not be sent. Please try again.' ) } );
+			} ).catch( function () {
+				FrontForm.show( form, { ok: false, message: t( 'sendFailed', 'That could not be sent. Please try again.' ) } );
+			} ).then( function () {
+				form.fkSending = false;
+				form.removeAttribute( 'aria-busy' );
+
+				if ( button ) {
+					button.disabled = false;
+					button.textContent = label;
+				}
+			} );
+		},
+
+		/**
+		 * Draw an answer: the message at the top, a refusal under each field
+		 * it is about, or a clean form once it has gone.
+		 *
+		 * @param {Element} form   The form.
+		 * @param {Object}  answer The route's answer.
+		 */
+		show: function ( form, answer ) {
+			var notice = form.querySelector( '.sugarcommerce-form__notice' );
+			var errors = answer.errors || {};
+			var ids = answer.ids || {};
+			var keys = Object.keys( errors );
+
+			form.querySelectorAll( '.field-kit__error' ).forEach( function ( error ) {
+				var control = error.id ? form.querySelector( '[aria-describedby~="' + error.id + '"]' ) : null;
+
+				if ( control ) {
+					FrontForm.describe( control, error.id, false );
+				}
+
+				error.remove();
+			} );
+
+			form.querySelectorAll( '[aria-invalid="true"]' ).forEach( function ( control ) {
+				control.removeAttribute( 'aria-invalid' );
+			} );
+
+			keys.forEach( function ( key ) {
+				var field = FrontForm.field( form, key );
+				var id = String( ids[ key ] || '' );
+				var error = document.createElement( 'p' );
+
+				if ( ! field ) {
+					return;
+				}
+
+				error.className = 'field-kit__error';
+				error.id = ( id || form.id + '_' + key ) + '__error';
+				error.textContent = String( errors[ key ] );
+
+				( field.querySelector( ':scope > fieldset' ) || field ).appendChild( error );
+
+				var control = id ? document.getElementById( id ) : null;
+				var group = field.querySelector( ':scope > fieldset' );
+
+				( group ? [ group ] : [] ).concat( control ? [ control ] : [] ).forEach( function ( el ) {
+					FrontForm.describe( el, error.id, true );
+				} );
+
+				if ( control ) {
+					control.setAttribute( 'aria-invalid', 'true' );
+				}
+			} );
+
+			if ( notice ) {
+				var list = '';
+
+				keys.forEach( function ( key ) {
+					list += '<li><a href="#' + Address.escape( String( ids[ key ] || '' ) ) + '" data-field="' + Address.escape( key ) + '">' + Address.escape( String( errors[ key ] ) ) + '</a></li>';
+				} );
+
+				notice.innerHTML = '<p>' + Address.escape( String( answer.message || '' ) ) + '</p>' + ( list ? '<ul>' + list + '</ul>' : '' );
+				notice.className = 'sugarcommerce-form__notice sugarcommerce-form__notice--' + ( answer.ok ? 'success' : 'error' );
+				notice.setAttribute( 'role', answer.ok ? 'status' : 'alert' );
+				notice.hidden = false;
+				notice.focus();
+			}
+
+			if ( answer.ok ) {
+				if ( ! form.hasAttribute( 'data-keep' ) ) {
+					form.reset();
+					form.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+				}
+
+				Guard.reset( form );
+			}
+
+			form.dispatchEvent( new CustomEvent( 'sugarcommerce-form:answer', { bubbles: true, detail: answer } ) );
+		},
+
+		describe: function ( el, id, add ) {
+			var ids = ( el.getAttribute( 'aria-describedby' ) || '' ).split( ' ' ).filter( function ( each ) {
+				return each && each !== id;
+			} );
+
+			if ( add ) {
+				ids.push( id );
+			}
+
+			if ( ids.length ) {
+				el.setAttribute( 'aria-describedby', ids.join( ' ' ) );
+			} else {
+				el.removeAttribute( 'aria-describedby' );
+			}
+		}
+	};
+
+	window.SugarCommerceFieldsModules.FrontForm = FrontForm;
+
 	/**
 	 * Bind every module within a root.
 	 *
@@ -5458,7 +6814,7 @@
 	function init( root ) {
 		root = root || document;
 
-		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Combobox', 'Reorder', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'Wysiwyg', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip', 'ColorField', 'IconPicker', 'Money', 'PasswordReveal', 'PasswordRemove', 'Counter', 'Region', 'Accordion', 'SettingsBar' ].forEach( function ( name ) {
+		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Combobox', 'Reorder', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'Wysiwyg', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip', 'ColorField', 'IconPicker', 'Money', 'PasswordReveal', 'PasswordRemove', 'Counter', 'Region', 'Accordion', 'SettingsBar', 'Slug', 'Location', 'Embed', 'Address', 'Guard', 'FrontForm' ].forEach( function ( name ) {
 			var module = window.SugarCommerceFieldsModules[ name ];
 
 			if ( module && typeof module.init === 'function' ) {

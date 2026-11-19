@@ -12,6 +12,7 @@ namespace SugarCommerce\Fields\Types;
 use SugarCommerce\Fields\Attributes;
 use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\Support\Markup;
+use SugarCommerce\Fields\Support\Rules;
 
 /**
  * A single checkbox with its text beside it.
@@ -100,6 +101,31 @@ class CheckboxType extends AbstractType {
 	 */
 	public function sanitize( mixed $value, Field $field ): int {
 		return in_array( $value, [ 1, '1', true, 'yes', 'on' ], true ) ? 1 : 0;
+	}
+
+	/**
+	 * A required box has to be ticked.
+	 *
+	 * An unticked box is stored as 0, which is a value -- the field set does
+	 * not see it as empty, and should not, or a saved "off" would come back
+	 * as the default. So `required` is answered here: "I accept the terms"
+	 * left unticked is refused on the server as the browser refuses it.
+	 *
+	 * @param mixed $value The sanitized value.
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	public function validate( mixed $value, Field $field ): string {
+		if ( $field->is_required() && 1 !== $value ) {
+			return sprintf(
+				/* translators: %s: field label */
+				__( '%s is required.', 'sugarcommerce' ),
+				Rules::name( $field )
+			);
+		}
+
+		return parent::validate( $value, $field );
 	}
 
 	/**

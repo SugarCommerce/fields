@@ -57,6 +57,14 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
 		public function get_method() {
 			return $this->method;
 		}
+
+		public function set_body_params( $params ) {
+			$this->params['__body'] = $params;
+		}
+
+		public function get_body_params() {
+			return $this->params['__body'] ?? [];
+		}
 	}
 }
 

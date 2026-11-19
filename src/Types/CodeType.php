@@ -11,6 +11,7 @@ namespace SugarCommerce\Fields\Types;
 
 use SugarCommerce\Fields\Attributes;
 use SugarCommerce\Fields\Field;
+use SugarCommerce\Fields\Contracts\AdminOnly;
 
 /**
  * A code editor, backed by CodeMirror.
@@ -18,7 +19,7 @@ use SugarCommerce\Fields\Field;
  * The underlying control stays a textarea, so the field still works — and
  * stays keyboard accessible — if the editor script fails to load.
  */
-final class CodeType extends TextareaType {
+final class CodeType extends TextareaType implements AdminOnly {
 
 	/**
 	 * Config defaults.

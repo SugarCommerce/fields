@@ -12,6 +12,7 @@ namespace SugarCommerce\Fields\Types;
 use SugarCommerce\Fields\Attributes;
 use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\Utils\Runtime;
+use SugarCommerce\Fields\Contracts\AdminOnly;
 
 /**
  * A button that runs a registered action over REST.
@@ -20,7 +21,7 @@ use SugarCommerce\Fields\Utils\Runtime;
  * the default for a button inside a form is submit, which is a common and
  * confusing bug. The result is announced through a polite live region.
  */
-final class ActionButtonType extends AbstractType {
+final class ActionButtonType extends AbstractType implements AdminOnly {
 
 	/**
 	 * Render the button and its status region.

@@ -17,6 +17,7 @@ use SugarCommerce\Fields\Attributes;
 use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\Icons\Icons;
 use SugarCommerce\Fields\Utils\Runtime;
+use SugarCommerce\Fields\Contracts\AdminOnly;
 
 /**
  * Class IconType
@@ -36,7 +37,7 @@ use SugarCommerce\Fields\Utils\Runtime;
  * A value stored in the old form, a whole Dashicons class, still draws and
  * is saved back as `dashicons:name`.
  */
-final class IconType extends AbstractType {
+final class IconType extends AbstractType implements AdminOnly {
 
 	/**
 	 * The type's id.

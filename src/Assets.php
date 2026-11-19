@@ -64,7 +64,16 @@ final class Assets {
 		// Each file is versioned by its own modification time, so a
 		// stylesheet-only change is not served from the cache under the
 		// script's version.
-		PackageAssets::register_style( $handle, __FILE__, 'css/field-kit.css' );
+		// The controls the engine draws itself -- a rating, an address, a
+		// dimension -- look the same in wp-admin and on a storefront, so their
+		// rules are one sheet both of the others load first.
+		PackageAssets::register_style( Runtime::handle( 'controls' ), __FILE__, 'css/fields-controls.css' );
+		PackageAssets::register_style( $handle, __FILE__, 'css/field-kit.css', [ Runtime::handle( 'controls' ) ] );
+
+		// The storefront's: spacing, focus and the error colour, and the
+		// controls the engine draws itself, with type and colour left to the
+		// theme. Nothing of wp-admin's.
+		PackageAssets::register_style( Runtime::handle( 'front' ), __FILE__, 'css/fields-front.css', [ Runtime::handle( 'controls' ) ] );
 
 		// jquery is a base dependency even though the kit is vanilla: several
 		// of the core controls it drives — the colour picker above all — are
@@ -86,9 +95,30 @@ final class Assets {
 	}
 
 	/**
-	 * Enqueue the kit and whatever a field set additionally needs.
+	 * Load what a public form needs: the script, the front-end stylesheet
+	 * and the fields' own scripts, and not wp-admin's stylesheet.
 	 *
-	 * @param array{scripts?: string[], styles?: string[], code_editors?: string[], editor?: bool} $dependencies Extra handles.
+	 * @param array{scripts?: string[], styles?: string[], code_editors?: string[], editor?: bool} $dependencies What the fields need.
+	 *
+	 * @return void
+	 */
+	public function enqueue_front( array $dependencies = [] ): void {
+		$this->register();
+
+		foreach ( $dependencies['scripts'] ?? [] as $script ) {
+			wp_enqueue_script( $script );
+		}
+
+		$this->depend_on( $dependencies['scripts'] ?? [] );
+
+		wp_enqueue_style( Runtime::handle( 'front' ) );
+		wp_enqueue_script( Runtime::handle() );
+	}
+
+	/**
+	 * Load what a set of fields needs inside wp-admin.
+	 *
+	 * @param array{scripts?: string[], styles?: string[], code_editors?: string[], editor?: bool} $dependencies What the fields need.
 	 *
 	 * @return void
 	 */
@@ -223,6 +253,27 @@ final class Assets {
 				'showPassword'     => __( 'Show password', 'sugarcommerce' ),
 				'hidePassword'     => __( 'Hide password', 'sugarcommerce' ),
 				'unsavedChanges'   => __( 'Unsaved changes', 'sugarcommerce' ),
+				'changed'          => __( 'Changed', 'sugarcommerce' ),
+				'requiredWord'     => __( '(required)', 'sugarcommerce' ),
+				'leaveChanges'     => __( 'You have changes that have not been saved. Leave anyway?', 'sugarcommerce' ),
+				/* translators: 1: characters typed, 2: the length to aim for, 3: the most allowed */
+				'countUpTo'        => __( '%1$d / %2$d (up to %3$d)', 'sugarcommerce' ),
+				'slugChecking'     => __( 'Checking…', 'sugarcommerce' ),
+				'slugFree'         => __( 'Available.', 'sugarcommerce' ),
+				'finding'          => __( 'Finding…', 'sugarcommerce' ),
+				'notFound'         => __( 'That address could not be found.', 'sugarcommerce' ),
+				/* translators: %s: an address */
+				'found'            => __( 'Found: %s', 'sugarcommerce' ),
+				'mapTitle'         => __( 'Map', 'sugarcommerce' ),
+				'openMap'          => __( 'Open in OpenStreetMap', 'sugarcommerce' ),
+				'selectCountry'    => __( 'Select a country', 'sugarcommerce' ),
+				/* translators: 1: what the country calls a postcode, 2: an example */
+				'postcodeInvalid'  => __( '%1$s is not in the form used here, such as %2$s.', 'sugarcommerce' ),
+				'sending'          => __( 'Sending…', 'sugarcommerce' ),
+				'sendFailed'       => __( 'That could not be sent. Please try again.', 'sugarcommerce' ),
+				/* translators: %d: how many fields need changing */
+				'fieldsNeedChange' => __( '%d fields need changing before this can be sent:', 'sugarcommerce' ),
+				'fieldNeedsChange' => __( '1 field needs changing before this can be sent:', 'sugarcommerce' ),
 				'selectRegion'     => __( 'Select a region', 'sugarcommerce' ),
 				'iconTitle'        => __( 'Choose an icon', 'sugarcommerce' ),
 				'iconClose'        => __( 'Close', 'sugarcommerce' ),

@@ -9,7 +9,9 @@ declare( strict_types=1 );
 
 namespace SugarCommerce\Fields\Tests;
 
+use SugarCommerce\Fields\Context\ArrayContext;
 use SugarCommerce\Fields\Field;
+use SugarCommerce\Fields\FieldSet;
 use SugarCommerce\Fields\Registry;
 use SugarCommerce\Fields\Renderer;
 use PHPUnit\Framework\TestCase;
@@ -112,6 +114,49 @@ final class CounterTest extends TestCase {
 			'/adornment--suffix.*<\/span><\/span><span class="field-kit__count/s',
 			$this->render( 'text', [ 'maxlength' => 20, 'suffix' => 'px' ], '12' )
 		);
+	}
+
+	/**
+	 * A soft limit is a length to aim for: counted against, warned past,
+	 * and never a refusal.
+	 */
+	public function test_a_soft_limit_counts_and_warns(): void {
+		$html = $this->render( 'text', [ 'soft_limit' => 5 ], 'abcdef' );
+
+		$this->assertStringContainsString( 'data-soft="5"', $html );
+		$this->assertStringContainsString( '>6 / 5<', $html );
+		$this->assertStringContainsString( 'field-kit__count--soft', $html );
+		$this->assertStringNotContainsString( 'field-kit__count--over', $html );
+		$this->assertStringNotContainsString( 'maxlength', $html );
+		$this->assertStringNotContainsString( 'field-kit__count--soft', $this->render( 'text', [ 'soft_limit' => 6 ], 'abcdef' ) );
+	}
+
+	public function test_both_limits_name_each_other(): void {
+		$this->assertStringContainsString( '>3 / 60 (up to 160)<', $this->render( 'textarea', [ 'soft_limit' => 60, 'maxlength' => 160 ], 'abc' ) );
+		$this->assertStringNotContainsString( 'data-counter', $this->render( 'textarea', [ 'soft_limit' => 60, 'counter' => false ], 'abc' ) );
+	}
+
+	/**
+	 * The hard limit is the server's too, and the soft one never refuses.
+	 */
+	public function test_the_hard_limit_is_refused_on_save_and_the_soft_one_is_not(): void {
+		$set = new FieldSet(
+			[
+				'title' => [ 'type' => 'text', 'label' => 'Title', 'maxlength' => 5, 'soft_limit' => 3 ],
+				'blurb' => [ 'type' => 'textarea', 'label' => 'Blurb', 'maxlength' => 4 ],
+			],
+			new ArrayContext(),
+			'c'
+		);
+
+		$this->assertSame(
+			[
+				'title' => 'Title can be at most 5 characters long.',
+				'blurb' => 'Blurb can be at most 4 characters long.',
+			],
+			$set->validate( [ 'title' => 'héllo!', 'blurb' => "on\ntwo" ] )
+		);
+		$this->assertSame( [], $set->validate( [ 'title' => 'héllo', 'blurb' => 'four' ] ), 'Characters, not bytes; past soft is fine.' );
 	}
 
 	public function test_a_hidden_input_counts_nothing(): void {

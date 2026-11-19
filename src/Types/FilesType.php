@@ -12,6 +12,8 @@ declare( strict_types=1 );
 
 namespace SugarCommerce\Fields\Types;
 
+use SugarCommerce\Fields\Contracts\AdminOnly;
+
 /**
  * A named list of files.
  *
@@ -29,7 +31,7 @@ namespace SugarCommerce\Fields\Types;
  * gets theirs — a third column for a download limit, say — and still gets the
  * table layout and the wording.
  */
-final class FilesType extends RepeaterType {
+final class FilesType extends RepeaterType implements AdminOnly {
 
 	/**
 	 * The type's id.

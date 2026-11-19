@@ -12,6 +12,7 @@ namespace SugarCommerce\Fields\Types;
 use SugarCommerce\Fields\Attributes;
 use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\Utils\Runtime;
+use SugarCommerce\Fields\Contracts\AdminOnly;
 
 /**
  * One email a plugin sends, as a collapsible panel.
@@ -43,7 +44,7 @@ use SugarCommerce\Fields\Utils\Runtime;
  * recipient, a plain-text one has no heading — and an input for something the
  * sender ignores is worse than no input at all.
  */
-final class EmailEditorType extends AbstractNestedType {
+final class EmailEditorType extends AbstractNestedType implements AdminOnly {
 
 	/**
 	 * Config defaults.

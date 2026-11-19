@@ -45,6 +45,9 @@ final class Registry {
 		'textarea'        => Types\TextareaType::class,
 		'code'            => Types\CodeType::class,
 		'code_generator'  => Types\CodeGeneratorType::class,
+		'slug'            => Types\SlugType::class,
+		'dimension'       => Types\DimensionType::class,
+		'rating'          => Types\RatingType::class,
 		'wysiwyg'         => Types\WysiwygType::class,
 
 		// Date and colour.
@@ -65,11 +68,14 @@ final class Registry {
 		'country'         => Types\CountryType::class,
 		'currency'        => Types\CurrencyType::class,
 		'region'          => Types\RegionType::class,
+		'address'         => Types\AddressType::class,
+		'location'        => Types\LocationType::class,
 
 		// Media.
 		'image'           => Types\ImageType::class,
 		'file'            => Types\FileType::class,
 		'file_url'        => Types\FileUrlType::class,
+		'embed'           => Types\EmbedType::class,
 
 		// Relational — one search endpoint behind all of them.
 		'post'            => Types\PostType::class,
@@ -131,6 +137,7 @@ final class Registry {
 		'ajax_select'   => 'ajax',     // flyouts' name for a callback search.
 		'hr'            => 'separator',
 		'notice'        => 'message',
+		'video'         => 'embed',
 
 		// What the settings library called an enhanced select, back when one
 		// was built on select2. Not a line of select2 remains anywhere in these

@@ -601,4 +601,19 @@ final class ValidationTest extends TestCase {
 		$this->assertSame( '', $type->validate( '', $field ) );
 		$this->assertSame( 'Count must be a number.', $type->validate( 'twelve', $field ) );
 	}
+
+	/**
+	 * An unticked box is stored as 0, a value; required still means ticked.
+	 */
+	public function test_a_required_checkbox_has_to_be_ticked(): void {
+		[ $set ] = $this->option_set(
+			[
+				'terms' => [ 'type' => 'checkbox', 'label' => 'Terms', 'required' => true ],
+				'news'  => [ 'type' => 'toggle', 'label' => 'News' ],
+			]
+		);
+
+		$this->assertSame( [ 'terms' => 'Terms is required.' ], $set->validate( [ 'terms' => '' ] ) );
+		$this->assertSame( [], $set->validate( [ 'terms' => '1' ] ) );
+	}
 }

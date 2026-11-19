@@ -12,6 +12,7 @@ namespace SugarCommerce\Fields\Types;
 use SugarCommerce\Fields\Attributes;
 use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\Utils\Runtime;
+use SugarCommerce\Fields\Contracts\AdminOnly;
 
 /**
  * Anything that searches a database source for its options.
@@ -28,7 +29,7 @@ use SugarCommerce\Fields\Utils\Runtime;
  * expected to implement the ARIA combobox pattern against it; the data
  * attributes below are what it binds to.
  */
-abstract class AbstractRelationalType extends SelectType {
+abstract class AbstractRelationalType extends SelectType implements AdminOnly {
 
 	/**
 	 * The source the search endpoint queries.

@@ -12,11 +12,12 @@ namespace SugarCommerce\Fields\Types;
 use SugarCommerce\Fields\Attributes;
 use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\Support\MergeTags;
+use SugarCommerce\Fields\Contracts\AdminOnly;
 
 /**
  * The core visual editor.
  */
-final class WysiwygType extends AbstractType {
+final class WysiwygType extends AbstractType implements AdminOnly {
 
 	/**
 	 * Config defaults.

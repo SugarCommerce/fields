@@ -14,9 +14,11 @@ namespace SugarCommerce\Fields;
 
 use SugarCommerce\Fields\Contracts\Context;
 use SugarCommerce\Fields\Contracts\Flushable;
+use SugarCommerce\Fields\Contracts\Lookup;
 use SugarCommerce\Fields\Contracts\Unechoed;
 use SugarCommerce\Fields\Rest\ActionController;
 use SugarCommerce\Fields\Rest\IconController;
+use SugarCommerce\Fields\Rest\LookupController;
 use SugarCommerce\Fields\Rest\SearchController;
 use SugarCommerce\Fields\Actions\Actions;
 use SugarCommerce\Fields\Actions\CallbackAction;
@@ -24,6 +26,7 @@ use SugarCommerce\Fields\Search\CallbackSource;
 use SugarCommerce\Fields\Search\Sources;
 use SugarCommerce\Fields\Support\Badge;
 use SugarCommerce\Fields\Support\Dependencies;
+use SugarCommerce\Fields\Support\Lookups;
 use SugarCommerce\Fields\Support\Rules;
 use SugarCommerce\Fields\Support\Sections;
 
@@ -115,6 +118,7 @@ final class FieldSet {
 
 		$this->register_search_sources();
 		$this->register_actions();
+		$this->register_lookups();
 
 		self::boot_endpoints();
 	}
@@ -142,6 +146,38 @@ final class FieldSet {
 		( new SearchController() )->boot();
 		( new ActionController() )->boot();
 		( new IconController() )->boot();
+		( new LookupController() )->boot();
+	}
+
+	/**
+	 * Register a lookup for every field whose type asks the server as it is
+	 * used -- a slug checking it is free, a location asking a geocoder.
+	 *
+	 * Built here for the reason searches and actions are: the endpoint finds
+	 * the handler on a later request, when nothing has rendered.
+	 *
+	 * @return void
+	 */
+	private function register_lookups(): void {
+		foreach ( $this->configs as $key => $config ) {
+			$type = (string) ( $config['type'] ?? 'text' );
+
+			if ( ! $this->registry->has( $type ) ) {
+				continue;
+			}
+
+			$resolved = $this->registry->get( $type );
+
+			if ( ! $resolved instanceof Lookup ) {
+				continue;
+			}
+
+			$handler = $resolved->lookup_handler( (array) $config );
+
+			if ( null !== $handler ) {
+				Lookups::shared()->register( $this->lookup_name( (string) $key ), $handler, $resolved->lookup_capability( (array) $config ) );
+			}
+		}
 	}
 
 	/**
@@ -274,6 +310,20 @@ final class FieldSet {
 	}
 
 	/**
+	 * The name a field's lookup is registered under: one its surface gave
+	 * it (Lookups::register_configs()), or one made like a source's.
+	 *
+	 * @param string $key Field key.
+	 *
+	 * @return string
+	 */
+	private function lookup_name( string $key ): string {
+		$named = (string) ( $this->configs[ $key ]['lookup_name'] ?? '' );
+
+		return '' === $named ? $this->source_name( $key ) : sanitize_key( $named );
+	}
+
+	/**
 	 * The name this field's source is actually registered under.
 	 *
 	 * A consumer may name it itself, and one has to: a field set built with
@@ -348,6 +398,11 @@ final class FieldSet {
 		// `activate` button would name the same handler.
 		if ( ! isset( $config['action_names'] ) || ! is_array( $config['action_names'] ) ) {
 			$config['action_names'] = $this->action_names_for( $key, $config );
+		}
+
+		// The name its lookup was registered under, for a type that has one.
+		if ( $resolved instanceof Lookup && Lookups::shared()->has( $this->lookup_name( $key ) ) ) {
+			$config['lookup_name'] = $this->lookup_name( $key );
 		}
 
 		$field = new Field( $key, $resolved, $config, null );
@@ -502,6 +557,34 @@ final class FieldSet {
 		}
 
 		return $errors;
+	}
+
+	/**
+	 * What a submission would store, without storing it.
+	 *
+	 * The same walk as save() and validate(), so a value here is exactly the
+	 * one save() would write: each field's type, or its own
+	 * `sanitize_callback`, over the unslashed input. A field whose conditions
+	 * are not met is left out, as one a save would clear; a value a rule
+	 * refuses is kept, so a form drawn again after a refusal shows what was
+	 * typed beside the message rather than what was stored before.
+	 *
+	 * @param array<string, mixed> $input     Raw submitted values, still slashed.
+	 * @param int|string           $object_id Object the values belong to.
+	 *
+	 * @return array<string, mixed> Keyed by field.
+	 * @since 1.4.0
+	 */
+	public function sanitize( array $input, int|string $object_id = 0 ): array {
+		$values = [];
+
+		foreach ( $this->sanitized( $input, $object_id ) as [ $field, $met, $value ] ) {
+			if ( $met && ! $this->is_empty( $value ) ) {
+				$values[ $field->key() ] = $value;
+			}
+		}
+
+		return $values;
 	}
 
 	/**

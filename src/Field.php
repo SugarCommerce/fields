@@ -63,6 +63,11 @@ final class Field {
 		// Set by a field set on each of its own fields: the name a control
 		// that never shows its value uses to ask for that value's removal.
 		'clear_name',
+
+		// Set by a field set on a field whose type asks the server as it is
+		// used: the name its handler was registered under.
+		'lookup_name',
+		'lookup_capability',
 		'disabled',
 		'readonly',
 		'autocomplete',

@@ -1,7 +1,7 @@
 # SugarCommerce Fields
 
-Render, sanitise and store an admin form field — once, so nothing has to
-render one again.
+Render, sanitise and store a form field — once, so nothing has to render
+one again, in wp-admin or on the front of the site.
 
 ## What it does
 
@@ -29,6 +29,10 @@ edit — are here too, each one array away.
 * Encrypt a value at rest, for an API key
 * Pick a colour with the browser's own picker, paste a hex beside it, or choose a preset
 * Pick an icon from Heroicons, WordPress's own, Dashicons or a theme's set in a searchable dialog
+* Draw the same fields in a public form on a storefront, checked exactly as wp-admin checks them
+* Take an address laid out the way its country writes one, with its postcode checked
+* Give a rating in stars, keyboard first, halves if you like
+* Warn before leaving a form with changes, and mark what changed -- where a form asks
 
 ## Installation
 
@@ -60,7 +64,7 @@ $set->save( $_POST['my_plugin'] ?? [] );
 ## Field types
 
 Text and numeric
-: `text` `email` `url` `tel` `password` `hidden` `number` `percentage` `range` `textarea` `code` `wysiwyg` `code_generator`
+: `text` `email` `url` `tel` `password` `hidden` `number` `percentage` `range` `textarea` `code` `wysiwyg` `code_generator` `slug` `dimension` `rating`
 
 Date, time and colour
 : `date` `time` `datetime` `color` `date_range` `time_range`
@@ -68,11 +72,14 @@ Date, time and colour
 Choice
 : `select` `enhanced_select` `select_multiple` `checkbox` `toggle` `radio` `checkbox_group` `button_group` `card_choice` `country` `region` `currency`
 
+Places
+: `address` `location`
+
 Relational — one search endpoint behind all of them
 : `post` `page` `user` `taxonomy` `ajax` `tags`
 
 Media
-: `image` `file` `file_url` `files`
+: `image` `file` `file_url` `files` `embed` (also `video`)
 
 Compound
 : `group` `repeater` `list` `key_value` `sortable` `amount_type` `money`
@@ -234,6 +241,250 @@ same editor drawn again is a new editor rather than the old one's ghost.
 `AmountType::posted_unit( $field, $input )` is the unit a submission chose,
 when it is one the field offers, and `unit_key( $field )` where it goes: the
 surface that stores the amount stores the unit beside it.
+
+## Public forms
+
+The same field arrays, on the front of the site: a checkout's address, a
+product's options, an account's details, a review. `Form` draws them inside
+a `<form>` with a nonce and a honeypot, checks a submission with the same
+field set wp-admin uses -- each value sanitised by its type, `required`,
+`validate`, a `maxlength`, conditions -- and hands the clean values to you.
+
+```php
+use SugarCommerce\Fields\Form;
+
+add_action( 'init', function () {
+	Form::register( 'order', [
+		'email'   => [ 'type' => 'email', 'label' => __( 'Email', 'my-plugin' ), 'required' => true, 'autocomplete' => 'email' ],
+		'address' => [ 'type' => 'address', 'label' => __( 'Delivery address', 'my-plugin' ), 'required' => true, 'autocomplete' => 'shipping' ],
+		'terms'   => [ 'type' => 'checkbox', 'label' => __( 'I accept the terms', 'my-plugin' ), 'required' => true ],
+	], [
+		'submit'    => __( 'Place order', 'my-plugin' ),
+		'rest'      => true,   // sent without leaving the page
+		'guard'     => true,   // warn before leaving it with changes
+		'redirect'  => home_url( '/thanks/' ),
+		'on_submit' => function ( array $values, Form $form ) {
+			$order = my_plugin_create_order( $values );
+
+			return is_wp_error( $order ) ? $order : __( 'Thank you: your order is in.', 'my-plugin' );
+		},
+	] );
+} );
+
+// In a template, a block or a shortcode:
+echo Form::get( 'order' )->render();
+```
+
+A public form is all or nothing. One refused field and nothing is sent or
+stored: the refusals are listed at the top, each a link to its field
+(`role="alert"`, focused), each field shows its own message
+(`aria-invalid`, `aria-describedby`), and the form comes back with what was
+typed. `on_submit` refuses with a `WP_Error`, whose data's `fields` may name
+a message per field; a string it returns is the success message. With
+`context` and `object_id` -- a `UserMetaContext` for an account page -- an
+accepted submission is also saved there, exactly as a profile screen would
+save it, and the form is drawn from what is stored.
+
+`Form::register()` on `init` is what lets the form be handled before the page
+is drawn (and redirected after, so a reload does not send it twice) and what
+gives it its REST route, `POST /{namespace}/forms/{id}`, for `'rest' =>
+true`: the script sends the form with `wp.apiFetch`, and the answer -- `ok`,
+`message`, `errors` and the `ids` of the controls they are about, a 422 when
+refused -- is drawn where the server would have drawn it. The route checks
+the same nonce and `capability` as a post. A form only built with `new
+Form()` inside a shortcode still handles a post sent to it, but cannot
+redirect or be sent over REST. `$form->handle( $input )`, `validate()`,
+`values()`, `errors()` and `result()` are there for a caller with its own
+flow.
+
+Other arguments: `success`, `action`, `class`, `capability` (empty for
+anyone), `nonce` (`false` only for a page a cache serves to everybody, which a
+nonce would break), `honeypot` (on; a robot that fills it is told it worked
+and nothing happens).
+
+The markup is the engine's -- labels, fieldsets and legends, descriptions --
+and the stylesheet is `css/fields-front.css`, not wp-admin's: spacing, a
+visible focus, an error colour and a box for each choice widget, every rule
+inside `:where()` so a theme's rules win without a fight, and the colours as
+custom properties on the form:
+
+```css
+.sugarcommerce-form { --fk-accent: #0a7d5a; --fk-error: #b00020; --fk-radius: 0; }
+```
+
+`render()` enqueues what the form needs; call `$form->enqueue()` on
+`wp_enqueue_scripts` as well to have the stylesheet in the head.
+`Assets::enqueue_front( $needs )` does the same for markup of your own.
+
+Every type works on the front end except the ones that lean on wp-admin,
+which say so with the `Contracts\AdminOnly` contract and are left off a
+public form with a `_doing_it_wrong()` notice -- nested in a repeater too:
+`image`, `file`, `file_url`, `files` (the media library), `code` and
+`wysiwyg` and `email_editor` (core's editors), `post`, `page`, `user`,
+`taxonomy`, `ajax` (searches that need a login), `icon`, `license` and
+`action_button`. A `region` on a public form asks the open address route for
+its list, so it works with nobody logged in.
+
+## Address
+
+One field for a postal address that is laid out the way its country writes
+one. Country first, because it decides the rest: which boxes there are,
+what they are called (a State and a ZIP code, a County and a Postcode, a
+Prefecture), which of them an address there must have, whether the region is
+chosen from a list or typed, which boxes share a line, and what a postcode
+there looks like -- all of it `sugarcommerce/geo`'s `Addresses`,
+`AddressFormats` and `Regions`, made from the data Google publishes for
+Chrome's own address forms.
+
+```php
+'ship_to' => [
+	'type'            => 'address',
+	'label'           => __( 'Shipping address', 'my-plugin' ),
+	'required'        => true,
+	'default_country' => 'GB',
+	'countries'       => [ 'GB', 'IE', 'FR', 'DE' ], // all of them when left out
+	'parts'           => [ 'name', 'company' ],      // as well as the address
+	'line2'           => true,
+	'autocomplete'    => 'shipping',                 // shipping address-line1 and so on
+],
+```
+
+Changing the country moves the boxes, renames them, marks the ones it
+requires, swaps the region list and starts the region again; the page asks
+`GET /{namespace}/address/{country}`, which is public and cached for a day,
+so it works at a checkout. The postcode is checked against the country's
+pattern as it is left and again on the server, and a refusal shows an
+example ("ZIP code is not in the form used in United States, such as
+95014."). A country geo has no pattern for is not refused.
+
+Stored as one array, `line1`, `line2`, `city`, `state`, `postcode`, `country`
+(and `name` and `company` where asked for), the shape `Addresses::format()`
+takes. `state` is a region code where the country has a list; a postcode is
+written the country's way (`ec1y 8sy` is `EC1Y 8SY`); a part the country does
+not have is dropped, so a state typed for Germany is not kept. An address
+that has been started has to be finished for its country, whether or not the
+field is required; `required` makes an empty one a refusal too.
+
+```php
+AddressType::format( $address, true ); // [ '1 Main St', 'Austin, TX 78701', 'United States' ]
+AddressType::layout( 'JP' );           // lines, labels, required parts, regions, postcode pattern
+```
+
+## Rating
+
+Stars, from a group of radio buttons: Tab reaches the group, the arrow keys
+move along it and choose, and a screen reader hears "4 out of 5". The strip
+of stars is painted by the stylesheet alone, filled to the chosen value or
+to the one under the pointer, so nothing waits for a script.
+
+```php
+'score'   => [ 'type' => 'rating', 'label' => __( 'Your rating', 'my-plugin' ), 'required' => true ],
+'quality' => [ 'type' => 'rating', 'label' => __( 'Quality', 'my-plugin' ), 'max' => 10, 'half' => true ],
+'average' => [ 'type' => 'rating', 'label' => __( 'Average', 'my-plugin' ), 'display' => true ], // read-only
+```
+
+`max` is one to ten (five by default), `half` allows halves, and `display`
+(or `readonly`) draws the stars with nothing to change, keeping the value in
+the form. What is stored is the number -- held between one step and `max`,
+rounded to the step -- and no rating is stored as nothing, so `required`
+means somebody chose. Anywhere else -- a product page, a review list:
+
+```php
+echo RatingType::stars( 4.3 );                                    // role="img", "4.3 out of 5 stars"
+echo RatingType::stars( $average, 10, [ 'size' => 16, 'class' => 'review-stars' ] );
+```
+
+`--fk-rating-size`, `--fk-rating-fill` and `--fk-rating-empty` restyle them.
+
+## Smaller types
+
+**`dimension`** -- a number and its unit, stored together as `[ 'value' =>
+2.5, 'unit' => 'kg' ]`. `units` is a list, a map of value to label, or a set:
+`length` (px em rem % vw vh, the default), `size` (cm mm m in ft) or
+`weight` (kg g lb oz); `unit_default`, `min`, `max`, `step`. One unit draws as
+a suffix. `DimensionType::format( $value )` gives `12px` or `2.5 kg`.
+
+**`slug`** -- cleaned as WordPress cleans a post name, as it is typed and
+when it is saved. `source` names a field to make it from, which it follows
+until somebody edits it; `prefix` shows where it sits (`example.com/shop/`).
+Whether a slug is free is yours to say: `unique_callback` is given the slug
+and returns true, false, or a free one to suggest. The field asks it as
+somebody types, through `GET /{namespace}/lookup` (who may ask:
+`lookup_capability`, `edit_posts` by default, empty for a public form), and
+the save asks again. The slug the field already holds is never checked
+against itself.
+
+```php
+'handle' => [
+	'type'            => 'slug',
+	'label'           => __( 'Address', 'my-plugin' ),
+	'source'          => 'title',
+	'prefix'          => home_url( '/shop/' ),
+	'unique_callback' => fn( string $slug ) => my_plugin_slug_taken( $slug ) ? $slug . '-2' : true,
+],
+```
+
+**`location`** -- an address, its latitude and longitude, and a map, stored
+as `[ 'address', 'lat', 'lng' ]`. `geocoder` is a `sugarcommerce/geocoding`
+Geocoder (anything with `locate()`), or a callable returning `[ 'lat', 'lng',
+'address' ]` or a `WP_Error`; with one, the address has a Find button (and
+Enter finds). Without, the numbers are typed. The map is OpenStreetMap's
+embed -- an iframe with a marker that needs no key, no script and no account
+-- and follows the numbers; allow `https://www.openstreetmap.org` in a
+content security policy's `frame-src`, or set `map => false`. Each Find may
+cost money, so `lookup_capability` is `edit_posts` unless a public form says
+`''`.
+
+```php
+'store' => [ 'type' => 'location', 'label' => __( 'Shop', 'my-plugin' ), 'geocoder' => new MapsCo( $key ) ],
+```
+
+**`embed`** (alias `video`) -- a link to a video or a track and the player it
+becomes, from `sugarcommerce/embeds`: exact hosts, a fresh `src` built from
+the id, never the pasted link. The preview follows as somebody types (`GET
+/{namespace}/embed`, public, no request made); a link no player can be made
+from is refused on save, naming what would be taken. `platforms` limits it
+(`[ 'youtube', 'vimeo' ]`), `preview => false` leaves the player off.
+
+**Character counts** -- every text input and textarea counts against its
+`maxlength`, which is now refused on the server too ("Title can be at most 60
+characters long."), not only stopped by the browser. `soft_limit` is a
+length to aim for: counted against, warned past (`5 / 60 (up to 160)` with
+both), never refused.
+
+```php
+'meta_description' => [ 'type' => 'textarea', 'label' => __( 'Meta description', 'my-plugin' ), 'soft_limit' => 155, 'maxlength' => 320 ],
+```
+
+A required `checkbox` or `toggle` now has to be ticked on the server as in
+the browser: an unticked box is stored as 0, which is a value, and was let
+through.
+
+## Unsaved changes
+
+Off unless a form asks. A guarded form notes what it would submit when it is
+drawn; a field whose value is no longer that is marked -- a bar beside it and
+"Changed" in its label -- and while any is, leaving the page asks first.
+Changing a field back takes the mark away; sending the form ends it.
+
+```php
+// A form of your own:
+printf( '<form method="post" %s>', esc_attr( Guard::ATTRIBUTE ) ); // data-fk-guard
+
+// A public form:
+Form::register( 'account', $fields, [ 'guard' => true ] );
+
+// A form another library draws -- a settings page, a flyout panel:
+Guard::enable( '.my-plugin-settings form' );
+Guard::enable( '.wp-flyout form' );
+```
+
+In a flyouts panel, closing it is the way out inside the page, and the panel
+already asks before it throws changes away; the guard adds the marks and the
+warning on leaving the page, and starts again when the panel saves (it
+listens for `wpflyout:dirty`). Code of your own about to remove a guarded
+form asks `SugarCommerceFieldsModules.Guard.confirm( element )` first, and a
+form fires `field-kit:dirty` with `{ dirty, count }` as it changes.
 
 ## Colour
 
