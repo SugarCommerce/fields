@@ -12,7 +12,6 @@
   ],
   "require": {
     "php": ">=8.3",
-    "sugarcommerce/embeds": "dev-main",
     "sugarcommerce/geo": "dev-main",
     "sugarcommerce/plugin": "dev-main",
     "sugarcommerce/security": "dev-main",
@@ -22,11 +21,13 @@
     "phpcompatibility/phpcompatibility-wp": "^2.1",
     "phpunit/phpunit": "^12.0",
     "squizlabs/php_codesniffer": "^3.13.5",
+    "sugarcommerce/embeds": "dev-main",
     "wp-coding-standards/wpcs": "^3.4"
   },
   "suggest": {
-    "sugarcommerce/money": "Supplies the currencies preset and the options of the currency field type.",
-    "sugarcommerce/geocoding": "Finds the coordinates of an address for the location field type."
+    "sugarcommerce/embeds": "Turns the embed field type's link into a player, and refuses one that cannot be played.",
+    "sugarcommerce/geocoding": "Finds the coordinates of an address for the location field type.",
+    "sugarcommerce/money": "Supplies the currencies preset and the options of the currency field type."
   },
   "repositories": [
     {

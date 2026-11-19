@@ -31,6 +31,10 @@ use SugarCommerce\Fields\Field;
  * the same class would print on the page. `platforms` limits the field
  * (`[ 'youtube', 'vimeo' ]` for video only); `preview => false` leaves the
  * player off.
+ *
+ * The embeds package is suggested rather than required, so a plugin with no
+ * embed field does not carry it. Without it the field is a link with no
+ * player, and any link is taken.
  */
 final class EmbedType extends AbstractInputType {
 
@@ -127,6 +131,12 @@ final class EmbedType extends AbstractInputType {
 			return $message;
 		}
 
+		// Without the embeds package there is nothing to tell a player from
+		// a page, so the link is taken as a link.
+		if ( ! class_exists( Embeds::class ) ) {
+			return '';
+		}
+
 		$platforms = self::platforms( (array) $field->get( 'platforms', [] ) );
 
 		return null === self::preview( (string) $value, $platforms ) ? self::refusal( $platforms ) : '';
@@ -201,8 +211,12 @@ final class EmbedType extends AbstractInputType {
 	private static function cases( array $platforms ): array {
 		$cases = [];
 
+		if ( ! class_exists( Platform::class ) ) {
+			return [];
+		}
+
 		foreach ( [] === $platforms ? self::PLATFORMS : $platforms as $id ) {
-			$case = class_exists( Platform::class ) ? Platform::tryFrom( (string) $id ) : null;
+			$case = Platform::tryFrom( (string) $id );
 
 			if ( null !== $case && $case->embeddable() ) {
 				$cases[] = $case;

@@ -444,7 +444,9 @@ becomes, from `sugarcommerce/embeds`: exact hosts, a fresh `src` built from
 the id, never the pasted link. The preview follows as somebody types (`GET
 /{namespace}/embed`, public, no request made); a link no player can be made
 from is refused on save, naming what would be taken. `platforms` limits it
-(`[ 'youtube', 'vimeo' ]`), `preview => false` leaves the player off.
+(`[ 'youtube', 'vimeo' ]`), `preview => false` leaves the player off. The
+package is suggested, not required: a plugin with an embed field requires
+`sugarcommerce/embeds` itself; without it the field is a plain link.
 
 **Character counts** -- every text input and textarea counts against its
 `maxlength`, which is now refused on the server too ("Title can be at most 60
