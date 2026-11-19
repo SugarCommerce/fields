@@ -69,4 +69,39 @@ class PostType extends AbstractRelationalType {
 			[ 'post_type' ]
 		);
 	}
+
+	/**
+	 * A new post is called what its post type calls one.
+	 *
+	 * The singular label, as it reads mid-sentence: a "Collection" post type
+	 * offers to add "as a new collection".
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 * @since 1.7.0
+	 */
+	protected function default_create_noun( Field $field ): string {
+		$object = get_post_type_object( (string) ( $this->search_args( $field )['post_type'] ?? 'post' ) );
+		$label  = $object->labels->singular_name ?? '';
+
+		return '' === $label ? parent::default_create_noun( $field ) : self::in_sentence( (string) $label );
+	}
+
+	/**
+	 * The status a new post is asked for, when the field chose one.
+	 *
+	 * `'create' => [ 'status' => 'draft' ]`. Without it the post is published
+	 * where the person may publish that type, and a draft where they may not.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, scalar>
+	 * @since 1.7.0
+	 */
+	protected function create_args( Field $field ): array {
+		$status = $this->create_options( $field )['status'] ?? '';
+
+		return is_string( $status ) && '' !== $status ? [ 'status' => sanitize_key( $status ) ] : [];
+	}
 }

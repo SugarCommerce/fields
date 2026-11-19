@@ -598,7 +598,7 @@ class RepeaterType extends AbstractNestedType {
 	 *
 	 * @return string
 	 */
-	private function render_status(): string {
+	protected function render_status(): string {
 		return '<span class="field-kit__repeater-status screen-reader-text" aria-live="polite"></span>';
 	}
 
@@ -621,7 +621,7 @@ class RepeaterType extends AbstractNestedType {
 	 *
 	 * @return string
 	 */
-	private function render_empty_message( Field $field, int $total ): string {
+	protected function render_empty_message( Field $field, int $total ): string {
 		return sprintf(
 			'<p class="field-kit__repeater-empty description"%s>%s</p>',
 			$total > 0 ? ' hidden' : '',

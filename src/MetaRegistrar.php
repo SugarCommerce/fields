@@ -284,6 +284,13 @@ final class MetaRegistrar {
 	/**
 	 * What to pass as `show_in_rest`.
 	 *
+	 * `true` is the type's own schema. An array is WordPress's own
+	 * `show_in_rest` array, passed on with its `schema` laid over the type's
+	 * rather than replacing it: a caller narrowing the `context` a value is
+	 * shown in, which is what the block editor's panel does, should not have
+	 * to restate a shape only the type knows. Its `prepare_callback`, and
+	 * anything else WordPress reads there, goes through as it is.
+	 *
 	 * @param Field                $field  The field.
 	 * @param array<string, mixed> $schema The field's schema.
 	 * @param string               $type   The field's type name.
@@ -291,7 +298,9 @@ final class MetaRegistrar {
 	 * @return array<string, mixed>|bool
 	 */
 	private function rest_argument( Field $field, array $schema, string $type ): array|bool {
-		if ( ! $field->get( 'show_in_rest', false ) ) {
+		$given = $field->get( 'show_in_rest', false );
+
+		if ( ! $given ) {
 			return false;
 		}
 
@@ -330,7 +339,13 @@ final class MetaRegistrar {
 			return false;
 		}
 
-		return [ 'schema' => $schema ];
+		if ( ! is_array( $given ) ) {
+			return [ 'schema' => $schema ];
+		}
+
+		$given['schema'] = array_merge( $schema, (array) ( $given['schema'] ?? [] ) );
+
+		return $given;
 	}
 
 	/**

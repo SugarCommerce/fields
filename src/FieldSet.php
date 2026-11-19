@@ -200,12 +200,19 @@ final class FieldSet {
 				continue;
 			}
 
+			// A field that may add to its own source names the callable that
+			// does it inside `create`, beside the noun the control shows.
+			$create  = is_array( $config['create'] ?? null ) ? $config['create'] : [];
+			$creator = $create['callback'] ?? null;
+
 			$sources->register(
 				new CallbackSource(
 					$this->source_name_for( (string) $key, $config ),
 					$callback,
 					(string) ( $config['search_capability'] ?? 'edit_posts' ),
-					array_keys( (array) ( $config['search_args'] ?? [] ) )
+					array_keys( (array) ( $config['search_args'] ?? [] ) ),
+					is_callable( $creator ) ? $creator : null,
+					(string) ( $create['capability'] ?? '' )
 				)
 			);
 		}

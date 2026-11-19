@@ -45,7 +45,7 @@ class SelectType extends AbstractType {
 
 			// A control allowed to invent values is a tag input. Same
 			// combobox, one permission.
-			$attributes->set_if( (bool) $field->get( 'creatable', false ), 'data-creatable', 'true' );
+			$attributes->set_if( $this->invents( $field ), 'data-creatable', 'true' );
 		}
 
 		return sprintf(
@@ -189,6 +189,22 @@ class SelectType extends AbstractType {
 	 */
 	protected function option_attributes( string $value ): string {
 		return '';
+	}
+
+	/**
+	 * Whether the control may keep a value it was never offered, as text.
+	 *
+	 * Asked through a method rather than read here, because a relational
+	 * field that makes real items (`create`) keeps ids instead, and says so
+	 * by overriding this.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return bool
+	 * @since 1.7.0
+	 */
+	protected function invents( Field $field ): bool {
+		return (bool) $field->get( 'creatable', false );
 	}
 
 	/**

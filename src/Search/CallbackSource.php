@@ -9,6 +9,8 @@ declare( strict_types=1 );
 
 namespace SugarCommerce\Fields\Search;
 
+use WP_Error;
+
 /**
  * A source backed by a consumer's own callable.
  *
@@ -21,8 +23,12 @@ namespace SugarCommerce\Fields\Search;
  * An empty `$term` with a non-empty `$ids` is a request to resolve labels
  * for a known selection rather than to search, because those are usually
  * different queries.
+ *
+ * A field may hand it a second callable, under `'create' => [ 'callback' ]`,
+ * to make an item from what was typed. Without one it creates nothing, and
+ * says so to the create route like any source that cannot.
  */
-final class CallbackSource implements Source {
+final class CallbackSource implements Source, Creates {
 
 	/**
 	 * The name a field refers to this source by.
@@ -53,18 +59,37 @@ final class CallbackSource implements Source {
 	private array $keys;
 
 	/**
+	 * The consumer's callable for making an item, if it gave one.
+	 *
+	 * @var callable|null
+	 */
+	private $creator;
+
+	/**
+	 * The capability required to make one.
+	 *
+	 * @var string
+	 */
+	private string $create_capability;
+
+	/**
 	 * Construct.
 	 *
-	 * @param string   $name       Source name.
-	 * @param callable $callback   The consumer's callable.
-	 * @param string   $capability Capability required to search it.
-	 * @param string[] $keys       Argument keys the field declared.
+	 * @param string        $name              Source name.
+	 * @param callable      $callback          The consumer's callable.
+	 * @param string        $capability        Capability required to search it.
+	 * @param string[]      $keys              Argument keys the field declared.
+	 * @param callable|null $creator           Callable that makes an item, if any.
+	 * @param string        $create_capability Capability required to make one;
+	 *                                         the search's when empty.
 	 */
-	public function __construct( string $name, callable $callback, string $capability = 'edit_posts', array $keys = [] ) {
-		$this->name       = $name;
-		$this->callback   = $callback;
-		$this->capability = $capability;
-		$this->keys       = array_values( array_map( 'strval', $keys ) );
+	public function __construct( string $name, callable $callback, string $capability = 'edit_posts', array $keys = [], ?callable $creator = null, string $create_capability = '' ) {
+		$this->name              = $name;
+		$this->callback          = $callback;
+		$this->capability        = $capability;
+		$this->keys              = array_values( array_map( 'strval', $keys ) );
+		$this->creator           = $creator;
+		$this->create_capability = '' === $create_capability ? $capability : $create_capability;
 	}
 
 	/**
@@ -206,5 +231,69 @@ final class CallbackSource implements Source {
 
 			return;
 		}
+	}
+
+	/**
+	 * Whether the field gave a way to make an item, and the current user
+	 * holds the capability it asked for.
+	 *
+	 * The search's capability unless the field named another: being allowed
+	 * to look something up is often not being allowed to add to it.
+	 *
+	 * @param array<string, mixed> $args Arguments the field supplied.
+	 *
+	 * @return bool
+	 * @since 1.7.0
+	 */
+	public function can_create( array $args ): bool {
+		return null !== $this->creator && current_user_can( $this->create_capability );
+	}
+
+	/**
+	 * Make an item through the consumer's callable.
+	 *
+	 * It is called as `( string $text, array $args )`, with the same declared
+	 * arguments the search gets, and may return an id, an `[ id, text ]`
+	 * array (with `existing` when it found rather than made one) or a
+	 * WP_Error whose message the control shows.
+	 *
+	 * @param string               $text What was typed.
+	 * @param array<string, mixed> $args Arguments the field supplied.
+	 *
+	 * @return array{id: string, text: string, existing: bool}|WP_Error
+	 * @since 1.7.0
+	 */
+	public function create( string $text, array $args ): array|WP_Error {
+		$made = null === $this->creator ? null : ( $this->creator )( $text, $this->declared( $args ) );
+
+		if ( $made instanceof WP_Error ) {
+			if ( ! is_array( $made->get_error_data() ) ) {
+				$made->add_data( [ 'status' => 400 ] );
+			}
+
+			return $made;
+		}
+
+		if ( is_array( $made ) && isset( $made['id'] ) && '' !== (string) $made['id'] ) {
+			return [
+				'id'       => (string) $made['id'],
+				'text'     => (string) ( $made['text'] ?? $text ),
+				'existing' => (bool) ( $made['existing'] ?? false ),
+			];
+		}
+
+		if ( ( is_int( $made ) || is_string( $made ) ) && '' !== (string) $made ) {
+			return [
+				'id'       => (string) $made,
+				'text'     => $text,
+				'existing' => false,
+			];
+		}
+
+		return new WP_Error(
+			'sugarcommerce_fields_not_created',
+			__( 'That could not be added.', 'sugarcommerce' ),
+			[ 'status' => 500 ]
+		);
 	}
 }

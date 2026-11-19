@@ -18,6 +18,7 @@ use SugarCommerce\Fields\Context\PostMetaContext;
 use SugarCommerce\Fields\Contracts\Context;
 use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\FieldSet;
+use SugarCommerce\Fields\MetaRegistrar;
 use SugarCommerce\Fields\Registry as TypeRegistry;
 use SugarCommerce\Fields\Support\Badge;
 use SugarCommerce\Fields\Support\Markup;
@@ -40,6 +41,10 @@ use WP_Post;
  * every field, which publishes every custom field a plugin has ever
  * registered to the REST API and the block editor, including the ones holding
  * a licence key. It is off unless a field asks.
+ *
+ * With `block_editor`, the fields the block editor's sidebar can draw go
+ * there instead (BlockEditorPanel), and the metabox keeps the rest. On the
+ * classic editor nothing changes: every field is in the metabox, as before.
  */
 class PostFields {
 
@@ -85,6 +90,20 @@ class PostFields {
 	private FieldSet $set;
 
 	/**
+	 * The type registry.
+	 *
+	 * @var TypeRegistry
+	 */
+	private TypeRegistry $registry;
+
+	/**
+	 * The block editor's sidebar, when the metabox asked for one.
+	 *
+	 * @var BlockEditorPanel|null
+	 */
+	private ?BlockEditorPanel $panel = null;
+
+	/**
 	 * Registered instances, so fields can be read back by metabox.
 	 *
 	 * @var array<string, self>
@@ -110,7 +129,16 @@ class PostFields {
 		// refused on its account, and stored the value in plain text.
 		$this->context = new EncryptedContext( new PostMetaContext() );
 
-		$this->set    = new FieldSet( $this->fields, $this->context, '', new TypeRegistry() );
+		$this->registry = new TypeRegistry();
+		$this->set      = new FieldSet( $this->fields, $this->context, '', $this->registry );
+
+		// A field may say it stays in the metabox, which the kit's check for
+		// keys nothing reads would otherwise report.
+		Field::allow_config_keys( [ 'block_editor' ] );
+
+		if ( (bool) $this->config['block_editor'] ) {
+			$this->panel = new BlockEditorPanel( $id, $this->config, $this->fields, $this->context, $this->registry );
+		}
 
 		// The configuration carries the prefixed keys too. Two getters
 		// disagreeing about what a field is called is how a default lookup
@@ -151,9 +179,13 @@ class PostFields {
 				'priority'   => 'high',
 				'prefix'     => '',
 				'capability' => 'edit_posts',
-				'layout'     => 'stacked',
-				'panels'     => [],
-				'fields'     => [],
+				'layout'       => 'stacked',
+				'panels'       => [],
+				'fields'       => [],
+				// Off unless asked. The sidebar puts each field it draws in
+				// REST, and moves it out of a metabox someone may be relying
+				// on, and neither should happen to a plugin by updating.
+				'block_editor' => false,
 			],
 			$config
 		);
@@ -216,12 +248,20 @@ class PostFields {
 	 * One registration per post type, because a key registered without a
 	 * subtype applies to every post type there is.
 	 *
+	 * The sidebar's fields go to REST with their schema, which is how the
+	 * block editor reads and saves them, and the REST save's own hook is
+	 * attached here: on init, because a REST request never reaches admin_init.
+	 *
 	 * @return void
 	 */
 	public function register_meta(): void {
+		$fields = $this->panel ? $this->panel->registration( $this->fields ) : $this->fields;
+
 		foreach ( (array) $this->config['post_types'] as $post_type ) {
-			$this->set->register_meta( (string) $post_type );
+			( new MetaRegistrar( $this->context, (string) $post_type, $this->registry ) )->register( $fields );
 		}
+
+		$this->panel?->register_hooks();
 	}
 
 	/**
@@ -233,6 +273,10 @@ class PostFields {
 		add_action( 'add_meta_boxes', [ $this, 'add_meta_box' ] );
 		add_action( 'save_post', [ $this, 'save' ], 10, 2 );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
+
+		if ( $this->panel ) {
+			add_action( 'enqueue_block_editor_assets', [ $this->panel, 'enqueue' ] );
+		}
 	}
 
 	/**
@@ -242,6 +286,12 @@ class PostFields {
 	 */
 	public function add_meta_box(): void {
 		foreach ( (array) $this->config['post_types'] as $post_type ) {
+			// In the block editor with every field in the sidebar, a box
+			// would be a heading over nothing.
+			if ( ! $this->has_metabox_fields( (string) $post_type ) ) {
+				continue;
+			}
+
 			add_meta_box(
 				$this->id,
 				(string) $this->config['title'],
@@ -269,6 +319,10 @@ class PostFields {
 			return;
 		}
 
+		if ( ! $this->has_metabox_fields( (string) $screen->post_type ) ) {
+			return;
+		}
+
 		( new Assets() )->enqueue( $this->set->dependencies() );
 	}
 
@@ -287,14 +341,24 @@ class PostFields {
 		// and the field markers agree.
 		$errors = Errors::recall( 'post', $post->ID, $this->id );
 
+		// The fields the sidebar draws, which this box leaves out. The box
+		// says so in its own submission: the block editor posts it after the
+		// REST save, without the sidebar's fields, and a save that read them
+		// as missing would clear every one.
+		$skip = $this->sidebar_keys( $post->post_type );
+
+		if ( null !== $this->panel && BlockEditorPanel::on_screen() ) {
+			printf( '<input type="hidden" name="%s" value="1" />', esc_attr( $this->id . '_block_editor' ) );
+		}
+
 		printf( '<div class="field-kit__metabox" data-metabox-id="%s">', esc_attr( $this->id ) );
 
 		echo Errors::notice( $errors ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
 
 		if ( [] !== (array) $this->config['panels'] ) {
-			echo $this->render_panels( $post, $errors ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
+			echo $this->render_panels( $post, $errors, $skip ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
 		} else {
-			echo $this->render_sections( $this->visible_fields( $post->ID ), $errors ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
+			echo $this->render_sections( $this->visible_fields( $post->ID, $skip ), $errors ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it is built.
 		}
 
 		echo '</div>';
@@ -309,13 +373,14 @@ class PostFields {
 	 *
 	 * @param WP_Post               $post   The post being edited.
 	 * @param array<string, string> $errors Messages from the last save, keyed by field.
+	 * @param string[]              $skip   Fields drawn somewhere else.
 	 *
 	 * @return string
 	 */
-	private function render_panels( WP_Post $post, array $errors ): string {
+	private function render_panels( WP_Post $post, array $errors, array $skip = [] ): string {
 		$visible = [];
 
-		foreach ( $this->visible_fields( $post->ID ) as $field ) {
+		foreach ( $this->visible_fields( $post->ID, $skip ) as $field ) {
 			$visible[ $field->key() ] = $field;
 		}
 
@@ -490,9 +555,16 @@ class PostFields {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified above.
 		$input = $_POST;
 
+		// The block editor's submission of this box, which carries none of
+		// the sidebar's fields: they were saved over REST a moment ago, and
+		// reading them as missing here would clear them all -- a checkbox
+		// above all, whose "unticked" is exactly "missing".
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified above.
+		$skip = empty( $_POST[ $this->id . '_block_editor' ] ) ? [] : $this->panel_keys( $post->post_type );
+
 		// Only what this user may set. A field they cannot see is not one a
 		// crafted submission gets to write either.
-		$set = $this->permitted_set( $post_id );
+		$set = $this->permitted_set( $post_id, $skip );
 
 		$set->save( $input, $post_id );
 
@@ -505,38 +577,95 @@ class PostFields {
 	/**
 	 * A field set limited to what the current user may write.
 	 *
-	 * @param int $post_id The post being edited.
+	 * @param int      $post_id The post being edited.
+	 * @param string[] $skip    Fields saved somewhere else.
 	 *
 	 * @return FieldSet
 	 */
-	private function permitted_set( int $post_id ): FieldSet {
+	private function permitted_set( int $post_id, array $skip = [] ): FieldSet {
 		$allowed = array_filter(
-			$this->fields,
+			array_diff_key( $this->fields, array_flip( $skip ) ),
 			fn( $config ) => $this->permitted( (array) $config, $post_id )
 		);
 
 		return $allowed === $this->fields
 			? $this->set
-			: new FieldSet( $allowed, $this->context, '', new TypeRegistry() );
+			: new FieldSet( $allowed, $this->context, '', $this->registry );
 	}
 
 	/**
 	 * The fields to draw, as Field objects.
 	 *
-	 * @param int $post_id The post being edited.
+	 * @param int      $post_id The post being edited.
+	 * @param string[] $skip    Fields drawn somewhere else.
 	 *
 	 * @return Field[]
 	 */
-	private function visible_fields( int $post_id ): array {
+	private function visible_fields( int $post_id, array $skip = [] ): array {
 		$fields = [];
 
 		foreach ( $this->set->fields( $post_id ) as $field ) {
+			if ( in_array( $field->key(), $skip, true ) ) {
+				continue;
+			}
+
 			if ( $this->permitted( (array) ( $this->fields[ $field->key() ] ?? [] ), $post_id ) ) {
 				$fields[] = $field;
 			}
 		}
 
 		return $fields;
+	}
+
+	/**
+	 * The fields the sidebar draws on a post type, whatever the screen.
+	 *
+	 * @param string $post_type The post type.
+	 *
+	 * @return string[]
+	 */
+	private function panel_keys( string $post_type ): array {
+		return $this->panel ? $this->panel->keys_for( $post_type ) : [];
+	}
+
+	/**
+	 * The fields the sidebar draws on the screen being drawn: none, unless
+	 * it is the block editor.
+	 *
+	 * @param string $post_type The post type.
+	 *
+	 * @return string[]
+	 */
+	private function sidebar_keys( string $post_type ): array {
+		return null !== $this->panel && BlockEditorPanel::on_screen() ? $this->panel_keys( $post_type ) : [];
+	}
+
+	/**
+	 * Whether the metabox has anything left to hold on this screen.
+	 *
+	 * A heading, a tab or a message holds nothing, and left alone in a box
+	 * whose fields all moved to the sidebar it would label an empty space.
+	 *
+	 * @param string $post_type The post type.
+	 *
+	 * @return bool
+	 */
+	private function has_metabox_fields( string $post_type ): bool {
+		$skip = $this->sidebar_keys( $post_type );
+
+		if ( [] === $skip ) {
+			return true;
+		}
+
+		foreach ( array_diff_key( $this->fields, array_flip( $skip ) ) as $config ) {
+			$type = (string) ( $config['type'] ?? 'text' );
+
+			if ( $this->registry->has( $type ) && $this->registry->get( $type )->stores_value() ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -581,6 +710,15 @@ class PostFields {
 	}
 
 	/**
+	 * Get the block editor's sidebar, when the metabox asked for one.
+	 *
+	 * @return BlockEditorPanel|null
+	 */
+	public function get_panel(): ?BlockEditorPanel {
+		return $this->panel;
+	}
+
+	/**
 	 * Register a metabox of fields on one or more post types.
 	 *
 	 * Values save to post meta, each sanitised by its own type. Nothing is
@@ -589,8 +727,8 @@ class PostFields {
 	 * @param string               $id     Unique metabox identifier.
 	 * @param array<string, mixed> $config Metabox configuration: title,
 	 *                                     post_types, context, priority,
-	 *                                     prefix, capability, layout, panels
-	 *                                     and fields.
+	 *                                     prefix, capability, layout, panels,
+	 *                                     block_editor and fields.
 	 *
 	 * @return self
 	 */

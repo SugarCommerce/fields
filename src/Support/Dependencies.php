@@ -13,6 +13,7 @@ declare( strict_types=1 );
 namespace SugarCommerce\Fields\Support;
 
 use SugarCommerce\Fields\Registry;
+use SugarCommerce\Fields\Types\FlexibleType;
 
 /**
  * What a list of field configurations needs loaded on the page: script and
@@ -100,6 +101,9 @@ final class Dependencies {
 			if ( is_array( $children ) ) {
 				self::walk( $children, $registry, $needs );
 			}
+
+			// Flexible content keeps its fields under each layout.
+			self::walk( FlexibleType::layout_fields( $config ), $registry, $needs );
 		}
 	}
 }

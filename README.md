@@ -22,6 +22,7 @@ edit — are here too, each one array away.
 * Render any of the field types below, escaped, with a label and description
 * Sanitise on save by type, rather than a callback per field
 * Put fields on a post, a term, a user profile, quick edit or bulk edit with one array
+* Draw a post's simpler fields in the block editor's sidebar, saved with the post over REST
 * Store to post meta, term meta, user meta, an option or a plain array
 * Show a field only when another has a given value
 * Search posts, users or terms from one endpoint, whatever the field type
@@ -32,6 +33,9 @@ edit — are here too, each one array away.
 * Draw the same fields in a public form on a storefront, checked exactly as wp-admin checks them
 * Take an address laid out the way its country writes one, with its postcode checked
 * Give a rating in stars, keyboard first, halves if you like
+* Build a page from rows of different layouts -- flexible content -- and draw it with your own templates
+* Choose a gallery of images from the media library, in order, with each picture's own alt text
+* Let another package offer more places a file can come from -- a bucket, a cloud drive
 * Warn before leaving a form with changes, and mark what changed -- where a form asks
 
 ## Installation
@@ -79,10 +83,10 @@ Relational — one search endpoint behind all of them
 : `post` `page` `user` `taxonomy` `ajax` `tags`
 
 Media
-: `image` `file` `file_url` `files` `embed` (also `video`)
+: `image` `file` `file_url` `files` `gallery` `embed` (also `video`)
 
 Compound
-: `group` `repeater` `list` `key_value` `sortable` `amount_type` `money`
+: `group` `repeater` `flexible` `list` `key_value` `sortable` `amount_type` `money`
 
 Layout and display
 : `heading` `separator` `message` `html` `clipboard` `custom` `tab` `accordion` `icon`
@@ -204,6 +208,120 @@ takes a `permission_callback`; a user field takes `own_capability` for when
 someone edits their own profile and `show_on_add` to keep it off the add-user
 screen. A value a rule refuses is not stored, and the post, term or profile
 screen says why when it reloads.
+
+## In the block editor
+
+`'block_editor' => true` on a metabox moves the fields the block editor can
+draw itself into the Post sidebar, as a panel with the metabox's title, using
+the editor's own controls. The editor saves them with the post, over REST, so
+a change there is unsaved until the post is, and undone by undo. The rest stay
+in the metabox under the content, which then holds and saves only those. In
+the classic editor nothing changes: every field is in the metabox.
+
+```php
+PostFields::register( 'pack_details', [
+	'title'        => __( 'Pack details', 'my-plugin' ),
+	'post_types'   => 'sample_pack',
+	'prefix'       => '_pack_',
+	'block_editor' => true,
+	'fields'       => [
+		'bpm'      => [ 'type' => 'number', 'label' => __( 'Tempo', 'my-plugin' ), 'min' => 40, 'max' => 240 ],
+		'key'      => [ 'type' => 'select', 'label' => __( 'Key', 'my-plugin' ), 'options' => [ 'c' => 'C', 'a_minor' => 'A minor' ] ],
+		'loops'    => [ 'type' => 'toggle', 'label' => __( 'Has loops', 'my-plugin' ) ],
+		'loop_bpm' => [ 'type' => 'text', 'label' => __( 'Loop tempos', 'my-plugin' ), 'show_when' => [ '_pack_loops' => 1 ] ],
+		'demo'     => [ 'type' => 'file', 'label' => __( 'Demo track', 'my-plugin' ) ], // stays in the metabox
+	],
+] );
+```
+
+The sidebar takes `text`, `email`, `url`, `tel`, `number`, `percentage`,
+`range`, `textarea`, `select`, `radio`, `button_group`, `checkbox`, `toggle`,
+`date`, `time`, `datetime` and `color` -- the types one of the editor's
+controls stores exactly as the metabox would. A field of any of those stays
+in the metabox when moving it would change what a save does:
+
+- it is `encrypted` (REST would hand the editor ciphertext);
+- it, or the metabox, asks for a `capability` other than `edit_posts` -- REST
+  gives a post's meta to everyone who may edit the post;
+- it is `required` or has a `validate` rule or a `sanitize_callback`, which
+  the metabox's save runs and a REST save does not;
+- it is `disabled`, `readonly` or carries a `badge`;
+- it is a select with `multiple` or `creatable`, or a colour with `alpha`;
+- its `show_when` names a field in the metabox, or a field in the metabox
+  names it -- the two are saved by different requests, so a condition and its
+  field always end up on the same side;
+- it says `'block_editor' => false`.
+
+Everything else -- media, relational, compound, code and visual editors,
+layout types -- is the metabox's. A metabox left with nothing that stores a
+value is not shown in the block editor at all. In the sidebar, `show_when`
+shows and hides as it does in the metabox, and after a save a field whose
+conditions are not met is deleted, as the metabox's own save would.
+
+Each sidebar field is registered with `show_in_rest`, its type's own schema
+and the `edit` context only -- the one the editor asks for, and the one
+WordPress answers only for someone who may edit the post -- with its type as
+`sanitize_callback` and `edit_posts` as its `auth_callback`. A field that set
+`show_in_rest` itself keeps what it asked for. REST leaves out a post's meta
+when its type does not support `custom-fields`, so add it to the post type's
+`supports`; without it every field stays in the metabox. The block editor's
+own Custom Fields panel, when someone turns it on, posts every unprotected
+key it lists, so give these keys a leading underscore -- a `prefix` such as
+`_pack_` does it.
+
+## Adding an item from a search
+
+A `post`, `page`, `taxonomy` or `user` picker with `'create' => true` offers
+to make what it could not find. Type a name nothing matches and the last row
+of the list reads “Add “Sample Packs” as a new collection”; choose it, by
+pointer or by Enter, and the term (or post, or user) is made over REST and
+chosen. It is stored as its id, like anything found, so the schema stays
+integers. Something of that name already there is chosen instead and said to
+be, and a refusal is shown at the top of the list without losing the search.
+
+```php
+$set = new FieldSet(
+	[
+		'collection' => [ 'type' => 'taxonomy', 'label' => __( 'Collection', 'my-plugin' ), 'taxonomy' => 'pack_collection', 'create' => true ],
+		'bundle'     => [ 'type' => 'post', 'label' => __( 'Bundle', 'my-plugin' ), 'post_type' => 'bundle', 'create' => [ 'status' => 'draft' ] ],
+		'customer'   => [ 'type' => 'user', 'label' => __( 'Customer', 'my-plugin' ), 'role' => 'customer', 'create' => true ],
+	],
+	new OptionContext( 'my_plugin' ),
+	'my_plugin'
+);
+```
+
+The noun is the post type's or taxonomy's singular label as it reads
+mid-sentence ("Collection" becomes "collection", "FAQ Group" "FAQ group"), or
+`'create' => [ 'noun' => 'pack' ]`. Nobody can make anything here they could
+not make on WordPress's own screens. The row is only drawn for someone the
+route would allow, and the route checks again when it is chosen:
+
+- A term needs the taxonomy's `edit_terms` -- for a tag as well, where core's
+  tag box settles for `assign_terms`.
+- A post needs the post type's `create_posts`. It is published when the person
+  may publish that type and a draft when they may not; `'status'` can ask for
+  `draft` or `pending`, and asking for `publish` without the right gives a
+  draft. Either way the search finds it again. A post already carrying that
+  title is chosen rather than made twice; an attachment is never made.
+- A user needs `create_users` and is added by email address, with a login made
+  from it and a random password; nothing is emailed, as with core's users
+  route. The role is `'create' => [ 'role' => … ]`, else the field's own
+  `role`, else the site's default, and has to be one the person may give
+  (`get_editable_roles()`). Anything that is not an address is refused.
+
+It is not `creatable`. That keeps what was typed as text -- a tag that never
+needs to be more than its name -- and makes the schema strings. `create` makes
+a real object and keeps its id. With both set, `create` wins.
+
+The route is `POST /{namespace}/search/create` (`Runtime::rest_namespace()`,
+beside the search) with `source`, `text` and `args`. A source of your own
+offers creation by implementing `Search\Creates` -- `can_create( $args )` and
+`create( $text, $args )` -- and an `ajax` field by naming a callable:
+`'create' => [ 'callback' => fn( $text, $args ) => $id_or_wp_error, 'noun' =>
+'size', 'capability' => 'manage_options' ]`, which is registered with its search
+and never reaches the page.
+
 ## Encrypted fields
 
 `'encrypted' => true` on any field -- a string, a number, a group, a repeater --
@@ -347,10 +465,11 @@ the top of the file for how to run it.
 Every type works on the front end except the ones that lean on wp-admin,
 which say so with the `Contracts\AdminOnly` contract and are left off a
 public form with a `_doing_it_wrong()` notice -- nested in a repeater too:
-`image`, `file`, `file_url`, `files` (the media library), `code` and
-`wysiwyg` and `email_editor` (core's editors), `post`, `page`, `user`,
-`taxonomy`, `ajax` (searches that need a login), `icon`, `license` and
-`action_button`. A `region` on a public form asks the open address route for
+`image`, `file`, `file_url`, `files`, `gallery` (the media library), `code`
+and `wysiwyg` and `email_editor` (core's editors), `post`, `page`, `user`,
+`taxonomy`, `ajax` (searches that need a login), `icon`, `license`,
+`action_button` and `flexible` (drawn on the front with
+`FlexibleType::display()` rather than edited there). A `region` on a public form asks the open address route for
 its list, so it works with nobody logged in.
 
 ## Address
@@ -489,6 +608,186 @@ both), never refused.
 A required `checkbox` or `toggle` now has to be ticked on the server as in
 the browser: an unticked box is stored as 0, which is a value, and was let
 through.
+
+## Flexible content
+
+Rows that are each one of several layouts: a hero, then two columns of
+text, then a list of features, in any order, each as often as the page
+wants. Each layout is its own set of fields, drawn and checked by the same
+engine as any other field, nested repeaters and editors included.
+
+```php
+'sections' => [
+	'type'     => 'flexible',
+	'label'    => __( 'Page sections', 'my-plugin' ),
+	'max_rows' => 12,
+	'layouts'  => [
+		'hero'     => [
+			'label'     => __( 'Hero', 'my-plugin' ),
+			'max'       => 1,          // at most one hero
+			'row_title' => 'heading',  // a closed row says what it is
+			'fields'    => [
+				'heading' => [ 'type' => 'text', 'label' => __( 'Heading', 'my-plugin' ) ],
+				'image'   => [ 'type' => 'image', 'label' => __( 'Background', 'my-plugin' ) ],
+			],
+		],
+		'text'     => [
+			'label'  => __( 'Text', 'my-plugin' ),
+			'min'    => 1,             // at least one
+			'fields' => [ 'body' => [ 'type' => 'wysiwyg', 'label' => __( 'Text', 'my-plugin' ) ] ],
+		],
+		'features' => [
+			'label'  => __( 'Features', 'my-plugin' ),
+			'fields' => [ 'items' => [ 'type' => 'list', 'label' => __( 'Features', 'my-plugin' ) ] ],
+		],
+		'divider'  => [ 'label' => __( 'Divider', 'my-plugin' ) ], // nothing to fill in
+	],
+],
+```
+
+Each row is a strip with the layout's name (and its `row_title` field's
+value), a handle that drags or takes the arrow keys, Duplicate, Remove and
+a chevron that folds it away; a saved row starts folded, a new one open.
+There is an Add button per layout, or a list and one button once there are
+more than four. A layout's `max` turns its button off when reached and
+`max_rows` turns them all off; Remove is off where taking the row out would
+leave a layout below its `min` or the field below `min_rows`. On the server
+a layout's rows past its `max` and rows past `max_rows` are dropped, and a
+field short of a minimum is refused ("Page sections needs at least 1 “Text”
+row.") -- an empty field only when it is `required`. A row with nothing
+filled in is dropped, as an empty repeater row is, unless its layout has
+nothing to fill in.
+
+Duplicate copies a row beneath it: built from the layout's template, as a
+new row is, and given the row's values, the rows of any list in it, and
+its pictures -- not a clone of the row, whose combobox, colour picker or
+editor would be built a second time on top of the first.
+
+Stored as a clean list, the layout beside its values:
+
+```php
+[
+	[ 'layout' => 'hero', 'values' => [ 'heading' => 'Spring sale', 'image' => 128 ] ],
+	[ 'layout' => 'text', 'values' => [ 'body' => '<p>Everything is 20% off.</p>' ] ],
+	[ 'layout' => 'divider', 'values' => [] ],
+]
+```
+
+A row whose layout has been taken out of the configuration is kept: drawn
+as a notice, its values posted back as they were, so putting the layout
+back brings the row back.
+
+On the front of the site the field is read, not edited (it is `AdminOnly`).
+`FlexibleType::display()` hands each row to what draws its layout -- a
+callable, or a template part named for it -- and `FlexibleType::rows_of()`
+is the stored value cleaned to that shape for a loop of your own:
+
+```php
+use SugarCommerce\Fields\Types\FlexibleType;
+
+echo FlexibleType::display( get_post_meta( get_the_ID(), 'sections', true ), [
+	'hero' => fn( array $values ) => sprintf( '<h2 class="hero">%s</h2>', esc_html( $values['heading'] ?? '' ) ),
+	'text' => fn( array $values ) => wp_kses_post( $values['body'] ?? '' ),
+	'*'    => fn( array $values, string $layout, int $index ) => '', // anything else
+] );
+
+// Or parts/section-hero.php, parts/section-text.php ..., each given
+// $args['values'], $args['layout'] and $args['index']:
+echo FlexibleType::display( $sections, 'parts/section' );
+```
+
+The schema says what every row has -- `layout`, a string, and `values`, an
+object -- and no more, because the values' shape depends on the layout.
+
+## Gallery
+
+An ordered set of images from the media library: a grid of tiles, each
+dragged to a new place (or moved with the arrow keys from its handle, which
+appears when it is tabbed to) and taken out with its cross. Add images opens
+the library to add several at once; a picture already in the gallery is not
+added twice.
+
+```php
+'photos' => [
+	'type'      => 'gallery',
+	'label'     => __( 'Photos', 'my-plugin' ),
+	'min'       => 2,
+	'max'       => 8,
+	'add_label' => __( 'Add photos', 'my-plugin' ),
+],
+```
+
+What is stored is the attachment ids, in order (`[ 128, 131, 140 ]`). The
+alt text is the attachment's own, read whenever the picture is drawn, so it
+is corrected once, in the library, for everywhere the picture appears; a tile
+whose picture has none says "No alt text". `max` turns Add off when the
+gallery is full and the server keeps the first that many; fewer than `min`
+is refused ("Photos needs at least 2 images."), an empty gallery only when it
+is `required`. `preview_size` is the tile's image size (`medium`), and
+`library` and `frame_title` go to the media frame.
+
+On the front of the site, through `wp_get_attachment_image()` -- the
+attachment's alt text, `srcset` and lazy loading as core draws them:
+
+```php
+use SugarCommerce\Fields\Types\GalleryType;
+
+echo GalleryType::images( $ids, 'large', [ 'class' => 'product-gallery' ] ); // <ul> of <li><img></li>
+GalleryType::alt( 128 ); // the alt text the library holds
+```
+
+## More places a file can come from
+
+A `file_url` can be filled from somewhere besides the media library -- a
+bucket, a cloud drive -- offered by whichever package knows it, through a
+filter, as plain values, so neither package need know the other. Only
+`file_url`: `file` stores an attachment id, and a file in a bucket has none.
+
+```php
+use SugarCommerce\Fields\Utils\Runtime;
+
+// sugarcommerce/storage-browser's picker hands over exactly this shape:
+add_filter( Runtime::hook( 'file_sources' ), fn( array $sources ) => $sources + [
+	$picker->id() => $picker->source() + [ 'protocols' => [ 's3' ] ],
+] );
+
+// Or any source of your own:
+add_filter( Runtime::hook( 'file_sources' ), fn( array $sources ) => $sources + [
+	'my_drive' => [
+		'label'     => __( 'Choose from the drive', 'my-plugin' ),
+		'icon'      => '<svg …>',                           // cleaned like any icon
+		'enqueue'   => fn(): bool => my_drive_enqueue(),    // false: not for this person
+		'protocols' => [ 'drive' ],                         // the schemes its addresses use
+	],
+] );
+```
+
+Each source is a button under the field (`Runtime::hook()` is
+`sugarcommerce_fields_file_sources`, prefixed in a Strauss build).
+`enqueue` loads the source's script as the field is drawn, and returning
+false leaves the button off for that person. The script registers the
+source under the same id:
+
+```js
+window.sugarcommerceFileSources = window.sugarcommerceFileSources || {};
+window.sugarcommerceFileSources.my_drive = {
+	label: 'Choose from the drive',
+	pick: ( { accept, returns } ) => Promise.resolve( { value: 'drive://files/pack.zip', name: 'pack.zip' } ), // or null
+};
+```
+
+What `pick` resolves fills the field the way a media-library choice does --
+the address, the file name, Remove -- and a `null` (dismissed) changes
+nothing. A button whose source never registered is hidden, so a script that
+failed to load leaves no button that does nothing.
+
+On the field: `sources` is `true` for every source (the default), `false`
+for none, or a list of ids; `accept` (`[ 'zip', 'wav' ]`) is handed to
+`pick` so a source can narrow what it offers; `protocols` adds schemes of the
+field's own. A value is kept on save when its scheme is the web's, the
+field's, or one its sources declare -- never `javascript:`, `data:` or
+`vbscript:` -- so a source should be offered wherever the field is saved, or
+the field should name the scheme itself.
 
 ## Unsaved changes
 
@@ -721,7 +1020,9 @@ now `sugarcommerce`.
 | `window.ArrayPressFieldKit`, `window.ArrayPressFieldKitModules` | `window.SugarCommerceFields`, `window.SugarCommerceFieldsModules` |
 | `EncryptedContext`'s own AES-256-GCM and key | `sugarcommerce/security`'s `Encryption\Cipher` (required); old `fkenc:` values read, new ones are `fkenc:v3:` under a per-purpose key (`new EncryptedContext( $inner, $purpose )`, or `'encrypted' => 'purpose'` on a field) |
 | `Assets`' own path and URL guessing, `new Assets( $path, $url )` | `SugarCommerce\Plugin\Assets` (required), the family's one asset resolver; `new Assets()` keeps the handles and configuration, and the `$path` and `$url` arguments are gone (nothing passed them) |
-| field types `providers`, `flexible`, `gradient`, `dimensions`, `link`, `oembed`, `nav_menu`, `gallery` (and the JS modules `Providers`, `Gallery`, `Oembed`) | removed: nothing used them (SugarCart is Stripe-only, so no gateway list). Use `repeater` for rows, `files` for several attachments, `color`, `url`, `select` with your own options, or a `custom` field |
+| field types `providers`, `gradient`, `dimensions`, `link`, `oembed`, `nav_menu` (and the JS modules `Providers`, `Oembed`) | removed: nothing used them (SugarCart is Stripe-only, so no gateway list). Use `repeater` for rows, `color`, `url`, `select` with your own options, or a `custom` field |
+| field type `flexible`: rows stored with their layout under `_layout`, mixed in with the values; `max_rows` only | `flexible`, rebuilt: rows are `[ 'layout' => …, 'values' => [ … ] ]`; per-layout `min`, `max` and `row_title`, Duplicate, `min_rows` checked on the server, `FlexibleType::display()` for the front |
+| field type `gallery`: `max_items`, any `mime_type`, files drawn as a list | `gallery`, rebuilt: images only (several files are `files`), `min` and `max`, the attachment's alt text on each tile, `GalleryType::images()` for the front |
 | `Glyphs` key `link` | removed with the `link` type |
 | icon set `wordpress`: 344 bundled `@wordpress/icons` 20.0.0 files, `Icons::WORDPRESS_ICONS_VERSION` | core's own icon library (88 icons) from WP 7.1's Icons API. A stored `wordpress:name` outside core's set no longer validates or draws; `cart`, `star-filled` and the like are in it, drawn as core draws them |
 | `SugarCommerce\Fields\Support\Color` (`hex`, `rgb`, `contrast`, `ratio`, `readable`) | `SugarCommerce\Text\Display\Color` (required), same methods and WCAG rule; `##fff` with two hashes is no longer read as a colour |

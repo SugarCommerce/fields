@@ -76,6 +76,7 @@ final class Registry {
 		'file'            => Types\FileType::class,
 		'file_url'        => Types\FileUrlType::class,
 		'embed'           => Types\EmbedType::class,
+		'gallery'         => Types\GalleryType::class,
 
 		// Relational — one search endpoint behind all of them.
 		'post'            => Types\PostType::class,
@@ -88,6 +89,7 @@ final class Registry {
 		// Nested — children go through this same registry and renderer.
 		'group'           => Types\GroupType::class,
 		'repeater'        => Types\RepeaterType::class,
+		'flexible'        => Types\FlexibleType::class,
 		'files'           => Types\FilesType::class,
 		'list'            => Types\ListType::class,
 		'key_value'       => Types\KeyValueType::class,

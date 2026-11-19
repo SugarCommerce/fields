@@ -69,4 +69,44 @@ final class UserType extends AbstractRelationalType {
 			[ 'role' ]
 		);
 	}
+
+	/**
+	 * A new user is a user.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 * @since 1.7.0
+	 */
+	protected function default_create_noun( Field $field ): string {
+		return __( 'user', 'sugarcommerce' );
+	}
+
+	/**
+	 * The role a new user is asked for.
+	 *
+	 * `'create' => [ 'role' => 'customer' ]`, or else the role the field
+	 * searches, so the person just added is one the same picker can find
+	 * again. Neither, and the site's default role is used.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, scalar>
+	 * @since 1.7.0
+	 */
+	protected function create_args( Field $field ): array {
+		$role = $this->create_options( $field )['role'] ?? $field->get( 'role', '' );
+
+		return is_string( $role ) && '' !== $role ? [ 'role' => $role ] : [];
+	}
+
+	/**
+	 * A user is added by their email address.
+	 *
+	 * @return string
+	 * @since 1.7.0
+	 */
+	protected function create_input(): string {
+		return 'email';
+	}
 }

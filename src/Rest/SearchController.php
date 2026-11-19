@@ -12,6 +12,7 @@ declare( strict_types=1 );
 
 namespace SugarCommerce\Fields\Rest;
 
+use SugarCommerce\Fields\Search\Creates;
 use SugarCommerce\Fields\Search\Sources;
 use SugarCommerce\Fields\Utils\Runtime;
 use WP_Error;
@@ -32,6 +33,13 @@ use WP_REST_Server;
  * a prefixed copy of this library under one namespace would mean the first
  * to register answered the other's requests — under its own capability check
  * and against its own sources.
+ *
+ * Beside it, `POST /search/create`: a picker that found nothing can make the
+ * item it was looking for, when its source can (Search\Creates) and the
+ * current user may. It is here rather than in a controller of its own
+ * because it is the same sources, resolved the same way and claimed under
+ * the same namespace -- a second controller would be a second claim that
+ * could disagree with this one.
  */
 final class SearchController {
 
@@ -39,6 +47,14 @@ final class SearchController {
 	 * Largest page a request may ask for.
 	 */
 	private const MAX_LIMIT = 50;
+
+	/**
+	 * Longest name a create request may send.
+	 *
+	 * A post title or a term name, typed into a search box. Anything longer
+	 * is not a name someone typed.
+	 */
+	private const MAX_NAME = 200;
 
 	/**
 	 * The available sources.
@@ -96,6 +112,47 @@ final class SearchController {
 				'args'                => $this->args(),
 			]
 		);
+
+		register_rest_route(
+			$namespace,
+			'/search/create',
+			[
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => [ $this, 'create' ],
+				'permission_callback' => [ $this, 'check_create_permission' ],
+				'args'                => $this->create_args(),
+			]
+		);
+	}
+
+	/**
+	 * Arguments to the create route.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 * @since 1.7.0
+	 */
+	private function create_args(): array {
+		return [
+			'source' => [
+				'description'       => __( 'Name of the source to add to.', 'sugarcommerce' ),
+				'type'              => 'string',
+				'required'          => true,
+				'sanitize_callback' => 'sanitize_key',
+			],
+			'text'   => [
+				'description'       => __( 'What was typed: a name, or an email address for a user.', 'sugarcommerce' ),
+				'type'              => 'string',
+				'required'          => true,
+				'minLength'         => 1,
+				'maxLength'         => self::MAX_NAME,
+				'sanitize_callback' => 'sanitize_text_field',
+			],
+			'args'   => [
+				'description' => __( 'Arguments the field supplied, such as taxonomy, status or role.', 'sugarcommerce' ),
+				'type'        => 'object',
+				'default'     => [],
+			],
+		];
 	}
 
 	/**
@@ -149,6 +206,35 @@ final class SearchController {
 	 * @return true|WP_Error
 	 */
 	public function check_permission( WP_REST_Request $request ): bool|WP_Error {
+		$allowed = $this->check_logged_in_and_known( $request );
+
+		if ( true !== $allowed ) {
+			return $allowed;
+		}
+
+		$source = $this->sources->get( (string) $request->get_param( 'source' ) );
+
+		if ( ! current_user_can( $source->capability() ) ) {
+			return new WP_Error(
+				'sugarcommerce_fields_forbidden',
+				__( 'You are not allowed to search this.', 'sugarcommerce' ),
+				[ 'status' => rest_authorization_required_code() ]
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * The two checks both routes start with: someone is signed in, and the
+	 * source they named exists.
+	 *
+	 * @param WP_REST_Request $request The request.
+	 *
+	 * @return true|WP_Error
+	 * @since 1.7.0
+	 */
+	private function check_logged_in_and_known( WP_REST_Request $request ): bool|WP_Error {
 		// Before the lookup, so an anonymous request cannot learn which
 		// names are registered from whether it gets a 404 or a 401. The
 		// names are built from field keys, which is more than nothing.
@@ -160,9 +246,7 @@ final class SearchController {
 			);
 		}
 
-		$source = $this->sources->get( (string) $request->get_param( 'source' ) );
-
-		if ( null === $source ) {
+		if ( null === $this->sources->get( (string) $request->get_param( 'source' ) ) ) {
 			return new WP_Error(
 				'sugarcommerce_fields_unknown_source',
 				__( 'Unknown search source.', 'sugarcommerce' ),
@@ -170,15 +254,88 @@ final class SearchController {
 			);
 		}
 
-		if ( ! current_user_can( $source->capability() ) ) {
+		return true;
+	}
+
+	/**
+	 * Whether the request may add to the named source.
+	 *
+	 * Not the search's capability: being able to find a category is not
+	 * being able to make one. The source answers for the arguments it was
+	 * sent, so a taxonomy, a post type or a role the person may not use is a
+	 * 403 before anything is written.
+	 *
+	 * @param WP_REST_Request $request The request.
+	 *
+	 * @return true|WP_Error
+	 * @since 1.7.0
+	 */
+	public function check_create_permission( WP_REST_Request $request ): bool|WP_Error {
+		$allowed = $this->check_logged_in_and_known( $request );
+
+		if ( true !== $allowed ) {
+			return $allowed;
+		}
+
+		$source = $this->sources->get( (string) $request->get_param( 'source' ) );
+
+		if ( ! $source instanceof Creates || ! $source->can_create( $this->clean_args( (array) $request->get_param( 'args' ) ) ) ) {
 			return new WP_Error(
-				'sugarcommerce_fields_forbidden',
-				__( 'You are not allowed to search this.', 'sugarcommerce' ),
+				'sugarcommerce_fields_cannot_create',
+				__( 'You are not allowed to add that here.', 'sugarcommerce' ),
 				[ 'status' => rest_authorization_required_code() ]
 			);
 		}
 
 		return true;
+	}
+
+	/**
+	 * Add an item to a source, and answer with it as a search would.
+	 *
+	 * @param WP_REST_Request $request The request.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 * @since 1.7.0
+	 */
+	public function create( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+		$source = $this->sources->get( (string) $request->get_param( 'source' ) );
+
+		// Asked again, not assumed from the permission check: a consumer
+		// calling this method directly has not been through it.
+		if ( ! $source instanceof Creates ) {
+			return new WP_Error(
+				'sugarcommerce_fields_cannot_create',
+				__( 'You are not allowed to add that here.', 'sugarcommerce' ),
+				[ 'status' => 404 ]
+			);
+		}
+
+		$args = $this->clean_args( (array) $request->get_param( 'args' ) );
+
+		if ( ! $source->can_create( $args ) ) {
+			return new WP_Error(
+				'sugarcommerce_fields_cannot_create',
+				__( 'You are not allowed to add that here.', 'sugarcommerce' ),
+				[ 'status' => rest_authorization_required_code() ]
+			);
+		}
+
+		$text = trim( (string) $request->get_param( 'text' ) );
+		$made = $source->create( function_exists( 'mb_substr' ) ? mb_substr( $text, 0, self::MAX_NAME ) : substr( $text, 0, self::MAX_NAME ), $args );
+
+		if ( is_wp_error( $made ) ) {
+			return $made;
+		}
+
+		return new WP_REST_Response(
+			[
+				'id'       => (string) $made['id'],
+				'text'     => (string) $made['text'],
+				'existing' => (bool) $made['existing'],
+			],
+			$made['existing'] ? 200 : 201
+		);
 	}
 
 	/**

@@ -150,4 +150,20 @@ final class AjaxType extends AbstractRelationalType {
 			[ 'label_callback', 'search_source' ]
 		);
 	}
+
+	/**
+	 * Offered only when the field gave a way to make an item.
+	 *
+	 * `'create' => [ 'callback' => ..., 'noun' => 'size' ]`. The callback is
+	 * registered server-side with the search's, so it never reaches the page;
+	 * without one there is nothing the route could do with the request.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return bool
+	 * @since 1.7.0
+	 */
+	protected function creates( Field $field ): bool {
+		return parent::creates( $field ) && is_callable( $this->create_options( $field )['callback'] ?? null );
+	}
 }

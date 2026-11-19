@@ -244,10 +244,25 @@ final class Assets {
 				'position'         => __( 'Item', 'sugarcommerce' ),
 				'rowAdded'         => __( 'Row added.', 'sugarcommerce' ),
 				'rowRemoved'       => __( 'Row removed.', 'sugarcommerce' ),
+				'rowDuplicated'    => __( 'Row duplicated.', 'sugarcommerce' ),
+				/* translators: %d: how many images were added */
+				'imagesAdded'      => __( '%d added.', 'sugarcommerce' ),
+				'imageRemoved'     => __( 'Image removed.', 'sugarcommerce' ),
 				'copied'           => __( 'Copied to the clipboard.', 'sugarcommerce' ),
 				'copyFailed'       => __( 'Could not copy.', 'sugarcommerce' ),
 				'addItem'          => __( 'Add', 'sugarcommerce' ),
 				'removeItem'       => __( 'Remove', 'sugarcommerce' ),
+				/* translators: 1: what was typed, 2: what the field calls a new item, such as "collection" */
+				'addAsNew'         => __( 'Add “%1$s” as a new %2$s', 'sugarcommerce' ),
+				'newItemNoun'      => __( 'item', 'sugarcommerce' ),
+				/* translators: %s: what was typed */
+				'adding'           => __( 'Adding “%s”…', 'sugarcommerce' ),
+				/* translators: %s: the new item's name */
+				'added'            => __( '“%s” added.', 'sugarcommerce' ),
+				/* translators: %s: the item's name */
+				'addExisting'      => __( '“%s” already exists, so it has been chosen.', 'sugarcommerce' ),
+				/* translators: %s: what was typed */
+				'addFailed'        => __( '“%s” could not be added.', 'sugarcommerce' ),
 				'actionDone'       => __( 'Done.', 'sugarcommerce' ),
 				'actionFailed'     => __( 'That did not work.', 'sugarcommerce' ),
 				'showPassword'     => __( 'Show password', 'sugarcommerce' ),

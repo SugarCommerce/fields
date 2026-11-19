@@ -1302,6 +1302,23 @@ li.field-kit__repeater-row {
 	}
 }
 
+/* The row that makes a new item sits under the results and is ruled off from
+   them: it is an action, not one of the things that were found. */
+.field-kit__combobox-option--add {
+	border-top: 1px solid #dcdcde;
+	font-weight: 600;
+}
+
+.field-kit__combobox-option--add:first-child {
+	border-top: 0;
+}
+
+/* Why something could not be added. Not an option, so not pointer-styled. */
+.field-kit__combobox-notice {
+	border-inline-start: 4px solid #d63638;
+	background: #fcf0f1;
+}
+
 /* -----------------------------------------------------------------------
  * Tags
  * -------------------------------------------------------------------- */
@@ -3798,6 +3815,301 @@ li.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-indicator
 	transform: rotate(180deg);
 }
 
+/* Places a file can come from besides the media library: one button per
+   source, on a line of their own under the field. */
+.field-kit__media-sources {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .375rem;
+	margin: .375rem 0 0;
+}
+
+.wp-core-ui .field-kit__media-source {
+	display: inline-flex;
+	align-items: center;
+	gap: .25rem;
+}
+
+.field-kit__media-source svg {
+	width: 16px;
+	height: 16px;
+	flex: 0 0 auto;
+}
+
+@media screen and (max-width: 600px) {
+	.wp-core-ui .field-kit__media-source {
+		flex: 1 1 100%;
+		justify-content: center;
+		min-height: 40px;
+	}
+}
+
+/* Gallery
+   -------------------------------------------------------------------------
+   A grid of square tiles. A tile is dragged by any part of it; the handle
+   is for the keyboard, and the cross for taking one out. */
+
+.field-kit__gallery {
+	display: flow-root;
+}
+
+.field-kit__gallery > * {
+	margin: 0 0 .6rem;
+}
+
+.field-kit__gallery > :last-child,
+.field-kit__gallery > input[type="hidden"] {
+	margin: 0;
+}
+
+.field-kit__gallery-items {
+	display: grid;
+	grid-template-columns: repeat( auto-fill, minmax( 112px, 1fr ) );
+	gap: .5rem;
+	max-width: min( 100%, 40rem );
+	padding: 0;
+	list-style: none;
+}
+
+.field-kit__gallery-items[data-empty="true"] {
+	display: none;
+}
+
+.field-kit__gallery-item {
+	position: relative;
+	aspect-ratio: 1;
+	margin: 0;
+	border: 1px solid #dcdcde;
+	border-radius: 2px;
+	background: #f6f7f7;
+	overflow: hidden;
+	cursor: grab;
+}
+
+.field-kit__gallery-item:active {
+	cursor: grabbing;
+}
+
+.field-kit__gallery-item.is-dragging {
+	opacity: .5;
+}
+
+.field-kit__gallery-item img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	pointer-events: none;
+}
+
+.field-kit__gallery-missing {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	padding: .5rem;
+	color: #646970;
+	font-size: 12px;
+	text-align: center;
+}
+
+/* Says a picture has no alt text, across its foot: small, but on every
+   tile it applies to, so a gallery that needs work looks it. */
+.field-kit__gallery-alt {
+	position: absolute;
+	inset-inline: 0;
+	bottom: 0;
+	padding: .15rem .35rem;
+	background: rgba( 29, 35, 39, .75 );
+	color: #fff;
+	font-size: 11px;
+	line-height: 1.4;
+	pointer-events: none;
+}
+
+/* The span the buttons sit in draws no box, so they are placed against the
+   tile itself. Nothing else can apply to a box that is not there. */
+.field-kit__gallery-actions {
+	display: contents;
+}
+
+/* The cross: a small dark disc in the corner, shown when the tile is hovered
+   or holds focus, red under the pointer. Dark rather than white, because a
+   white disc vanished on a light photo. */
+.wp-core-ui .field-kit__gallery-remove {
+	position: absolute;
+	top: .375rem;
+	inset-inline-end: .375rem;
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.5rem;
+	height: 1.5rem;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: rgba( 29, 35, 39, .7 );
+	color: #fff;
+	box-shadow: 0 1px 2px rgba( 0, 0, 0, .25 );
+	text-decoration: none;
+	opacity: 0;
+	transition: opacity .12s ease-in-out, background-color .12s ease-in-out;
+}
+
+.field-kit__gallery-item:hover .field-kit__gallery-remove,
+.field-kit__gallery-item:focus-within .field-kit__gallery-remove {
+	opacity: 1;
+}
+
+.wp-core-ui .field-kit__gallery-remove:hover,
+.wp-core-ui .field-kit__gallery-remove:focus {
+	background: #d63638;
+	color: #fff;
+	opacity: 1;
+}
+
+.wp-core-ui .field-kit__gallery-remove:focus-visible {
+	outline: 2px solid #fff;
+	outline-offset: 1px;
+	box-shadow: 0 0 0 4px rgba( 29, 35, 39, .5 );
+}
+
+.field-kit__gallery-remove .sugarcommerce-icon {
+	display: block;
+}
+
+/* Clipped away like screen-reader text until it is tabbed to: nobody with
+   a pointer needs it, since the whole tile drags. */
+.field-kit__gallery-item .field-kit__gallery-handle {
+	position: absolute;
+	top: .375rem;
+	inset-inline-start: .375rem;
+	z-index: 1;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset( 50% );
+	border: 0;
+	border-radius: 2px;
+	background: rgba( 255, 255, 255, .92 );
+	box-shadow: 0 1px 2px rgba( 0, 0, 0, .25 );
+}
+
+.field-kit__gallery-item .field-kit__gallery-handle:focus-visible {
+	width: auto;
+	height: auto;
+	margin: 0;
+	padding: .15rem;
+	overflow: visible;
+	clip-path: none;
+}
+
+/* Nothing may be revealed by hover alone where nothing hovers. */
+@media (hover: none) {
+	.wp-core-ui .field-kit__gallery-remove {
+		opacity: 1;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.wp-core-ui .field-kit__gallery-remove {
+		transition: none;
+	}
+}
+
+@media screen and (max-width: 782px) {
+	.field-kit__gallery-items {
+		grid-template-columns: repeat( auto-fill, minmax( 96px, 1fr ) );
+	}
+
+	/* A thumb's target, with the glyph its size in the middle of it. */
+	.wp-core-ui .field-kit__gallery-remove {
+		width: 2.25rem;
+		height: 2.25rem;
+		top: .25rem;
+		inset-inline-end: .25rem;
+	}
+}
+
+/* Flexible content
+   -------------------------------------------------------------------------
+   A row is a collapsible repeater row whose strip names its layout, so it
+   wears that strip's rules. Its own are the name, the duplicate button and
+   the add buttons. A layout is usually a card of several fields, so the
+   rows get more room than a repeater's. */
+
+.field-kit__flexible > .field-kit__repeater-rows {
+	max-width: 48rem;
+}
+
+.field-kit__flexible-name {
+	display: flex;
+	flex: 1 1 auto;
+	align-items: center;
+	gap: .5rem;
+	min-width: 0;
+}
+
+.field-kit__flexible-badge {
+	flex: 0 0 auto;
+	padding: 0 .5rem;
+	border: 1px solid #c3c4c7;
+	border-radius: 999px;
+	background: #fff;
+	color: #3c434a;
+	font-size: 12px;
+	line-height: 1.6;
+}
+
+.field-kit__flexible-name .field-kit__repeater-title {
+	font-weight: 400;
+	color: #50575e;
+}
+
+.wp-core-ui .field-kit__repeater-duplicate {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.75rem;
+	height: 1.75rem;
+	padding: 0;
+	border-radius: 2px;
+	color: #50575e;
+	text-decoration: none;
+}
+
+.wp-core-ui .field-kit__repeater-duplicate:hover,
+.wp-core-ui .field-kit__repeater-duplicate:focus {
+	background: #f0f0f1;
+	color: #1d2327;
+}
+
+.wp-core-ui .field-kit__repeater-duplicate:disabled,
+.wp-core-ui .field-kit__repeater-remove:disabled {
+	background: none;
+	color: #c3c4c7;
+	cursor: default;
+}
+
+.field-kit__repeater-duplicate .sugarcommerce-icon {
+	width: 1rem;
+	height: 1rem;
+}
+
+.field-kit__flexible-add {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .375rem;
+	margin: .6rem 0 0;
+}
+
+.field-kit__flexible-orphan {
+	margin: 0 0 .5rem;
+}
+
 /* -----------------------------------------------------------------------
  * Hooks for sibling libraries
  *
@@ -3810,10 +4122,12 @@ li.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-indicator
  * -------------------------------------------------------------------- */
 
 /* wp-register-flyouts. Its panel is already as narrow as a list is going
-   to get: the cap on a repeater and a sortable is there so one
+   to get: the cap on a gallery, a repeater and a sortable is there so one
    on a settings screen does not run the width of a desktop, and inside a
    flyout it just leaves a column of dead space down the end of every row. */
 .wp-flyout .field-kit__repeater-rows,
+.wp-flyout .field-kit__gallery-items,
+.wp-flyout .field-kit__flexible > .field-kit__repeater-rows,
 .wp-flyout .field-kit__sortable {
 	max-width: none;
 }

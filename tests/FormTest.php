@@ -246,7 +246,7 @@ final class FormTest extends TestCase {
 		$admin    = array_values( array_filter( $registry->ids(), static fn( string $id ): bool => $registry->get( $id ) instanceof AdminOnly ) );
 
 		$this->assertSame(
-			[ 'action_button', 'ajax', 'code', 'email_editor', 'file', 'file_url', 'files', 'icon', 'image', 'license', 'page', 'post', 'taxonomy', 'user', 'wysiwyg' ],
+			[ 'action_button', 'ajax', 'code', 'email_editor', 'file', 'file_url', 'files', 'flexible', 'gallery', 'icon', 'image', 'license', 'page', 'post', 'taxonomy', 'user', 'wysiwyg' ],
 			$admin
 		);
 	}

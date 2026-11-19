@@ -58,8 +58,21 @@ if ( ! function_exists( 'esc_textarea' ) ) {
 }
 
 if ( ! function_exists( 'esc_url_raw' ) ) {
-	function esc_url_raw( $url ) {
-		return filter_var( (string) $url, FILTER_SANITIZE_URL ) ?: '';
+	function esc_url_raw( $url, $protocols = null ) {
+		$url = filter_var( (string) $url, FILTER_SANITIZE_URL ) ?: '';
+
+		// Core's rule that matters here: a scheme not on the list is no URL.
+		if ( preg_match( '/^([a-z][a-z0-9+.-]*):/i', $url, $scheme ) && ! in_array( strtolower( $scheme[1] ), $protocols ?? wp_allowed_protocols(), true ) ) {
+			return '';
+		}
+
+		return $url;
+	}
+}
+
+if ( ! function_exists( 'wp_allowed_protocols' ) ) {
+	function wp_allowed_protocols() {
+		return [ 'http', 'https', 'ftp', 'ftps', 'mailto', 'news', 'irc', 'irc6', 'ircs', 'gopher', 'nntp', 'feed', 'telnet', 'mms', 'rtsp', 'sms', 'svn', 'tel', 'fax', 'xmpp', 'webcal', 'urn' ];
 	}
 }
 
@@ -792,4 +805,18 @@ require_once __DIR__ . '/stubs/Rest.php';
  */
 if ( ! class_exists( 'WP_Icons_Registry' ) ) {
 	require_once __DIR__ . '/stubs/IconsRegistry.php';
+}
+
+/*
+ * A template part, recorded and drawn as its name, so a test can see which
+ * part was asked for and what it was given.
+ */
+if ( ! function_exists( 'get_template_part' ) ) {
+	function get_template_part( $slug, $name = null, $args = [] ) {
+		$GLOBALS['fk_template_parts'][] = [ $slug, $name, $args ];
+
+		echo '<part ' . $slug . ( null === $name ? '' : '-' . $name ) . '>';
+
+		return true;
+	}
 }

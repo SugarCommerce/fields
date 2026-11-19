@@ -73,4 +73,19 @@ final class TaxonomyType extends AbstractRelationalType {
 			[ 'taxonomy' ]
 		);
 	}
+
+	/**
+	 * A new term is called what its taxonomy calls one.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 * @since 1.7.0
+	 */
+	protected function default_create_noun( Field $field ): string {
+		$taxonomy = get_taxonomy( (string) $field->get( 'taxonomy', 'category' ) );
+		$label    = $taxonomy ? (string) ( $taxonomy->labels->singular_name ?? '' ) : '';
+
+		return '' === $label ? parent::default_create_noun( $field ) : self::in_sentence( $label );
+	}
 }

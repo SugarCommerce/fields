@@ -599,6 +599,53 @@ try {
 } )();
 
 /*
+ * A picker that may make a new item offers to, and only when it should.
+ *
+ * The row is offered when nothing found is what was typed -- a user found
+ * by the address in brackets counts -- and for a user only when what was
+ * typed is an address, since the server refuses anything else. Its words
+ * start with "Add", which the panels audit relies on to never press it.
+ * What it does is read out of the source, for the same reason as the clear
+ * button above: driving bind() needs more of a document than this has.
+ */
+( function () {
+	const Combobox = modules.Combobox;
+	const expect = ( ok, message ) => {
+		if ( ! ok ) {
+			console.error( `  Combobox (add): ${ message }` );
+			failures ++;
+		}
+	};
+
+	const found = [ { id: '4', text: 'Sample Packs' }, { id: '9', text: 'Jane Doe (jane@example.test)' } ];
+
+	expect( true === Combobox.offersAdd( found, 'Sample', '' ), 'a partial match did not leave room to add' );
+	expect( false === Combobox.offersAdd( found, ' sample packs ', '' ), 'an exact match, in another case, was offered as new' );
+	expect( false === Combobox.offersAdd( found, '', '' ), 'nothing typed was offered as new' );
+	expect( false === Combobox.offersAdd( found, 'Jane@example.test', 'email' ), 'a user found by address was offered as new' );
+	expect( false === Combobox.offersAdd( [], 'Jane Doe', 'email' ), 'a name was offered as a new user, who is added by address' );
+	expect( true === Combobox.offersAdd( [], 'new@example.test', 'email' ), 'a new address was not offered' );
+	expect( true === Combobox.offersAdd( [ { text: 'Sample Packs', add: true } ], 'Sample Packs', '' ), 'the Add row counted as a match for itself' );
+
+	const label = Combobox.addLabel( ' Sample Packs ', 'collection' );
+
+	expect( 'Add “Sample Packs” as a new collection' === label, `the row reads "${ label }"` );
+	expect( 0 === Combobox.addLabel( 'x', '' ).indexOf( 'Add ' ), 'the row does not start with "Add "' );
+
+	const checks = [
+		[ /var creatable = ! adds &&/, 'a field that makes real items also keeps the raw text' ],
+		[ /results = results\.concat\( \[ \{[\s\S]{0,80}add: true/, 'the Add row is not the last row' ],
+		[ /if \( result\.add \) \{\s*add\( String\( result\.text \) \)/, 'choosing the Add row (Enter or click) does not create' ],
+		[ /function add\( text \)[\s\S]{0,2000}method: 'POST'[\s\S]{0,400}createEndpoint|kit\.request\( new URL\( createEndpoint/, 'the new item is not posted to the create route' ],
+		[ /function add\( text \)[\s\S]{0,3200}take\( String\( answer\.data\.id \)/, 'the new item is not chosen by the id that came back' ],
+		[ /function add\( text \)[\s\S]{0,1200}selectedOptions\.length >= max/, 'an item is made past the field\'s limit, where nobody can choose it' ],
+		[ /function refuse\([\s\S]{0,600}kit\.announce\( status, notice \)/, 'a refusal is not announced when the list cannot show it' ],
+	];
+
+	checks.forEach( ( [ pattern, complaint ] ) => expect( pattern.test( source ), complaint ) );
+} )();
+
+/*
  * A drag moves an item one place, not two.
  *
  * dragover fires continuously — many times per second — and the list has
@@ -1948,9 +1995,101 @@ function smallerChecks() {
 	expect( '0' === modules.Location.number( -0.00000001 ), 'Location: minus nothing is nothing' );
 	expect( false === modules.Guard.dirty(), 'Guard: nothing guarded is dirty' );
 	expect( true === modules.Guard.confirm(), 'Guard: nothing to confirm asks nothing' );
+
+	// A gallery writes its order to the hidden input, says it changed, and
+	// turns its button off when it is full.
+	const input = makeElement();
+	const add = makeElement();
+	const wrap = makeElement();
+	const list = makeElement();
+	const changes = [];
+
+	input.dispatchEvent = ( event ) => changes.push( event.type );
+	wrap.dataset = { max: '2' };
+	wrap.querySelector = ( selector ) => ( selector.includes( 'media-value' ) ? input : ( selector.includes( 'gallery-add' ) ? add : null ) );
+	list.closest = () => wrap;
+	list.querySelectorAll = () => [ 7, 3 ].map( ( id ) => Object.assign( makeElement(), { dataset: { id: String( id ) } } ) );
+
+	modules.Gallery.sync( list );
+
+	expect( '7,3' === input.value, `Gallery: the order written was ${ input.value }` );
+	expect( 1 === changes.length, 'Gallery: a new order is not announced as a change' );
+	expect( true === add.disabled, 'Gallery: a full gallery still offers to add' );
+	expect( 'false' === list.dataset.empty, 'Gallery: a gallery with pictures says it is empty' );
+
+	modules.Gallery.sync( list );
+
+	expect( 1 === changes.length, 'Gallery: the same order is announced as a change' );
 }
 
-regionChecks.then( requestChecks ).then( smallerChecks ).then( finish, ( error ) => {
+/**
+ * A file source: a bucket's picker fills a file field through the same path
+ * a media-library choice takes, a dismissed picker changes nothing, and a
+ * button for a source whose script never registered is hidden.
+ */
+async function sourceChecks() {
+	const expect = ( ok, message ) => {
+		if ( ! ok ) {
+			console.error( `  ${ message }` );
+			failures ++;
+		}
+	};
+
+	const input = makeElement();
+	const clear = makeElement();
+	const known = makeElement();
+	const unknown = makeElement();
+	const wrap = makeElement();
+	const changes = [];
+	let answer = { value: 's3://bucket/packs/one.zip', name: 'one.zip' };
+	let asked = null;
+
+	input.dispatchEvent = ( event ) => changes.push( event.type );
+	clear.hidden = true;
+	known.dataset = { source: 'bucket' };
+	unknown.dataset = { source: 'drive' };
+	wrap.dataset = { returns: 'url', accept: 'zip,wav' };
+	wrap.querySelector = ( selector ) => ( {
+		'.field-kit__media-value': input,
+		'.field-kit__media-clear': clear,
+	}[ selector ] || null );
+	wrap.querySelectorAll = ( selector ) => ( selector.includes( 'media-source' ) ? [ known, unknown ] : [] );
+
+	context.window.sugarcommerceFileSources = {
+		bucket: {
+			label: 'Bucket',
+			pick: ( options ) => {
+				asked = options;
+
+				return Promise.resolve( answer );
+			},
+		},
+	};
+
+	modules.Media.sources( wrap );
+
+	expect( false === known.hidden, 'Sources: a registered source is hidden' );
+	expect( true === unknown.hidden, 'Sources: a source whose script never registered shows a dead button' );
+
+	await modules.Media.fromSource( wrap, 'bucket' );
+
+	expect( 's3://bucket/packs/one.zip' === input.value, `Sources: the field holds ${ input.value }` );
+	expect( changes.includes( 'change' ), 'Sources: a picked file is not announced as a change' );
+	expect( false === clear.hidden, 'Sources: Remove did not appear for a picked file' );
+	expect( asked && 'zip,wav' === asked.accept.join( ',' ) && 'address' === asked.returns, 'Sources: the picker was not told what the field takes' );
+
+	answer = null;
+	changes.length = 0;
+
+	await modules.Media.fromSource( wrap, 'bucket' );
+
+	expect( 's3://bucket/packs/one.zip' === input.value && 0 === changes.length, 'Sources: a dismissed picker changed the field' );
+	expect( undefined === modules.Media.fromSource( wrap, 'drive' ), 'Sources: an unregistered source was asked' );
+
+	delete context.window.sugarcommerceFileSources;
+}
+
+regionChecks.then( requestChecks ).then( sourceChecks ).then( smallerChecks ).then( finish, ( error ) => {
 	console.error( `  Region: ${ error.message }` );
 	failures ++;
 	finish();

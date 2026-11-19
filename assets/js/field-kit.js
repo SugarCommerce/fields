@@ -709,6 +709,56 @@
 			return button;
 		},
 
+		/**
+		 * Whether a search's results leave room to add what was typed as a
+		 * new item.
+		 *
+		 * Not when one of them already is it: "Sample Packs" offered as new
+		 * beside a "Sample Packs" that exists is an invitation to make a
+		 * duplicate. A user is labelled "Name (address)", so an address
+		 * matches the one in brackets. And a user is added by their address,
+		 * so nothing else typed is offered at all -- the server would only
+		 * refuse it.
+		 *
+		 * @param {Array}  found The search's results.
+		 * @param {string} typed What is in the box.
+		 * @param {string} kind  'email' when an address is needed, else ''.
+		 * @return {boolean} Whether to offer the Add row.
+		 */
+		offersAdd: function ( found, typed, kind ) {
+			var needle = String( typed || '' ).trim().toLowerCase();
+
+			if ( '' === needle ) {
+				return false;
+			}
+
+			if ( 'email' === kind && ! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test( needle ) ) {
+				return false;
+			}
+
+			return ! ( found || [] ).some( function ( result ) {
+				var text = String( result.text || '' ).toLowerCase();
+
+				return ! result.add && ( text === needle || text.slice( -( needle.length + 2 ) ) === '(' + needle + ')' );
+			} );
+		},
+
+		/**
+		 * The Add row's words: Add “Sample Packs” as a new collection.
+		 *
+		 * Starts with "Add" in English on purpose, so it reads as the action
+		 * it is and is never mistaken for a result.
+		 *
+		 * @param {string} typed What is in the box.
+		 * @param {string} noun  What the field calls a new item.
+		 * @return {string} The label.
+		 */
+		addLabel: function ( typed, noun ) {
+			return t( 'addAsNew', 'Add “%1$s” as a new %2$s' )
+				.replace( '%1$s', String( typed ).trim() )
+				.replace( '%2$s', noun || t( 'newItemNoun', 'item' ) );
+		},
+
 		syncOrder: function ( chips ) {
 			var wrap = chips.closest( '.field-kit__combobox' ) || chips.parentElement;
 			var select = wrap ? wrap.querySelector( 'select' ) : null;
@@ -910,10 +960,25 @@
 			var remote = !! select.dataset.searchEndpoint;
 			var multiple = select.multiple;
 
+			// Whether what was typed can be made into a real item -- a post,
+			// a term, a user -- through the create route, and chosen by the
+			// id that comes back.
+			var createEndpoint = select.dataset.createEndpoint || '';
+			var adds = remote && '' !== createEndpoint;
+			var adding = false;
+
+			// A refusal from the create route, shown at the top of the list
+			// until something else is typed, and the text it refused, so the
+			// same row is not offered straight back.
+			var notice = '';
+			var refused = '';
+
 			// Whether a value the list does not offer can be added anyway.
 			// This is what makes a control a tag input rather than a picker:
-			// the same combobox, allowed to invent an option.
-			var creatable = 'true' === select.dataset.creatable;
+			// the same combobox, allowed to invent an option. A field that
+			// makes real items does not also keep the raw text; the server
+			// says so too, and this is the same rule.
+			var creatable = ! adds && 'true' === select.dataset.creatable;
 
 			// A local list needs no minimum: there is nothing to spare by
 			// waiting, and an empty query means "show me everything".
@@ -1209,7 +1274,121 @@
 					return;
 				}
 
+				if ( result.add ) {
+					add( String( result.text ) );
+
+					return;
+				}
+
 				take( String( result.id ), result.text, false );
+			}
+
+			/**
+			 * Make what was typed into a real item, then choose it.
+			 *
+			 * The route answers with an id and a label the way the search
+			 * does, so the new item goes through take() as if it had been
+			 * found: a chip, or the single choice, and nothing kept as text.
+			 * One that already existed is chosen all the same and said to be.
+			 *
+			 * @param {string} text What was typed.
+			 */
+			function add( text ) {
+				if ( adding ) {
+					return;
+				}
+
+				// Checked before anything is made: past the limit take() would
+				// refuse the new item, which would then exist and be chosen
+				// by nobody.
+				var max = parseInt( select.getAttribute( 'data-max' ) || '0', 10 );
+
+				if ( multiple && max > 0 && select.selectedOptions.length >= max ) {
+					kit.announce(
+						status,
+						t( 'maxReached', 'You can choose at most %d.' ).replace( '%d', String( max ) )
+					);
+
+					return;
+				}
+
+				var args = {};
+
+				[ select.dataset.searchArgs, select.dataset.createArgs ].forEach( function ( json ) {
+					var parsed = json ? JSON.parse( json ) : {};
+
+					Object.keys( parsed ).forEach( function ( key ) {
+						args[ key ] = parsed[ key ];
+					} );
+				} );
+
+				adding = true;
+				input.setAttribute( 'aria-busy', 'true' );
+				kit.announce( status, t( 'adding', 'Adding “%s”…' ).replace( '%s', text ) );
+
+				kit.request( new URL( createEndpoint, window.location.origin ), {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-WP-Nonce': select.dataset.searchNonce || config.restNonce || ''
+					},
+					body: JSON.stringify( {
+						source: select.dataset.searchSource,
+						text: text,
+						args: args
+					} )
+				} ).then( function ( response ) {
+					return response.json().catch( function () {
+						return {};
+					} ).then( function ( data ) {
+						return { ok: response.ok, data: data || {} };
+					} );
+				} ).then( function ( answer ) {
+					adding = false;
+					input.removeAttribute( 'aria-busy' );
+
+					if ( answer.ok && answer.data.id ) {
+						var label = String( answer.data.text || text );
+
+						refused = '';
+						notice = '';
+						take( String( answer.data.id ), label, false );
+						kit.announce(
+							status,
+							( answer.data.existing
+								? t( 'addExisting', '“%s” already exists, so it has been chosen.' )
+								: t( 'added', '“%s” added.' ) ).replace( '%s', label )
+						);
+
+						return;
+					}
+
+					refuse( text, answer.data.message );
+				} ).catch( function () {
+					adding = false;
+					input.removeAttribute( 'aria-busy' );
+					refuse( text, '' );
+				} );
+			}
+
+			/**
+			 * Say why something could not be added, without losing the list.
+			 *
+			 * @param {string} text    What was typed.
+			 * @param {string} message The server's reason, if it gave one.
+			 */
+			function refuse( text, message ) {
+				refused = text.trim().toLowerCase();
+				notice = message || t( 'addFailed', '“%s” could not be added.' ).replace( '%s', text );
+
+				if ( document.activeElement === input ) {
+					render();
+
+					return;
+				}
+
+				kit.announce( status, notice );
 			}
 
 			/**
@@ -1232,6 +1411,31 @@
 				// so the pointer has the same way in as the keyboard.
 				var typed = input.value.trim();
 
+				// One that makes real items offers it as the last row instead:
+				// after everything that already exists, which is usually what
+				// was wanted, and reached with End from anywhere in the list.
+				results = results.filter( function ( result ) {
+					return ! result.add;
+				} );
+
+				if ( adds && ! adding && refused !== typed.toLowerCase() && Combobox.offersAdd( results, typed, select.dataset.createInput || '' ) ) {
+					results = results.concat( [ {
+						id: '',
+						text: typed,
+						add: true
+					} ] );
+				}
+
+				// The create route's refusal heads the list. Not an option:
+				// there is nothing to choose in it, and arrowing onto it would
+				// be a stop that does nothing.
+				if ( notice ) {
+					var said = document.createElement( 'li' );
+					said.className = 'field-kit__combobox-option field-kit__combobox-notice';
+					said.textContent = notice;
+					list.appendChild( said );
+				}
+
 				if ( creatable && '' !== typed && ! results.some( function ( result ) {
 					return String( result.text ).toLowerCase() === typed.toLowerCase();
 				} ) ) {
@@ -1250,7 +1454,7 @@
 					place();
 					list.hidden = false;
 					input.setAttribute( 'aria-expanded', 'true' );
-					kit.announce( status, t( 'noResults', 'No results found.' ) );
+					kit.announce( status, notice || t( 'noResults', 'No results found.' ) );
 
 					return;
 				}
@@ -1265,6 +1469,11 @@
 					var text = result.create
 						? t( 'addItem', 'Add' ) + ' “' + result.text + '”'
 						: result.text;
+
+					if ( result.add ) {
+						text = Combobox.addLabel( result.text, select.dataset.createNoun || '' );
+						option.classList.add( 'field-kit__combobox-option--add' );
+					}
 
 					// Built rather than assigned, so the label stays text and
 					// the glyph is an element beside it.
@@ -1297,9 +1506,18 @@
 				list.hidden = false;
 				input.setAttribute( 'aria-expanded', 'true' );
 
+				// The refusal is what has just happened, so it is what is
+				// said; the count would talk over it. Otherwise an Add row is
+				// not a result, and is named after the count so it is heard.
+				var found = results.filter( function ( result ) {
+					return ! result.add;
+				} ).length;
+				var offered = results.length > found;
+
 				kit.announce(
 					status,
-					results.length + ' ' + t( 'resultsAvailable', 'results available.' )
+					notice || ( ( found ? found + ' ' + t( 'resultsAvailable', 'results available.' ) : t( 'noResults', 'No results found.' ) )
+						+ ( offered ? ' ' + Combobox.addLabel( typed, select.dataset.createNoun || '' ) + '.' : '' ) )
 				);
 			}
 
@@ -1365,6 +1583,10 @@
 
 			input.addEventListener( 'input', function () {
 				window.clearTimeout( timer );
+
+				// Something new typed: the last refusal was about something
+				// else.
+				notice = '';
 
 				if ( input.value.length < minChars ) {
 					close();
@@ -1509,7 +1731,7 @@
 		 * @param {Element} root Container.
 		 */
 		init: function ( root ) {
-			root.querySelectorAll( '.field-kit__sortable, .field-kit__repeater-rows, .field-kit__combobox-chips[data-sortable]' ).forEach( function ( list ) {
+			root.querySelectorAll( '.field-kit__sortable, .field-kit__repeater-rows, .field-kit__gallery-items, .field-kit__combobox-chips[data-sortable]' ).forEach( function ( list ) {
 				if ( list.dataset.fkBound ) {
 					return;
 				}
@@ -1529,6 +1751,10 @@
 		itemSelector: function ( list ) {
 			if ( list.classList.contains( 'field-kit__sortable' ) ) {
 				return '.field-kit__sortable-item';
+			}
+
+			if ( list.classList.contains( 'field-kit__gallery-items' ) ) {
+				return '.field-kit__gallery-item';
 			}
 
 			if ( list.classList.contains( 'field-kit__combobox-chips' ) ) {
@@ -1597,7 +1823,12 @@
 			// form takes part: the older lists draw the handle as a
 			// decorative span and keep their own move buttons.
 			list.addEventListener( 'keydown', function ( event ) {
-				if ( 'ArrowUp' !== event.key && 'ArrowDown' !== event.key ) {
+				// Left and right as well as up and down: a gallery is a
+				// grid, and its neighbours are beside a tile as often as
+				// above it.
+				var backward = 'ArrowUp' === event.key || 'ArrowLeft' === event.key;
+
+				if ( ! backward && 'ArrowDown' !== event.key && 'ArrowRight' !== event.key ) {
 					return;
 				}
 
@@ -1616,7 +1847,7 @@
 				// Or the page scrolls under the list while the row moves.
 				event.preventDefault();
 
-				Reorder.move( list, item, 'ArrowUp' === event.key ? 'up' : 'down' );
+				Reorder.move( list, item, backward ? 'up' : 'down' );
 
 				// Focus stays on the handle, which has moved with its row --
 				// so the arrow keys keep working and the new position is
@@ -1742,6 +1973,10 @@
 
 			if ( list.classList.contains( 'field-kit__combobox-chips' ) ) {
 				Combobox.syncOrder( list );
+			}
+
+			if ( list.classList.contains( 'field-kit__gallery-items' ) && window.SugarCommerceFieldsModules.Gallery ) {
+				window.SugarCommerceFieldsModules.Gallery.sync( list );
 			}
 
 			if ( list.classList.contains( 'field-kit__repeater-rows' ) ) {
@@ -1913,7 +2148,18 @@
 					if ( addButton && Repeater.owns( wrap, addButton ) ) {
 						event.preventDefault();
 
-						Repeater.add( wrap );
+						// Flexible content has a template per layout: the
+						// button names one, or the list beside it does.
+						var picker = Repeater.own( wrap, '.field-kit__flexible-layout' );
+
+						Repeater.add( wrap, addButton.dataset.layout || ( picker ? picker.value : '' ) );
+					}
+
+					var duplicate = event.target.closest( '.field-kit__repeater-duplicate' );
+
+					if ( duplicate && Repeater.owns( wrap, duplicate ) ) {
+						event.preventDefault();
+						Repeater.duplicate( wrap, duplicate.closest( '.field-kit__repeater-row' ) );
 					}
 
 					var remove = event.target.closest( '.field-kit__repeater-remove' );
@@ -1939,18 +2185,118 @@
 				// follow what is typed into the field it comes from --
 				// otherwise renaming a tier and folding it away shows the
 				// name it used to have until the page is reloaded.
+				// A flexible field's layouts are each titled by a field of
+				// their own, so its rows carry the key.
 				var key = wrap.dataset.rowTitle;
 
-				if ( key ) {
+				if ( key || wrap.classList.contains( 'field-kit__flexible' ) ) {
 					wrap.addEventListener( 'input', function ( event ) {
 						var row = event.target.closest( '.field-kit__repeater-row' );
+						var own = row ? ( row.dataset.rowTitle || key ) : '';
 
-						if ( ! row || ! Repeater.namesField( event.target, key ) ) {
+						if ( ! row || ! own || ! Repeater.owns( wrap, row ) || ! Repeater.namesField( event.target, own ) ) {
 							return;
 						}
 
 						Repeater.retitle( row, event.target.value );
 					} );
+				}
+
+				// A layout's picker offers only what there is room for.
+				var picker = Repeater.own( wrap, '.field-kit__flexible-layout' );
+
+				if ( picker ) {
+					picker.addEventListener( 'change', function () {
+						Repeater.limits( wrap );
+					} );
+				}
+
+				Repeater.limits( wrap );
+			} );
+		},
+
+		/**
+		 * Turn a flexible field's buttons off where a limit is reached.
+		 *
+		 * A layout's Add at its maximum, every Add at the field's, and a
+		 * row's Remove where taking it out would leave its layout -- or the
+		 * field -- short of a minimum. Off rather than silently ignored, so
+		 * nobody presses a button that does nothing.
+		 *
+		 * @param {Element} wrap The repeater.
+		 */
+		limits: function ( wrap ) {
+			if ( ! wrap.classList.contains( 'field-kit__flexible' ) ) {
+				return;
+			}
+
+			var list = Repeater.own( wrap, '.field-kit__repeater-rows' );
+
+			if ( ! list ) {
+				return;
+			}
+
+			var rows = Array.prototype.slice.call( list.children );
+			var counts = {};
+
+			rows.forEach( function ( row ) {
+				counts[ row.dataset.layout ] = ( counts[ row.dataset.layout ] || 0 ) + 1;
+			} );
+
+			var max = parseInt( wrap.dataset.maxRows || '0', 10 );
+			var min = parseInt( wrap.dataset.minRows || '0', 10 );
+			var full = max > 0 && rows.length >= max;
+			var mins = {};
+
+			function spent( control ) {
+				var cap = parseInt( control.dataset.max || '0', 10 );
+
+				return cap > 0 && ( counts[ control.dataset.layout || control.value ] || 0 ) >= cap;
+			}
+
+			wrap.querySelectorAll( '.field-kit__repeater-add[data-layout], .field-kit__flexible-layout option' ).forEach( function ( control ) {
+				if ( ! Repeater.owns( wrap, control ) ) {
+					return;
+				}
+
+				mins[ control.dataset.layout || control.value ] = parseInt( control.dataset.min || '0', 10 );
+				control.disabled = full || spent( control );
+			} );
+
+			var picker = Repeater.own( wrap, '.field-kit__flexible-layout' );
+			var single = Repeater.own( wrap, '.field-kit__repeater-add:not([data-layout])' );
+
+			if ( picker && single ) {
+				var chosen = picker.options[ picker.selectedIndex ];
+
+				// The list moves off a layout that has just filled up.
+				if ( chosen && chosen.disabled ) {
+					var open = Array.prototype.find.call( picker.options, function ( option ) {
+						return ! option.disabled;
+					} );
+
+					if ( open ) {
+						picker.value = open.value;
+						chosen = open;
+					}
+				}
+
+				single.disabled = full || ! chosen || chosen.disabled;
+			}
+
+			rows.forEach( function ( row ) {
+				var remove = row.querySelector( '.field-kit__repeater-actions .field-kit__repeater-remove' );
+				var duplicate = row.querySelector( '.field-kit__repeater-actions .field-kit__repeater-duplicate' );
+				var layoutMin = mins[ row.dataset.layout ] || 0;
+
+				if ( remove ) {
+					remove.disabled = ( min > 0 && rows.length <= min ) || ( layoutMin > 0 && ( counts[ row.dataset.layout ] || 0 ) <= layoutMin );
+				}
+
+				if ( duplicate && undefined !== mins[ row.dataset.layout ] ) {
+					var control = wrap.querySelector( '.field-kit__repeater-add[data-layout="' + CSS.escape( row.dataset.layout ) + '"], .field-kit__flexible-layout option[value="' + CSS.escape( row.dataset.layout ) + '"]' );
+
+					duplicate.disabled = full || ( !! control && spent( control ) );
 				}
 			} );
 		},
@@ -2056,26 +2402,40 @@
 		 * row is labelled and associated exactly like an existing one — which
 		 * is not true of a row assembled from a string in script.
 		 *
-		 * @param {Element} wrap The repeater.
+		 * @param {Element}      wrap   The repeater.
+		 * @param {string}       layout A flexible field's layout; a plain
+		 *                              repeater has one template and ignores it.
+		 * @param {Element|null} after  The row to put it after; the end when
+		 *                              there is none.
+		 * @param {Element|null} source A row whose values it starts with.
+		 * @param {boolean}      quiet  Neither focus nor announce: a row added
+		 *                              as part of another's copy.
+		 * @return {Element|null} The row, or null when there is no room.
 		 */
-		add: function ( wrap ) {
-			var template = Repeater.own( wrap, '.field-kit__repeater-template' );
+		add: function ( wrap, layout, after, source, quiet ) {
+			var template = layout
+				? Repeater.own( wrap, '.field-kit__repeater-template[data-layout="' + CSS.escape( layout ) + '"]' )
+				: Repeater.own( wrap, '.field-kit__repeater-template' );
 
 			var list = Repeater.own( wrap, '.field-kit__repeater-rows' );
 
 			if ( ! template || ! list ) {
-				return;
+				return null;
 			}
 
 			var max = parseInt( wrap.dataset.maxRows || '0', 10 );
 
 			if ( max > 0 && list.children.length >= max ) {
-				return;
+				return null;
 			}
 
 			var row = template.content.firstElementChild.cloneNode( true );
 
-			list.appendChild( row );
+			if ( after && after.nextElementSibling ) {
+				list.insertBefore( row, after.nextElementSibling );
+			} else {
+				list.appendChild( row );
+			}
 
 			// Through Reorder rather than reindex(): the template is rendered
 			// for a row that has no position yet, so it arrives with both its
@@ -2084,6 +2444,12 @@
 			// all of that; reindex() on its own only renumbers, which left
 			// every added row unable to move in either direction.
 			kit.Reorder.sync( list );
+
+			// A copy takes its values before the modules see it, so a
+			// combobox, a colour or an editor starts on them.
+			if ( source ) {
+				Repeater.copy( wrap, source, row );
+			}
 
 			// The new row's markup has never been past the modules, so a
 			// combobox, colour picker or media button inside it is inert
@@ -2104,6 +2470,12 @@
 				Repeater.toggle( row );
 			}
 
+			Repeater.limits( wrap );
+
+			if ( quiet ) {
+				return row;
+			}
+
 			// Focus into the new row, or adding one is silent and leaves a
 			// keyboard user still on the button.
 			var first = row.querySelector( 'input:not([type="hidden"]), select, textarea' );
@@ -2112,7 +2484,138 @@
 				first.focus();
 			}
 
-			kit.announce( Repeater.status( wrap ), t( 'rowAdded', 'Row added.' ) );
+			kit.announce( Repeater.status( wrap ), source ? t( 'rowDuplicated', 'Row duplicated.' ) : t( 'rowAdded', 'Row added.' ) );
+
+			return row;
+		},
+
+		/**
+		 * Add a copy of a row beneath it.
+		 *
+		 * Built from the layout's template, as an added row is, and given the
+		 * row's values -- not a clone of the row, whose combobox, colour and
+		 * editor are already built and would be built a second time on top.
+		 *
+		 * @param {Element} wrap The repeater.
+		 * @param {Element} row  The row to copy.
+		 * @return {Element|null} The copy.
+		 */
+		duplicate: function ( wrap, row ) {
+			if ( ! row ) {
+				return null;
+			}
+
+			// Editors keep what is typed to themselves until asked.
+			if ( window.tinymce && typeof window.tinymce.triggerSave === 'function' ) {
+				window.tinymce.triggerSave();
+			}
+
+			row.querySelectorAll( '.CodeMirror' ).forEach( function ( element ) {
+				if ( element.CodeMirror ) {
+					element.CodeMirror.save();
+				}
+			} );
+
+			return Repeater.add( wrap, row.dataset.layout || '', row, row );
+		},
+
+		/**
+		 * Give a row another row's values.
+		 *
+		 * Lists inside the row are given as many rows as the source's first,
+		 * outer before inner, so every control of the source has a twin to
+		 * take its value. Controls are paired by name below the row's own
+		 * part of it, and in order where a name repeats. A preview -- a
+		 * picture, a gallery -- comes across as drawn.
+		 *
+		 * @param {Element} wrap   The repeater.
+		 * @param {Element} source The row copied.
+		 * @param {Element} target The new row.
+		 */
+		copy: function ( wrap, source, target ) {
+			var base = wrap.dataset.fieldName || '';
+			var from = base + '[' + source.dataset.index + ']';
+			var to = base + '[' + target.dataset.index + ']';
+
+			function below( name ) {
+				return 0 === name.indexOf( from ) ? name.slice( from.length ) : null;
+			}
+
+			source.querySelectorAll( '.field-kit__repeater[data-field-name]' ).forEach( function ( nested ) {
+				var rest = below( nested.dataset.fieldName );
+				var twin = null === rest ? null : target.querySelector( '.field-kit__repeater[data-field-name="' + CSS.escape( to + rest ) + '"]' );
+				var rows = Repeater.own( nested, '.field-kit__repeater-rows' );
+
+				if ( ! twin || ! rows ) {
+					return;
+				}
+
+				Array.prototype.forEach.call( rows.children, function ( child ) {
+					Repeater.add( twin, child.dataset.layout || '', null, null, true );
+				} );
+			} );
+
+			var seen = {};
+
+			source.querySelectorAll( '[name]' ).forEach( function ( control ) {
+				var rest = below( control.getAttribute( 'name' ) );
+
+				if ( null === rest ) {
+					return;
+				}
+
+				var nth = seen[ rest ] = ( seen[ rest ] || 0 ) + 1;
+				var twin = target.querySelectorAll( '[name="' + CSS.escape( to + rest ) + '"]' )[ nth - 1 ];
+
+				if ( ! twin || twin.tagName !== control.tagName ) {
+					return;
+				}
+
+				if ( 'SELECT' === control.tagName ) {
+					// A search's options are only what is chosen, so the
+					// copy may not have them yet.
+					Array.prototype.forEach.call( control.options, function ( option ) {
+						var match = Array.prototype.find.call( twin.options, function ( candidate ) {
+							return candidate.value === option.value;
+						} );
+
+						if ( ! match ) {
+							match = option.cloneNode( true );
+							twin.appendChild( match );
+						}
+
+						match.selected = option.selected;
+					} );
+
+					return;
+				}
+
+				if ( 'checkbox' === control.type || 'radio' === control.type ) {
+					twin.checked = control.checked;
+
+					return;
+				}
+
+				twin.value = control.value;
+			} );
+
+			[ '.field-kit__media-preview', '.field-kit__gallery-items' ].forEach( function ( selector ) {
+				var twins = target.querySelectorAll( selector );
+
+				source.querySelectorAll( selector ).forEach( function ( preview, index ) {
+					if ( twins[ index ] ) {
+						twins[ index ].innerHTML = preview.innerHTML;
+						twins[ index ].dataset.empty = preview.dataset.empty || 'false';
+					}
+				} );
+			} );
+
+			var title = source.querySelector( '.field-kit__repeater-title' );
+			var titled = target.querySelector( '.field-kit__repeater-title' );
+
+			if ( title && titled ) {
+				titled.textContent = title.textContent;
+			}
 		},
 
 		/**
@@ -2124,18 +2627,26 @@
 		remove: function ( wrap, row ) {
 			var list = row.parentNode;
 			var min = parseInt( wrap.dataset.minRows || '0', 10 );
+			var button = row.querySelector( '.field-kit__repeater-remove' );
 
-			if ( min > 0 && list.children.length <= min ) {
+			if ( ( min > 0 && list.children.length <= min ) || ( button && button.disabled ) ) {
 				return;
 			}
 
 			var next = row.nextElementSibling || row.previousElementSibling;
+
+			// An editor inside the row is let go of with it, or the same
+			// row drawn again finds the old one's ghost.
+			if ( typeof kit.destroy === 'function' ) {
+				kit.destroy( row );
+			}
 
 			row.remove();
 
 			// sync() rather than reindex(), for the same reason as add(): the
 			// new first and last rows have moves that are no longer possible.
 			kit.Reorder.sync( list );
+			Repeater.limits( wrap );
 
 			var empty = Repeater.own( wrap, '.field-kit__repeater-empty' );
 
@@ -2145,7 +2656,7 @@
 
 			var target = next
 				? next.querySelector( 'input:not([type="hidden"]), select, textarea, button' )
-				: Repeater.own( wrap, '.field-kit__repeater-add' );
+				: Repeater.own( wrap, '.field-kit__repeater-add:not([disabled])' );
 
 			if ( target ) {
 				target.focus();
@@ -2292,6 +2803,10 @@
 		 */
 		init: function ( root ) {
 			root.querySelectorAll( '.field-kit__media' ).forEach( function ( wrap ) {
+				// Before the bound check: init() runs again at load, and a
+				// source's script that arrived late shows its button then.
+				Media.sources( wrap );
+
 				if ( wrap.dataset.fkBound ) {
 					return;
 				}
@@ -2304,12 +2819,67 @@
 						Media.open( wrap );
 					}
 
+					var sourceButton = event.target.closest( '.field-kit__media-source' );
+
+					if ( sourceButton ) {
+						event.preventDefault();
+						Media.fromSource( wrap, sourceButton.dataset.source );
+					}
+
 					if ( event.target.closest( '.field-kit__media-clear' ) ) {
 						event.preventDefault();
 						Media.clear( wrap );
 					}
 				} );
 			} );
+		},
+
+		/**
+		 * Show a source's button only when its script registered it.
+		 *
+		 * A source that failed to load must not leave a button that does
+		 * nothing.
+		 *
+		 * @param {Element} wrap The field.
+		 */
+		sources: function ( wrap ) {
+			var registry = window.sugarcommerceFileSources || {};
+
+			wrap.querySelectorAll( '.field-kit__media-source' ).forEach( function ( button ) {
+				var source = registry[ button.dataset.source ];
+
+				button.hidden = ! source || typeof source.pick !== 'function';
+			} );
+		},
+
+		/**
+		 * Fill the field from another source: a bucket, a cloud drive.
+		 *
+		 * Through apply(), the path a media-library choice takes, so the
+		 * preview, the file name, the button's label and Remove follow.
+		 *
+		 * @param {Element} wrap The field.
+		 * @param {string}  id   The source's key in window.sugarcommerceFileSources.
+		 * @return {Promise|undefined} The pick, when there was a source to ask.
+		 */
+		fromSource: function ( wrap, id ) {
+			var source = ( window.sugarcommerceFileSources || {} )[ id ];
+
+			if ( ! source || typeof source.pick !== 'function' ) {
+				return;
+			}
+
+			return Promise.resolve( source.pick( {
+				accept: ( wrap.dataset.accept || '' ).split( ',' ).filter( Boolean ),
+				returns: 'address'
+			} ) ).then( function ( chosen ) {
+				// Dismissed.
+				if ( ! chosen || ! chosen.value ) {
+					return;
+				}
+
+				Media.apply( wrap, { url: chosen.value, id: chosen.value, filename: chosen.name || '', title: chosen.name || '' } );
+			}, function () {} );
 		},
 
 		/**
@@ -2435,6 +3005,209 @@
 			// somewhere deliberate rather than to the body.
 			if ( choose ) {
 				choose.focus();
+			}
+		}
+	};
+
+	/* ====================================================================
+	 * Gallery
+	 * ================================================================= */
+
+	var Gallery = {
+
+		/**
+		 * Bind every gallery within a root.
+		 *
+		 * Reordering is Reorder's, which knows the grid; this is choosing,
+		 * removing and keeping the hidden value in step.
+		 *
+		 * @param {Element} root Container.
+		 */
+		init: function ( root ) {
+			root.querySelectorAll( '.field-kit__gallery' ).forEach( function ( wrap ) {
+				if ( wrap.dataset.fkBound ) {
+					return;
+				}
+
+				wrap.dataset.fkBound = '1';
+
+				wrap.addEventListener( 'click', function ( event ) {
+					if ( event.target.closest( '.field-kit__gallery-add' ) ) {
+						event.preventDefault();
+						Gallery.open( wrap );
+					}
+
+					var remove = event.target.closest( '.field-kit__gallery-remove' );
+
+					if ( remove ) {
+						event.preventDefault();
+						Gallery.remove( wrap, remove.closest( '.field-kit__gallery-item' ) );
+					}
+				} );
+			} );
+		},
+
+		/**
+		 * Open the media library, adding to what is chosen.
+		 *
+		 * @param {Element} wrap The gallery.
+		 */
+		open: function ( wrap ) {
+			if ( ! window.wp || ! window.wp.media ) {
+				return;
+			}
+
+			var frame = window.wp.media( {
+				title: wrap.dataset.frameTitle,
+				library: { type: wrap.dataset.mimeType || 'image' },
+				multiple: 'add',
+				button: { text: wrap.dataset.chooseLabel }
+			} );
+
+			frame.on( 'select', function () {
+				var list = wrap.querySelector( '.field-kit__gallery-items' );
+				var added = 0;
+
+				frame.state().get( 'selection' ).forEach( function ( attachment ) {
+					added += Gallery.append( wrap, attachment.toJSON() ) ? 1 : 0;
+				} );
+
+				kit.Reorder.sync( list );
+
+				if ( added ) {
+					kit.announce( wrap.querySelector( '.field-kit__gallery-status' ), t( 'imagesAdded', '%d added.' ).replace( '%d', String( added ) ) );
+				}
+			} );
+
+			frame.open();
+		},
+
+		/**
+		 * Add one picture, from the tile the server drew to clone.
+		 *
+		 * @param {Element} wrap       The gallery.
+		 * @param {Object}  attachment The attachment, as the media library has it.
+		 * @return {boolean} Whether it was added.
+		 */
+		append: function ( wrap, attachment ) {
+			var list = wrap.querySelector( '.field-kit__gallery-items' );
+			var template = wrap.querySelector( '.field-kit__gallery-template' );
+
+			if ( ! list || ! template || ! attachment || ! attachment.id ) {
+				return false;
+			}
+
+			if ( list.querySelector( '[data-id="' + CSS.escape( String( attachment.id ) ) + '"]' ) ) {
+				return false;
+			}
+
+			// The frame takes several at once, so the limit is checked as
+			// each arrives rather than once before it opened.
+			var max = parseInt( wrap.dataset.max || '0', 10 );
+
+			if ( max > 0 && list.children.length >= max ) {
+				return false;
+			}
+
+			var item = template.content.firstElementChild.cloneNode( true );
+			var sizes = attachment.sizes || {};
+			var thumb = sizes.medium || sizes.thumbnail || {};
+			var image = item.querySelector( 'img' );
+			var name = attachment.title || attachment.filename || String( attachment.id );
+			var alt = String( attachment.alt || '' ).trim();
+
+			item.dataset.id = String( attachment.id );
+
+			// Built, not written: the address and the alt text are whatever
+			// the library holds, and markup is where they must not go.
+			if ( image ) {
+				image.src = thumb.url || attachment.url;
+				image.alt = alt;
+			}
+
+			var missing = item.querySelector( '.field-kit__gallery-alt' );
+
+			if ( missing ) {
+				missing.hidden = '' !== alt;
+			}
+
+			item.querySelectorAll( '[aria-label], [data-label-template]' ).forEach( function ( button ) {
+				[ 'aria-label', 'data-label-template' ].forEach( function ( attribute ) {
+					var value = button.getAttribute( attribute );
+
+					if ( null !== value ) {
+						button.setAttribute( attribute, value.split( '{name}' ).join( name ) );
+					}
+				} );
+			} );
+
+			list.appendChild( item );
+
+			return true;
+		},
+
+		/**
+		 * Take one picture out.
+		 *
+		 * @param {Element} wrap The gallery.
+		 * @param {Element} item The tile.
+		 */
+		remove: function ( wrap, item ) {
+			if ( ! item ) {
+				return;
+			}
+
+			var list = item.parentNode;
+			var next = item.nextElementSibling || item.previousElementSibling;
+
+			item.remove();
+			kit.Reorder.sync( list );
+
+			// Focus would land on the body otherwise, which loses a
+			// keyboard user's place in the grid.
+			var target = next ? next.querySelector( '.field-kit__gallery-remove' ) : wrap.querySelector( '.field-kit__gallery-add' );
+
+			if ( target ) {
+				target.focus();
+			}
+
+			kit.announce( wrap.querySelector( '.field-kit__gallery-status' ), t( 'imageRemoved', 'Image removed.' ) );
+		},
+
+		/**
+		 * Write the order back to the hidden input, and settle the button.
+		 *
+		 * Called by Reorder after every move, add and removal.
+		 *
+		 * @param {Element} list The grid.
+		 */
+		sync: function ( list ) {
+			var wrap = list.closest( '.field-kit__gallery' );
+
+			if ( ! wrap ) {
+				return;
+			}
+
+			var input = wrap.querySelector( '.field-kit__media-value' );
+			var items = Array.prototype.slice.call( list.querySelectorAll( '.field-kit__gallery-item' ) );
+			var value = items.map( function ( item ) {
+				return item.dataset.id;
+			} ).join( ',' );
+
+			if ( input && input.value !== value ) {
+				input.value = value;
+				input.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+			}
+
+			list.dataset.empty = items.length ? 'false' : 'true';
+
+			// A full gallery says so by turning its button off, rather than
+			// by opening the library and quietly dropping the choice.
+			var max = parseInt( wrap.dataset.max || '0', 10 );
+			var add = wrap.querySelector( '.field-kit__gallery-add' );
+
+			if ( add ) {
+				add.disabled = max > 0 && items.length >= max;
 			}
 		}
 	};
@@ -4764,6 +5537,7 @@
 
 	window.SugarCommerceFieldsModules.Repeater = Repeater;
 	window.SugarCommerceFieldsModules.Media = Media;
+	window.SugarCommerceFieldsModules.Gallery = Gallery;
 	window.SugarCommerceFieldsModules.Tags = Tags;
 
 	/* =================================================================
@@ -6814,7 +7588,7 @@
 	function init( root ) {
 		root = root || document;
 
-		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Combobox', 'Reorder', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'Wysiwyg', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip', 'ColorField', 'IconPicker', 'Money', 'PasswordReveal', 'PasswordRemove', 'Counter', 'Region', 'Accordion', 'SettingsBar', 'Slug', 'Location', 'Embed', 'Address', 'Guard', 'FrontForm' ].forEach( function ( name ) {
+		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Combobox', 'Reorder', 'Repeater', 'Media', 'Gallery', 'Tags', 'CodeEditor', 'Wysiwyg', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip', 'ColorField', 'IconPicker', 'Money', 'PasswordReveal', 'PasswordRemove', 'Counter', 'Region', 'Accordion', 'SettingsBar', 'Slug', 'Location', 'Embed', 'Address', 'Guard', 'FrontForm' ].forEach( function ( name ) {
 			var module = window.SugarCommerceFieldsModules[ name ];
 
 			if ( module && typeof module.init === 'function' ) {
