@@ -208,18 +208,42 @@ screen says why when it reloads.
 
 `'encrypted' => true` on any field -- a string, a number, a group, a repeater --
 stores it encrypted, in an option or in post, term or user meta. The value is
-written as `fkenc:j:` and the payload of `sugarcommerce/security`'s
+written as `fkenc:v3:` and the payload of `sugarcommerce/security`'s
 `Encryption\Cipher` (AES-256-GCM, so a value altered in the database does not
-decrypt); the key is the site's, `WP_ENCRYPTION_KEY` or one made from the salts
-in `wp-config.php`. Encryption is the security package's: this one keeps only
-the `fkenc:` marker. A value that will not decrypt reads as empty and is never
-deleted by a blank save, and a field marked encrypted where encryption is not
-possible refuses to save rather than store plaintext.
+decrypt) under a key derived from the site's -- `WP_ENCRYPTION_KEY`, or one
+made from the salts in `wp-config.php` -- for a **purpose**. Encryption is the
+security package's: this one keeps only the `fkenc:` markers. A value that will
+not decrypt reads as empty and is never deleted by a blank save, and a field
+marked encrypted where encryption is not possible refuses to save rather than
+store plaintext.
 
-Values written before the move, under the key this package used to make from
-`LOGGED_IN_KEY`, `LOGGED_IN_SALT`, `AUTH_KEY` and `SECURE_AUTH_KEY`, still
-read exactly as they did (`tests/fixtures/fkenc` holds some, made by the old
-code); saving one writes it under the site's key.
+Each purpose seals under a key of its own, so a secret one plugin stored does
+not open under another's even though both start from the same salts. The
+context names the purpose, `sugarcommerce/fields` when it is not told, and a
+field can name its own:
+
+```php
+$context = new EncryptedContext( new OptionContext( 'my_plugin' ), 'my-plugin/settings' );
+
+'secret_key' => [ 'type' => 'password', 'label' => __( 'Secret key', 'my-plugin' ), 'encrypted' => 'my-plugin/stripe' ],
+```
+
+A purpose is for good: a value sealed for one does not read under another, so
+choose it once per kind of secret.
+
+Values written before purposes still read, under any purpose: `fkenc:j:` ones
+(under the shared site key) and `fkenc:` ones from before the move to the
+security package (under the key this package made from `LOGGED_IN_KEY`,
+`LOGGED_IN_SALT`, `AUTH_KEY` and `SECURE_AUTH_KEY`; `tests/fixtures/fkenc`
+holds values both older codes wrote). Saving one writes it under its purpose.
+To move them all at once, `EncryptedContext::is_legacy( $stored )` finds them
+and either write each back through the context or seal the stored string again:
+
+```php
+if ( EncryptedContext::is_legacy( $stored ) ) {
+	$moved = EncryptedContext::reseal( $stored, 'my-plugin/stripe' ); // null when it does not open: keep the old one
+}
+```
 
 ## Markup that arrives later
 
@@ -695,7 +719,7 @@ now `sugarcommerce`.
 | transient and key prefix `field_kit_` (save errors) | `sugarcommerce_fields_` (`Runtime::key()`) |
 | REST error codes `field_kit_forbidden`, `_unknown_source`, `_unknown_action`, `_unknown_icon_set` | `sugarcommerce_fields_…` |
 | `window.ArrayPressFieldKit`, `window.ArrayPressFieldKitModules` | `window.SugarCommerceFields`, `window.SugarCommerceFieldsModules` |
-| `EncryptedContext`'s own AES-256-GCM and key | `sugarcommerce/security`'s `Encryption\Cipher` (required); same `fkenc:` values, new ones under the site key |
+| `EncryptedContext`'s own AES-256-GCM and key | `sugarcommerce/security`'s `Encryption\Cipher` (required); old `fkenc:` values read, new ones are `fkenc:v3:` under a per-purpose key (`new EncryptedContext( $inner, $purpose )`, or `'encrypted' => 'purpose'` on a field) |
 | `Assets`' own path and URL guessing, `new Assets( $path, $url )` | `SugarCommerce\Plugin\Assets` (required), the family's one asset resolver; `new Assets()` keeps the handles and configuration, and the `$path` and `$url` arguments are gone (nothing passed them) |
 | field types `providers`, `flexible`, `gradient`, `dimensions`, `link`, `oembed`, `nav_menu`, `gallery` (and the JS modules `Providers`, `Gallery`, `Oembed`) | removed: nothing used them (SugarCart is Stripe-only, so no gateway list). Use `repeater` for rows, `files` for several attachments, `color`, `url`, `select` with your own options, or a `custom` field |
 | `Glyphs` key `link` | removed with the `link` type |

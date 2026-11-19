@@ -1,0 +1,40 @@
+{
+	"made_by": "SugarCommerce\\Fields\\Context\\EncryptedContext at fields b72bfbf: sugarcommerce/security's Cipher( 'fields' )->seal(), the shared key, no purpose",
+	"key_material": "The salts tests/stubs.php defines; the site key sugarcommerce/security makes from them.",
+	"json": {
+		"string": {
+			"value": "sk_example_DO-NOT-LEAK-1234567890",
+			"stored": "fkenc:j:/uHhCPikdVDO9AztS+9EeaNwSKp49n14Dx+srwHEEKX4tQJe1OwRTxFjqQJS0DbgLaXWpMsbSQRqoI+y+PUB"
+		},
+		"unicode": {
+			"value": "Pässwörd — £€ 日本",
+			"stored": "fkenc:j:6o2v09EmYnmdtJicOn79xiH0MiInjLQZBDi0KzgwCF6yQlCWP6Q0UiV1mRp9K9leJ+jy3m/430anekJvhGsv1KoLBtiokU7NhzoE7TABlMok"
+		},
+		"int": {
+			"value": 123,
+			"stored": "fkenc:j:50WYXwNHH+ULSP4/oElCGX6ZDjHJxkOStw4ZvCKkZw=="
+		},
+		"float": {
+			"value": 19.99,
+			"stored": "fkenc:j:pv8HsL3fdzCWsm5SOGlCh4CWVSbhrjETx1iV+9UHSa0X"
+		},
+		"bool": {
+			"value": true,
+			"stored": "fkenc:j:AHXm3YlyH4uxUggSDq4lirNkpeD5fUtJK3/8aPbY+AU="
+		},
+		"list": {
+			"value": [
+				"a",
+				"b"
+			],
+			"stored": "fkenc:j:SKmDiTzsqi2+bqc9TH1gzOVvrla9QOCsim/ESY6NeABvEIIiNw=="
+		},
+		"map": {
+			"value": {
+				"key": "value",
+				"n": 2
+			},
+			"stored": "fkenc:j:1feil0b00Satz1vE8o1SLy6FSJ0W6OKIqoZowMTXxjlAAbK75lIKbA3uhNn1VNQiBA=="
+		}
+	}
+}

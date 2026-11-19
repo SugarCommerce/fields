@@ -261,12 +261,10 @@ final class ContextTest extends TestCase {
 		$context = new EncryptedContext( $inner );
 		$field   = $this->field( [ 'encrypted' => true ] );
 
-		// Written the way the previous version wrote it: the raw string as
-		// the payload, under the unversioned marker.
-		$encrypt = ( new \ReflectionObject( $context ) )->getMethod( 'encrypt' );
-
+		// Written the way the first version wrote it: the raw string as the
+		// payload, under the unversioned marker, on the shared key.
 		$GLOBALS['fk_options']['fk_test'] = [
-			'api_key' => $encrypt->invoke( $context, 'fkenc:', 'sk-live-DO-NOT-LEAK' ),
+			'api_key' => 'fkenc:' . ( new \SugarCommerce\Security\Encryption\Cipher( 'fields' ) )->seal( 'sk-live-DO-NOT-LEAK' ),
 		];
 
 		$this->assertSame( 'sk-live-DO-NOT-LEAK', $context->read( 0, $field ) );
