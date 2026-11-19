@@ -206,6 +206,12 @@
 	 * Money reads its currency this way and region its country -- one lookup
 	 * rather than two copies of the same query, free to drift apart.
 	 *
+	 * The sibling named like the asking control is looked for first:
+	 * `address[region]` sits beside `address[country]`, a bare `region`
+	 * beside a bare `country`. Matching any name that ends in `[country]`
+	 * found whichever came first in the form -- in a panel with a table of
+	 * rates above an address group, the region followed a rate's country.
+	 *
 	 * @param {Element} wrap The control asking.
 	 * @param {string}  key  Field key of the sibling.
 	 * @return {Element|null} The control, if there is one.
@@ -216,6 +222,17 @@
 		}
 
 		var scope = wrap.closest( '.field-kit__repeater-row' ) || wrap.closest( 'form' ) || document;
+		var own = typeof wrap.getAttribute === 'function' && wrap.getAttribute( 'name' ) ? wrap : wrap.querySelector( '[name]' );
+		var name = own && typeof own.getAttribute === 'function' ? String( own.getAttribute( 'name' ) || '' ).replace( /\[\]$/, '' ) : '';
+
+		if ( name ) {
+			var cut = name.lastIndexOf( '[' );
+			var exact = scope.querySelector( '[name="' + ( -1 === cut ? key : name.slice( 0, cut ) + '[' + key + ']' ) + '"]' );
+
+			if ( exact ) {
+				return exact;
+			}
+		}
 
 		return scope.querySelector( '[name$="[' + key + ']"], [name="' + key + '"]' );
 	}
@@ -2661,7 +2678,10 @@
 			window.tinyMCEPreInit.mceInit = window.tinyMCEPreInit.mceInit || {};
 			window.tinyMCEPreInit.qtInit = window.tinyMCEPreInit.qtInit || {};
 			window.tinyMCEPreInit.mceInit[ id ] = mce;
-			window.tinyMCEPreInit.qtInit[ id ] = { id: id, buttons: ( defaults.quicktags && defaults.quicktags.buttons ) || 'strong,em,link,block,del,ins,img,ul,ol,li,code,more,close' };
+			// wp_editor()'s own buttons, not the shorter list core's script
+			// defaults to: the same field has the same toolbar wherever it
+			// is drawn.
+			window.tinyMCEPreInit.qtInit[ id ] = { id: id, buttons: 'strong,em,link,block,del,ins,img,ul,ol,li,code,more,close' };
 
 			Wysiwyg.ours[ id ] = true;
 

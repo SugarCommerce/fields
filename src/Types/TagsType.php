@@ -71,16 +71,21 @@ final class TagsType extends AbstractInputType {
 	}
 
 	/**
-	 * The value as a separated string, whichever way it was stored.
+	 * The value as a string separated the field's own way, whichever way it
+	 * was stored.
 	 *
 	 * @param Field $field The field.
 	 *
 	 * @return string
 	 */
 	protected function render_value( Field $field ): string {
-		$value = $field->value();
+		$value     = $field->value();
+		$separator = (string) $field->get( 'separator', ',' );
 
-		return is_array( $value ) ? implode( ', ', $value ) : (string) $value;
+		// Joined with the field's own separator: joined with commas, a
+		// `|`-separated field showed "one, two" and the next save stored
+		// that as one tag.
+		return is_array( $value ) ? implode( ',' === $separator ? ', ' : $separator, $value ) : (string) $value;
 	}
 
 	/**

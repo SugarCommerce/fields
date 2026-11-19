@@ -1747,7 +1747,7 @@ const regionChecks = ( async function () {
 			failures ++;
 		}
 
-		if ( 1 !== quicktags.length || ! context.window.tinyMCEPreInit || ! context.window.tinyMCEPreInit.mceInit.panel_body ) {
+		if ( 1 !== quicktags.length || ! context.window.tinyMCEPreInit || ! context.window.tinyMCEPreInit.mceInit.panel_body || 'strong,em,link,block,del,ins,img,ul,ol,li,code,more,close' !== context.window.tinyMCEPreInit.qtInit.panel_body.buttons ) {
 			console.error( '  Wysiwyg: the Code toolbar, or the settings Visual switches back with, were not set up' );
 			failures ++;
 		}
@@ -1803,6 +1803,51 @@ const regionChecks = ( async function () {
 	}
 } )();
 
+/*
+ * A region follows the country beside it, not the first country in the form.
+ *
+ * In a panel with a table of rates above an address group, the address's
+ * region matched `rates[0][country]` -- any name ending in `[country]` --
+ * and offered that country's regions.
+ */
+( function () {
+	const groupCountry = { name: 'address[country]' };
+	const rowCountry = { name: 'rates[0][country]' };
+	const asked = [];
+	const form = {
+		querySelector: ( selector ) => {
+			asked.push( selector );
+
+			if ( '[name="address[country]"]' === selector ) {
+				return groupCountry;
+			}
+
+			return selector.includes( '$=' ) ? rowCountry : null;
+		},
+	};
+	const own = { getAttribute: ( name ) => ( 'name' === name ? 'address[region]' : null ) };
+	const wrap = Object.assign( makeElement(), {
+		closest: ( selector ) => ( 'form' === selector ? form : null ),
+		querySelector: ( selector ) => ( '[name]' === selector ? own : null ),
+	} );
+
+	if ( modules.sibling( wrap, 'country' ) !== groupCountry ) {
+		console.error( `  sibling(): found ${ JSON.stringify( modules.sibling( wrap, 'country' ) ) } for address[region], asked ${ asked.join( ' then ' ) }` );
+		failures ++;
+	}
+
+	// A bare name looks for the bare sibling.
+	const top = Object.assign( makeElement(), {
+		closest: ( selector ) => ( 'form' === selector ? { querySelector: ( selector2 ) => ( '[name="country"]' === selector2 ? 'top' : 'row' ) } : null ),
+		querySelector: () => ( { getAttribute: () => 'region' } ),
+	} );
+
+	if ( 'top' !== modules.sibling( top, 'country' ) ) {
+		console.error( '  sibling(): a bare region did not find the bare country first' );
+		failures ++;
+	}
+} )();
+
 /**
  * The report, once the asynchronous checks have settled.
  */
@@ -1812,7 +1857,7 @@ function finish() {
 		process.exit( 1 );
 	}
 
-	console.log( `  ${ expected.length } modules loaded and initialised cleanly, colour picker signals correctly, a native colour keeps its swatch and box in step, an icon choice is written and escaped, an added repeater row is live and renumbered, chips reorder, a root binds once, a password reveals, a count counts, a region follows its country, an accordion opens and closes, a secret is marked for removal and unmarked, the save bar says what changed, a late visual editor starts once and stops with its markup, requests go through apiFetch` );
+	console.log( `  ${ expected.length } modules loaded and initialised cleanly, colour picker signals correctly, a native colour keeps its swatch and box in step, an icon choice is written and escaped, an added repeater row is live and renumbered, chips reorder, a root binds once, a password reveals, a count counts, a region follows its country and not another's, an accordion opens and closes, a secret is marked for removal and unmarked, the save bar says what changed, a late visual editor starts once and stops with its markup, requests go through apiFetch` );
 }
 
 /*
