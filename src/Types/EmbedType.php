@@ -12,10 +12,9 @@ declare( strict_types=1 );
 
 namespace SugarCommerce\Fields\Types;
 
-use SugarCommerce\Embeds\Embeds;
-use SugarCommerce\Embeds\Models\Platform;
 use SugarCommerce\Fields\Attributes;
 use SugarCommerce\Fields\Field;
+use SugarCommerce\Plugin\Build;
 
 /**
  * A link to a video or a track, with the player it becomes beside it.
@@ -139,7 +138,7 @@ final class EmbedType extends AbstractInputType {
 
 		// Without the embeds package there is nothing to tell a player from
 		// a page, so the link is taken as a link.
-		if ( ! class_exists( Embeds::class ) ) {
+		if ( null === self::embeds() ) {
 			return '';
 		}
 
@@ -158,12 +157,14 @@ final class EmbedType extends AbstractInputType {
 	 * @return array{html: string, platform: string, label: string, url: string}|null
 	 */
 	public static function preview( string $url, array $platforms = [], string $title = '' ): ?array {
-		if ( '' === trim( $url ) || ! class_exists( Embeds::class ) ) {
+		$embeds = self::embeds();
+
+		if ( '' === trim( $url ) || null === $embeds ) {
 			return null;
 		}
 
 		$only  = self::cases( $platforms );
-		$embed = Embeds::embed( $url, $only );
+		$embed = $embeds::embed( $url, $only );
 
 		if ( null === $embed ) {
 			return null;
@@ -185,7 +186,7 @@ final class EmbedType extends AbstractInputType {
 	 * @return string
 	 */
 	public static function refusal( array $platforms = [] ): string {
-		$names = array_map( static fn( Platform $platform ): string => $platform->label(), self::cases( $platforms ) );
+		$names = array_map( static fn( object $platform ): string => $platform->label(), self::cases( $platforms ) );
 
 		return sprintf(
 			/* translators: %s: platform names, such as "YouTube, Vimeo" */
@@ -212,24 +213,40 @@ final class EmbedType extends AbstractInputType {
 	 *
 	 * @param string[] $platforms Platform ids.
 	 *
-	 * @return Platform[]
+	 * @return \UnitEnum[] The embeds package's Models\Platform cases.
 	 */
 	private static function cases( array $platforms ): array {
-		$cases = [];
+		$cases    = [];
+		$platform = null === self::embeds() ? '' : Build::sibling( __NAMESPACE__, 3, 'Embeds\\Models\\Platform' );
 
-		if ( ! class_exists( Platform::class ) ) {
+		if ( '' === $platform || ! enum_exists( $platform ) ) {
 			return [];
 		}
 
 		foreach ( [] === $platforms ? self::PLATFORMS : $platforms as $id ) {
-			$case = Platform::tryFrom( (string) $id );
+			$case = $platform::tryFrom( (string) $id );
 
 			if ( null !== $case && $case->embeddable() ) {
 				$cases[] = $case;
 			}
 		}
 
-		return [] === $cases ? array_map( static fn( string $id ): Platform => Platform::from( $id ), self::PLATFORMS ) : $cases;
+		return [] === $cases ? array_map( static fn( string $id ): object => $platform::from( $id ), self::PLATFORMS ) : $cases;
+	}
+
+	/**
+	 * sugarcommerce/embeds' Embeds in this build, when the build has it.
+	 *
+	 * Asked through Build::sibling() rather than imported: a plugin that
+	 * bundles fields without embeds would otherwise find SugarCart's
+	 * unprefixed copy, or another plugin's.
+	 *
+	 * @return class-string|null
+	 */
+	private static function embeds(): ?string {
+		$embeds = Build::sibling( __NAMESPACE__, 3, 'Embeds\\Embeds' );
+
+		return class_exists( $embeds ) ? $embeds : null;
 	}
 
 	/**

@@ -15,7 +15,7 @@ namespace SugarCommerce\Fields\Support;
 use SugarCommerce\Geo\Countries;
 use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\Utils\Runtime;
-use SugarCommerce\Money\Currencies;
+use SugarCommerce\Plugin\Build;
 
 /**
  * Named option lists a choice field can ask for by name.
@@ -455,11 +455,14 @@ final class Presets {
 	 * @return array<string, string>
 	 */
 	private static function currencies(): array {
-		if ( ! self::available( Currencies::class, 'sugarcommerce/money' ) ) {
+		// Optional, so asked by name in this build: never SugarCart's copy.
+		$currencies = Build::sibling( __NAMESPACE__, 3, 'Money\\Currencies' );
+
+		if ( ! self::available( $currencies, 'sugarcommerce/money' ) ) {
 			return [];
 		}
 
-		return Currencies::options();
+		return $currencies::options();
 	}
 
 	/**
