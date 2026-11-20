@@ -112,6 +112,11 @@ function kitSource() {
 const source = kitSource();
 
 /**
+ * The stamp every stub sits inside: the build under test's.
+ */
+const STAMP = { getAttribute: () => 'sugarcommerce-fields' };
+
+/**
  * The smallest DOM the script touches.
  *
  * @return {Object} An element that remembers nothing.
@@ -139,7 +144,7 @@ function makeElement() {
 		removeEventListener() {},
 		querySelector: () => null,
 		querySelectorAll: () => [],
-		closest: () => null,
+		closest: stamped( null ),
 		getAttribute: () => null,
 		setAttribute() {},
 		hasAttribute: () => false,
@@ -159,15 +164,15 @@ function makeElement() {
 
 /**
  * A stub's closest(): the element it stands in, for any selector but the
- * build's stamp -- these stubs were drawn by nobody's build, which every
- * copy of the kit treats as its own.
+ * build's stamp, which is the build under test's -- a copy of the kit drives
+ * only markup stamped for it, and these stubs were drawn by this one.
  *
  * @param {Object} found What closest() finds.
  * @return {Function} closest().
  */
-function unstamped( found ) {
+function stamped( found ) {
 	return ( selector ) =>
-		'[data-field-kit-build]' === selector ? null : found;
+		'[data-field-kit-build]' === selector ? STAMP : found;
 }
 
 const documentStub = {
@@ -464,8 +469,8 @@ smoke( 'Adding a row leaves it usable.', () => {
 	template.content = { firstElementChild: makeRow( true, true ) };
 
 	const wrap = makeElement();
-	list.closest = unstamped( wrap );
-	template.closest = unstamped( wrap );
+	list.closest = stamped( wrap );
+	template.closest = stamped( wrap );
 	wrap.dataset = { fieldName: 'rates' };
 
 	// A saved row that holds a repeater of its own. Its template sits inside
@@ -479,7 +484,7 @@ smoke( 'Adding a row leaves it usable.', () => {
 	nestedRow.cloneNode = () =>
 		Object.assign( makeRow( true, true ), { nested: true } );
 	nestedTemplate.content = { firstElementChild: nestedRow };
-	nestedTemplate.closest = unstamped( innerWrap );
+	nestedTemplate.closest = stamped( innerWrap );
 
 	wrap.querySelectorAll = ( selector ) => {
 		if ( selector.includes( 'template' ) ) {
@@ -580,7 +585,7 @@ smoke( "Renumbering admits the template's index.", () => {
 	const wrap = makeElement();
 
 	list.children = rows;
-	list.closest = unstamped( wrap );
+	list.closest = stamped( wrap );
 	wrap.dataset = { fieldName: 'rates' };
 
 	try {
@@ -617,7 +622,7 @@ smoke( 'Reordering chips reaches the combobox.', () => {
 	const chips = makeElement();
 
 	chips.classList.contains = ( name ) => 'field-kit__combobox-chips' === name;
-	chips.closest = unstamped( wrap );
+	chips.closest = stamped( wrap );
 
 	try {
 		modules.Reorder.sync( chips );
@@ -1216,7 +1221,7 @@ function recorder() {
 			attributes[ name ] = String( value );
 		},
 		querySelector: () => null,
-		closest: () => null,
+		closest: stamped( null ),
 		addEventListener() {},
 	};
 }
@@ -1246,7 +1251,7 @@ smoke( 'A reveal button shows what has been typed, and says so.', () => {
 	input.type = 'password';
 	wrap.querySelector = ( selector ) =>
 		'input' === selector ? input : null;
-	button.closest = unstamped( wrap );
+	button.closest = stamped( wrap );
 	button.querySelector = ( selector ) =>
 		'.sugarcommerce-icon' === selector ? icon : null;
 	button.addEventListener = ( type, handler ) => clicks.push( handler );
@@ -1476,7 +1481,9 @@ smoke( 'A region follows the country beside it.', async () => {
 			searchNonce: 'n',
 		};
 		wrap.closest = ( selector ) =>
-			selector.includes( 'repeater-row' ) ? row : null;
+			selector.includes( 'repeater-row' )
+				? row
+				: stamped( null )( selector );
 		wrap.querySelector = ( selector ) => {
 			if ( selector.includes( 'region-select' ) ) {
 				return select;
@@ -1641,7 +1648,7 @@ smoke( 'A region follows the country beside it.', async () => {
 		const four = makeRegion( 'US' );
 		const asked = requests.length;
 
-		four.wrap.closest = () => null;
+		four.wrap.closest = stamped( null );
 		modules.Region.init( four.root );
 
 		if (
@@ -1751,7 +1758,7 @@ smoke(
 		input.dispatchEvent = ( event ) => dispatched.push( event.type );
 		wrap.querySelector = ( selector ) =>
 			selector.includes( 'password-clear' ) ? flag : input;
-		button.closest = unstamped( wrap );
+		button.closest = stamped( wrap );
 		button.addEventListener = ( type, handler ) => clicks.push( handler );
 		Object.assign( button.dataset, {
 			remove: 'Remove',
@@ -2576,7 +2583,7 @@ smoke(
 
 			return selector.includes( 'gallery-add' ) ? add : null;
 		};
-		list.closest = unstamped( wrap );
+		list.closest = stamped( wrap );
 		list.querySelectorAll = () =>
 			[ 7, 3 ].map( ( id ) =>
 				Object.assign( makeElement(), {

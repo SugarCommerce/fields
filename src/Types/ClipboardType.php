@@ -11,6 +11,7 @@ namespace SugarCommerce\Fields\Types;
 
 use SugarCommerce\Fields\Attributes;
 use SugarCommerce\Fields\Field;
+use SugarCommerce\Fields\Utils\Runtime;
 
 /**
  * A read-only value with a copy button.
@@ -54,7 +55,7 @@ final class ClipboardType extends AbstractType {
 		// briefly. Visible feedback matters as much as the announced kind —
 		// a button that silently succeeds leaves everyone guessing.
 		return sprintf(
-			'<div class="field-kit__clipboard"><input%s /> <button%s>%s</button>' .
+			'<div class="field-kit__clipboard"' . Runtime::stamp() . '><input%s /> <button%s>%s</button>' .
 			'<span class="success hidden field-kit__clipboard-success" aria-hidden="true">%s</span>' .
 			'<span class="field-kit__clipboard-status screen-reader-text" aria-live="polite"></span></div>',
 			$attributes->render(),

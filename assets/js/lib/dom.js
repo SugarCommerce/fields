@@ -2,17 +2,20 @@
  * Small things every module does to the page.
  *
  * Including finding the controls this build is to drive: two plugins' copies
- * of the kit can be on one page, and each binds only what its own PHP drew
- * -- markup inside an element stamped `data-field-kit-build` with its own
- * handle (mine(), ours()). Markup nobody stamped is anybody's, as it always
- * was, and the first copy to reach a control marks it bound.
+ * of the kit can be on one page, and each binds only markup stamped for it
+ * -- inside an element whose `data-field-kit-build` holds its own handle
+ * (mine(), ours()). The nearest stamp decides, so one stamp on a screen's
+ * wrapper claims everything a plugin wrote by hand inside it, and a field
+ * another copy drew in there keeps its own. Markup nobody stamped is
+ * nobody's: when it was anybody's, whichever copy ran first took it, and
+ * which one that was changed with the order plugins loaded in.
  */
 
 import { build, icon } from './config';
 
 /**
- * Whether an element is this build's to drive: inside nothing stamped with
- * a build, or inside something stamped with this one.
+ * Whether an element is this build's to drive: its nearest stamp, itself or
+ * an ancestor, is this build's handle.
  *
  * @param {Element|null} element The element.
  * @return {boolean} Ours.
@@ -23,7 +26,44 @@ export function mine( element ) {
 			? element.closest( '[data-field-kit-build]' )
 			: null;
 
-	return ! marked || marked.getAttribute( 'data-field-kit-build' ) === build;
+	return (
+		null !== marked &&
+		marked.getAttribute( 'data-field-kit-build' ) === build
+	);
+}
+
+/**
+ * Every element under a root that a selector this build was configured with
+ * matches, stamped or not.
+ *
+ * For a selector the build's PHP named -- Guard::enable( '#post' ) -- which
+ * claims markup somebody else drew and never stamped. Anything else is
+ * ours().
+ *
+ * @param {Element|Document} root     Where to look.
+ * @param {string}           selector CSS selector the build was given.
+ * @return {Element[]} The elements, in document order.
+ */
+export function asked( root, selector ) {
+	return Array.from( root.querySelectorAll( selector ) );
+}
+
+/**
+ * Stamp an element for this build, so the build drives what is inside it.
+ *
+ * For markup a script builds outside anything stamped -- PHP's is stamped
+ * with Runtime::stamp(). Call it before the build's init() reaches the
+ * element: `modules.claim( el ); modules.init( el );`.
+ *
+ * @param {Element|null} element The element.
+ * @return {Element|null} The element.
+ */
+export function claim( element ) {
+	if ( element && 'function' === typeof element.setAttribute ) {
+		element.setAttribute( 'data-field-kit-build', build );
+	}
+
+	return element;
 }
 
 /**

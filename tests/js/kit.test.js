@@ -21,6 +21,7 @@ const PUBLISHED = [
 	'CodeGenerator',
 	'announce',
 	'bound',
+	'claim',
 	'sibling',
 	't',
 	'icon',
@@ -82,6 +83,13 @@ beforeAll( async () => {
 		value: 'loading',
 		configurable: true,
 	} );
+
+	// The page is this build's: a copy drives only markup stamped for it,
+	// and one stamp on a wrapper claims everything inside.
+	document.body.setAttribute(
+		'data-field-kit-build',
+		'sugarcommerce-fields'
+	);
 
 	await import( '../../assets/js/field-kit.js' );
 

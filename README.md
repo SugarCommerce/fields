@@ -1098,16 +1098,38 @@ as PHP reads them), `block-editor/controls` and `block-editor/panel`.
   finds `modules` there at once; one that may load first asks at the moment
   it needs them.
 
-Each copy drives only the controls its own build drew. A field's wrapper, a
-public form, a set of panel tabs, a tooltip and a section carry
-`data-field-kit-build` (`Runtime::BUILD_ATTRIBUTE`) holding the build's
-handle, and every module finds its controls with `ours( root, selector )`
-(`lib/dom.js`), which passes over anything inside another build's stamp; the
+Each copy drives only markup stamped for it. A field's wrapper, a public
+form, a set of panel tabs, a tooltip, a section, and a clipboard or action
+button drawn bare carry `data-field-kit-build` (`Runtime::BUILD_ATTRIBUTE`)
+holding the build's handle, and every module finds its controls with
+`ours( root, selector )` (`lib/dom.js`), which takes only what sits inside
+its own build's stamp -- the nearest one, itself or an ancestor; the
 listeners a module puts on the document answer only their own build's
-controls, and are marked bound per build. Markup nobody stamped -- a control
-a plugin wrote by hand with the kit's classes -- is driven by whichever copy
-reaches it first, as before; write `Runtime::stamp()` into its outer tag
-(` data-field-kit-build="…"`) to tie it to your build.
+controls, and are marked bound per build.
+
+Markup nobody stamped is nobody's. It used to be driven by whichever copy
+ran first, which changed with the order plugins happened to load in. Claim
+markup you write by hand with the kit's classes in one of two ways:
+
+```php
+use SugarCommerce\Fields\Utils\Runtime; // your build's prefixed copy
+
+// Once, on your screen's wrapper: everything you write inside is your
+// build's. A field another copy drew in there keeps its own stamp.
+printf( '<div class="wrap"%s>', Runtime::stamp() ); // ` data-field-kit-build="…"`, escaped
+
+// Or on the control's own outer tag.
+echo '<select class="field-kit__relational"' . Runtime::stamp() . ' …>';
+```
+
+```js
+// Markup a script builds outside anything stamped: claim it, then start it.
+modules.claim( element );
+modules.init( element );
+```
+
+A form named to `Guard::enable( $selector )` needs no stamp -- naming it is
+the claim -- but a hand-written `data-fk-guard` does.
 * `window.sugarcommerceFileSources` -- read, never written: the places a file
   can come from ("More places a file can come from").
 * `field-kit:change` -- fired, bubbling, on a colour input core's picker

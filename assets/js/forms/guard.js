@@ -11,7 +11,7 @@
 
 import { config, t } from '../lib/config';
 import { fieldOf } from '../lib/lookups';
-import { mine, ours } from '../lib/dom';
+import { asked, mine, ours } from '../lib/dom';
 
 const Guard = {
 	forms: [],
@@ -20,19 +20,29 @@ const Guard = {
 	init( root ) {
 		const selectors = [ '[data-fk-guard]' ].concat( config.guard || [] );
 
-		selectors.forEach( function ( selector ) {
+		selectors.forEach( function ( selector, index ) {
 			const found = [];
+
+			// The attribute is hand-written markup, which is this build's
+			// only when stamped for it. A selector this build's PHP passed
+			// to Guard::enable() is a claim in itself: the markup is
+			// somebody else's -- WordPress's, another library's -- and was
+			// never going to carry a stamp.
+			const claimed = 0 < index;
 
 			try {
 				if (
 					root.matches &&
 					root.matches( selector ) &&
-					mine( root )
+					( claimed || mine( root ) )
 				) {
 					found.push( root );
 				}
 
-				ours( root, selector ).forEach( function ( el ) {
+				( claimed
+					? asked( root, selector )
+					: ours( root, selector )
+				).forEach( function ( el ) {
 					found.push( el );
 				} );
 			} catch {

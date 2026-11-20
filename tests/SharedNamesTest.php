@@ -143,6 +143,14 @@ final class SharedNamesTest extends TestCase {
 		$this->assertMatchesRegularExpression( '/^<div class="field-kit__field[^"]*"[^>]*\s' . preg_quote( $stamp, '/' ) . '/', ( new Renderer() )->render( $field ) );
 		$this->assertStringContainsString( '<div class="field-kit__panel-tabs" ' . $stamp, PanelTabs::render( 'box', [ 'a' => [ 'label' => 'A', 'content' => '' ] ] ) );
 		$this->assertStringContainsString( '<span class="field-kit__tooltip" ' . $stamp . '>', Tooltip::render( 'Help', 'tip' ) );
+
+		// With no label these two are drawn bare, with no wrapper to carry
+		// the stamp -- so they carry their own, or no copy would drive them.
+		foreach ( [ 'clipboard' => 'field-kit__clipboard', 'action_button' => 'field-kit__action-wrap' ] as $type => $class ) {
+			$bare = new Field( 'bare', ( new Registry() )->get( $type ), [ 'action' => 'check' ] );
+
+			$this->assertStringStartsWith( '<div class="' . $class . '" ' . $stamp . '>', ( new Renderer() )->render( $bare ) );
+		}
 	}
 
 	/**

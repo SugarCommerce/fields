@@ -58,7 +58,7 @@ import Wysiwyg from './fields/wysiwyg';
 import FrontForm from './forms/front-form';
 import Guard from './forms/guard';
 import { config, icon, t } from './lib/config';
-import { announce, bound, sibling, swapIcon } from './lib/dom';
+import { announce, bound, claim, sibling, swapIcon } from './lib/dom';
 import { kit } from './lib/kit';
 import { destroy, init } from './lib/lifecycle';
 import { request } from './lib/request';
@@ -73,6 +73,7 @@ Object.assign( kit, {
 	CodeGenerator,
 	announce,
 	bound,
+	claim,
 	sibling,
 	t,
 	icon,

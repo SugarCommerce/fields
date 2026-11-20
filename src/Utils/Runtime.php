@@ -61,9 +61,10 @@ final class Runtime {
 	 *
 	 * A field's wrapper, a public form, a set of panel tabs, a tooltip and a
 	 * section carry it, holding handle(). Each build's script binds only the
-	 * controls inside markup stamped with its own handle (assets/js/lib/dom.js,
-	 * mine()), so two plugins' copies of the kit on one page each drive
-	 * their own fields and leave the other's alone.
+	 * controls inside markup stamped with its own handle -- the nearest stamp
+	 * decides (assets/js/lib/dom.js, mine()) -- so two plugins' copies of the
+	 * kit on one page each drive their own fields and leave the other's
+	 * alone. Unstamped markup is nobody's: stamp() claims it.
 	 */
 	public const string BUILD_ATTRIBUTE = 'data-field-kit-build';
 
@@ -153,6 +154,10 @@ final class Runtime {
 	/**
 	 * The build's stamp, as an attribute to write into a tag:
 	 * ` data-field-kit-build="{handle}"`, escaped, with its leading space.
+	 *
+	 * The way to claim markup written by hand with the kit's classes: a copy
+	 * drives only what sits inside its own stamp, and markup with none is
+	 * nobody's. One stamp on a screen's wrapper claims everything inside it.
 	 *
 	 * @return string
 	 */
