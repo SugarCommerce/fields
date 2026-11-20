@@ -5,6 +5,7 @@
 
 import { t } from '../lib/config';
 import { ask, endpoint } from '../lib/lookups';
+import { ours } from '../lib/dom';
 
 const Address = {
 	layouts: {},
@@ -30,7 +31,7 @@ const Address = {
 	},
 
 	init( root ) {
-		root.querySelectorAll( '.field-kit__address[data-address]' ).forEach(
+		ours( root, '.field-kit__address[data-address]' ).forEach(
 			function ( wrap ) {
 				if ( wrap.dataset.fkBound ) {
 					return;

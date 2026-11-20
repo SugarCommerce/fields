@@ -2,6 +2,8 @@
  * Accordion sections: a heading that folds the fields after it away.
  */
 
+import { ours } from '../lib/dom';
+
 const Accordion = {
 	/**
 	 * Bind every accordion trigger within a root.
@@ -14,7 +16,8 @@ const Accordion = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll(
+		ours(
+			root,
 			'.field-kit__accordion .privacy-settings-accordion-trigger'
 		).forEach( function ( button ) {
 			if ( button.dataset.fkBound ) {

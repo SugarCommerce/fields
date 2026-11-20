@@ -18,6 +18,7 @@
 
 import { config, icon, t } from '../lib/config';
 import { request } from '../lib/request';
+import { ours } from '../lib/dom';
 
 const IconPicker = {
 	/**
@@ -46,40 +47,38 @@ const IconPicker = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll( '.field-kit__icon-picker' ).forEach(
-			function ( wrap ) {
-				if ( wrap.dataset.fkBound ) {
-					return;
-				}
-
-				wrap.dataset.fkBound = '1';
-
-				const button = wrap.querySelector( '.field-kit__icon-button' );
-
-				if ( ! button ) {
-					return;
-				}
-
-				const clear = wrap.querySelector( '.field-kit__icon-clear' );
-
-				function warm() {
-					IconPicker.prefetch( wrap );
-				}
-
-				button.addEventListener( 'pointerenter', warm );
-				button.addEventListener( 'focus', warm );
-				button.addEventListener( 'click', function () {
-					IconPicker.open( wrap );
-				} );
-
-				if ( clear ) {
-					clear.addEventListener( 'click', function () {
-						IconPicker.write( wrap, null );
-						button.focus();
-					} );
-				}
+		ours( root, '.field-kit__icon-picker' ).forEach( function ( wrap ) {
+			if ( wrap.dataset.fkBound ) {
+				return;
 			}
-		);
+
+			wrap.dataset.fkBound = '1';
+
+			const button = wrap.querySelector( '.field-kit__icon-button' );
+
+			if ( ! button ) {
+				return;
+			}
+
+			const clear = wrap.querySelector( '.field-kit__icon-clear' );
+
+			function warm() {
+				IconPicker.prefetch( wrap );
+			}
+
+			button.addEventListener( 'pointerenter', warm );
+			button.addEventListener( 'focus', warm );
+			button.addEventListener( 'click', function () {
+				IconPicker.open( wrap );
+			} );
+
+			if ( clear ) {
+				clear.addEventListener( 'click', function () {
+					IconPicker.write( wrap, null );
+					button.focus();
+				} );
+			}
+		} );
 	},
 
 	/**

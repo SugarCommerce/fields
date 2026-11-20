@@ -2,6 +2,8 @@
  * Panel tabs: the tab markers' tab list, from the keyboard as well.
  */
 
+import { ours } from '../lib/dom';
+
 const PanelTabs = {
 	/**
 	 * Bind every tab list within a root.
@@ -9,16 +11,14 @@ const PanelTabs = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll( '.field-kit__panel-tabs' ).forEach(
-			function ( wrap ) {
-				if ( wrap.dataset.fkBound ) {
-					return;
-				}
-
-				wrap.dataset.fkBound = '1';
-				PanelTabs.bind( wrap );
+		ours( root, '.field-kit__panel-tabs' ).forEach( function ( wrap ) {
+			if ( wrap.dataset.fkBound ) {
+				return;
 			}
-		);
+
+			wrap.dataset.fkBound = '1';
+			PanelTabs.bind( wrap );
+		} );
 	},
 
 	/**

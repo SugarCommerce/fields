@@ -4,52 +4,50 @@
  */
 
 import { t } from '../lib/config';
-import { announce } from '../lib/dom';
+import { announce, ours } from '../lib/dom';
 import { ask, endpoint } from '../lib/lookups';
 
 const Location = {
 	init( root ) {
-		root.querySelectorAll( '.field-kit__location' ).forEach(
-			function ( wrap ) {
-				if ( wrap.dataset.fkBound ) {
-					return;
-				}
+		ours( root, '.field-kit__location' ).forEach( function ( wrap ) {
+			if ( wrap.dataset.fkBound ) {
+				return;
+			}
 
-				wrap.dataset.fkBound = '1';
+			wrap.dataset.fkBound = '1';
 
-				const address = wrap.querySelector(
-					'.field-kit__location-address'
-				);
-				const find = wrap.querySelector( '.field-kit__location-find' );
-				let timer = null;
+			const address = wrap.querySelector(
+				'.field-kit__location-address'
+			);
+			const find = wrap.querySelector( '.field-kit__location-find' );
+			let timer = null;
 
-				if ( find && address ) {
-					find.addEventListener( 'click', function () {
+			if ( find && address ) {
+				find.addEventListener( 'click', function () {
+					Location.find( wrap );
+				} );
+
+				// Enter in the address box finds rather than sending the
+				// form a step before it is ready.
+				address.addEventListener( 'keydown', function ( event ) {
+					if ( 'Enter' === event.key ) {
+						event.preventDefault();
 						Location.find( wrap );
-					} );
-
-					// Enter in the address box finds rather than sending the
-					// form a step before it is ready.
-					address.addEventListener( 'keydown', function ( event ) {
-						if ( 'Enter' === event.key ) {
-							event.preventDefault();
-							Location.find( wrap );
-						}
-					} );
-				}
-
-				wrap.querySelectorAll(
-					'.field-kit__location-lat, .field-kit__location-lng'
-				).forEach( function ( input ) {
-					input.addEventListener( 'input', function () {
-						window.clearTimeout( timer );
-						timer = window.setTimeout( function () {
-							Location.preview( wrap );
-						}, 500 );
-					} );
+					}
 				} );
 			}
-		);
+
+			wrap.querySelectorAll(
+				'.field-kit__location-lat, .field-kit__location-lng'
+			).forEach( function ( input ) {
+				input.addEventListener( 'input', function () {
+					window.clearTimeout( timer );
+					timer = window.setTimeout( function () {
+						Location.preview( wrap );
+					}, 500 );
+				} );
+			} );
+		} );
 	},
 
 	find( wrap ) {

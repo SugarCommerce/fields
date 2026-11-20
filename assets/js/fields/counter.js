@@ -4,6 +4,7 @@
  */
 
 import { t } from '../lib/config';
+import { ours } from '../lib/dom';
 
 const Counter = {
 	/**
@@ -15,25 +16,23 @@ const Counter = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll( '[data-counter]' ).forEach(
-			function ( counter ) {
-				if ( counter.dataset.fkBound ) {
-					return;
-				}
-
-				counter.dataset.fkBound = '1';
-
-				const control = Counter.control( counter );
-
-				if ( ! control ) {
-					return;
-				}
-
-				control.addEventListener( 'input', function () {
-					Counter.update( counter, control );
-				} );
+		ours( root, '[data-counter]' ).forEach( function ( counter ) {
+			if ( counter.dataset.fkBound ) {
+				return;
 			}
-		);
+
+			counter.dataset.fkBound = '1';
+
+			const control = Counter.control( counter );
+
+			if ( ! control ) {
+				return;
+			}
+
+			control.addEventListener( 'input', function () {
+				Counter.update( counter, control );
+			} );
+		} );
 	},
 
 	/**

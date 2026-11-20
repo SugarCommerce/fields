@@ -6,6 +6,7 @@
  */
 
 import { colorPicker, hasColorPicker } from '../lib/jquery';
+import { ours } from '../lib/dom';
 
 const ColorPicker = {
 	/**
@@ -28,47 +29,45 @@ const ColorPicker = {
 			return;
 		}
 
-		root.querySelectorAll( 'input.field-kit__color' ).forEach(
-			function ( input ) {
-				if ( input.dataset.fkBound ) {
-					return;
-				}
-
-				input.dataset.fkBound = '1';
-
-				/**
-				 * Tell the kit the value moved, without telling iris.
-				 *
-				 * iris fires its change callback *before* it writes the new
-				 * value to the input — verified in iris.min.js `_change`,
-				 * which calls `_trigger("change")` and only then
-				 * `element.val()`. It also listens for `change` on the input
-				 * itself and re-reads the value when one arrives.
-				 *
-				 * So dispatching a native change from here handed iris the
-				 * *old* value and it reset the picker: the palette opened,
-				 * swatches highlighted, and clicking one changed nothing.
-				 * From the clear callback it was worse — that one is reached
-				 * from iris's own change listener, so a native change there
-				 * loops.
-				 *
-				 * A custom event does neither. Conditions listens for it.
-				 */
-				function notify() {
-					input.dispatchEvent(
-						new CustomEvent( 'field-kit:change', { bubbles: true } )
-					);
-				}
-
-				colorPicker( input, {
-					palettes: input.dataset.palette
-						? input.dataset.palette.split( ',' )
-						: true,
-					change: notify,
-					clear: notify,
-				} );
+		ours( root, 'input.field-kit__color' ).forEach( function ( input ) {
+			if ( input.dataset.fkBound ) {
+				return;
 			}
-		);
+
+			input.dataset.fkBound = '1';
+
+			/**
+			 * Tell the kit the value moved, without telling iris.
+			 *
+			 * iris fires its change callback *before* it writes the new
+			 * value to the input — verified in iris.min.js `_change`,
+			 * which calls `_trigger("change")` and only then
+			 * `element.val()`. It also listens for `change` on the input
+			 * itself and re-reads the value when one arrives.
+			 *
+			 * So dispatching a native change from here handed iris the
+			 * *old* value and it reset the picker: the palette opened,
+			 * swatches highlighted, and clicking one changed nothing.
+			 * From the clear callback it was worse — that one is reached
+			 * from iris's own change listener, so a native change there
+			 * loops.
+			 *
+			 * A custom event does neither. Conditions listens for it.
+			 */
+			function notify() {
+				input.dispatchEvent(
+					new CustomEvent( 'field-kit:change', { bubbles: true } )
+				);
+			}
+
+			colorPicker( input, {
+				palettes: input.dataset.palette
+					? input.dataset.palette.split( ',' )
+					: true,
+				change: notify,
+				clear: notify,
+			} );
+		} );
 	},
 };
 

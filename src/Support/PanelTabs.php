@@ -13,6 +13,7 @@ declare( strict_types=1 );
 namespace SugarCommerce\Fields\Support;
 
 use SugarCommerce\Fields\Attributes;
+use SugarCommerce\Fields\Utils\Runtime;
 
 /**
  * A list of tabs down one side and a panel beside them.
@@ -74,7 +75,7 @@ final class PanelTabs {
 		}
 
 		return sprintf(
-			'<div class="field-kit__panel-tabs" data-tabs="%s">' .
+			'<div class="field-kit__panel-tabs"' . Runtime::stamp() . ' data-tabs="%s">' .
 			'<div class="field-kit__panel-tablist" role="tablist" aria-orientation="vertical">%s</div>' .
 			'<div class="field-kit__panel-bodies">%s</div>' .
 			'</div>',

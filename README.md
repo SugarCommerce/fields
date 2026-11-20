@@ -1066,6 +1066,17 @@ as PHP reads them), `block-editor/controls` and `block-editor/panel`.
   A script that loads after the kit's (it depends on `Runtime::handle()`)
   finds `modules` there at once; one that may load first asks at the moment
   it needs them.
+
+Each copy drives only the controls its own build drew. A field's wrapper, a
+public form, a set of panel tabs, a tooltip and a section carry
+`data-field-kit-build` (`Runtime::BUILD_ATTRIBUTE`) holding the build's
+handle, and every module finds its controls with `ours( root, selector )`
+(`lib/dom.js`), which passes over anything inside another build's stamp; the
+listeners a module puts on the document answer only their own build's
+controls, and are marked bound per build. Markup nobody stamped -- a control
+a plugin wrote by hand with the kit's classes -- is driven by whichever copy
+reaches it first, as before; write `Runtime::stamp()` into its outer tag
+(` data-field-kit-build="…"`) to tie it to your build.
 * `window.sugarcommerceFileSources` -- read, never written: the places a file
   can come from ("More places a file can come from").
 * `field-kit:change` -- fired, bubbling, on a colour input core's picker

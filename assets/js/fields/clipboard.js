@@ -3,7 +3,7 @@
  */
 
 import { t } from '../lib/config';
-import { announce, bound } from '../lib/dom';
+import { announce, bound, mine } from '../lib/dom';
 
 const Clipboard = {
 	/**
@@ -19,7 +19,8 @@ const Clipboard = {
 		root.addEventListener( 'click', function ( event ) {
 			const button = event.target.closest( '.field-kit__clipboard-copy' );
 
-			if ( ! button ) {
+			// Another plugin's copy of the kit copies its own.
+			if ( ! button || ! mine( button ) ) {
 				return;
 			}
 

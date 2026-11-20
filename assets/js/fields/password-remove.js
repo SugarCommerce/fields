@@ -12,6 +12,8 @@
  * removal that will not happen.
  */
 
+import { ours } from '../lib/dom';
+
 const PasswordRemove = {
 	/**
 	 * Bind every remove button within a root.
@@ -19,7 +21,7 @@ const PasswordRemove = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll( '.field-kit__password-remove' ).forEach(
+		ours( root, '.field-kit__password-remove' ).forEach(
 			function ( button ) {
 				const wrap = button.closest( '.field-kit__password' );
 				const input = wrap

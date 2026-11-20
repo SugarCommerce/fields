@@ -3,6 +3,8 @@
  * another plugin offers.
  */
 
+import { ours } from '../lib/dom';
+
 const Media = {
 	/**
 	 * Bind every single-item media field within a root.
@@ -10,40 +12,38 @@ const Media = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll( '.field-kit__media' ).forEach(
-			function ( wrap ) {
-				// Before the bound check: init() runs again at load, and a
-				// source's script that arrived late shows its button then.
-				Media.sources( wrap );
+		ours( root, '.field-kit__media' ).forEach( function ( wrap ) {
+			// Before the bound check: init() runs again at load, and a
+			// source's script that arrived late shows its button then.
+			Media.sources( wrap );
 
-				if ( wrap.dataset.fkBound ) {
-					return;
+			if ( wrap.dataset.fkBound ) {
+				return;
+			}
+
+			wrap.dataset.fkBound = '1';
+
+			wrap.addEventListener( 'click', function ( event ) {
+				if ( event.target.closest( '.field-kit__media-choose' ) ) {
+					event.preventDefault();
+					Media.open( wrap );
 				}
 
-				wrap.dataset.fkBound = '1';
+				const sourceButton = event.target.closest(
+					'.field-kit__media-source'
+				);
 
-				wrap.addEventListener( 'click', function ( event ) {
-					if ( event.target.closest( '.field-kit__media-choose' ) ) {
-						event.preventDefault();
-						Media.open( wrap );
-					}
+				if ( sourceButton ) {
+					event.preventDefault();
+					Media.fromSource( wrap, sourceButton.dataset.source );
+				}
 
-					const sourceButton = event.target.closest(
-						'.field-kit__media-source'
-					);
-
-					if ( sourceButton ) {
-						event.preventDefault();
-						Media.fromSource( wrap, sourceButton.dataset.source );
-					}
-
-					if ( event.target.closest( '.field-kit__media-clear' ) ) {
-						event.preventDefault();
-						Media.clear( wrap );
-					}
-				} );
-			}
-		);
+				if ( event.target.closest( '.field-kit__media-clear' ) ) {
+					event.preventDefault();
+					Media.clear( wrap );
+				}
+			} );
+		} );
 	},
 
 	/**

@@ -68,6 +68,7 @@ final class FormTest extends TestCase {
 		$html = ( new Form( 'order', $this->fields(), [ 'submit' => 'Buy', 'guard' => true ] ) )->render( [ 'name' => 'Ada' ] );
 
 		$this->assertStringStartsWith( '<form class="sugarcommerce-form" id="order" method="post"', $html );
+		$this->assertMatchesRegularExpression( '/^<form [^>]*data-field-kit-build="sugarcommerce-fields"/', $html );
 		$this->assertStringContainsString( 'name="_sugarcommerce_fields_form" value="order"', $html );
 		$this->assertStringContainsString( 'name="_order_nonce" value="nonce-sugarcommerce_fields_form_order"', $html );
 		$this->assertStringContainsString( 'name="_order_website"', $html );

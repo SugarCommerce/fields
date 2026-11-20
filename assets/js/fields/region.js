@@ -4,7 +4,7 @@
  */
 
 import { config, t } from '../lib/config';
-import { sibling } from '../lib/dom';
+import { ours, sibling } from '../lib/dom';
 import { request } from '../lib/request';
 import Combobox from './combobox';
 
@@ -23,7 +23,7 @@ const Region = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll( '.field-kit__region[data-country-key]' ).forEach(
+		ours( root, '.field-kit__region[data-country-key]' ).forEach(
 			function ( wrap ) {
 				if ( wrap.dataset.fkBound ) {
 					return;

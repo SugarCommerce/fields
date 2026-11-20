@@ -285,7 +285,7 @@ final class ColorFieldTest extends TestCase {
 
 		$this->assertMatchesRegularExpression( '/\.field-kit__color-field\[data-empty="true"\] \.field-kit__color-swatch\s*\{/', $css );
 		$this->assertMatchesRegularExpression( '/\.field-kit__color-preset\[aria-pressed="true"\]/', $css );
-		$this->assertStringContainsString( "querySelectorAll( '.field-kit__color-field' )", $js );
+		$this->assertStringContainsString( "ours( root, '.field-kit__color-field' )", $js );
 		$this->assertStringContainsString( "swatch.addEventListener( 'input'", $js );
 	}
 	/**

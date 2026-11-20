@@ -1,8 +1,47 @@
 /**
  * Small things every module does to the page.
+ *
+ * Including finding the controls this build is to drive: two plugins' copies
+ * of the kit can be on one page, and each binds only what its own PHP drew
+ * -- markup inside an element stamped `data-field-kit-build` with its own
+ * handle (mine(), ours()). Markup nobody stamped is anybody's, as it always
+ * was, and the first copy to reach a control marks it bound.
  */
 
-import { icon } from './config';
+import { build, icon } from './config';
+
+/**
+ * Whether an element is this build's to drive: inside nothing stamped with
+ * a build, or inside something stamped with this one.
+ *
+ * @param {Element|null} element The element.
+ * @return {boolean} Ours.
+ */
+export function mine( element ) {
+	const marked =
+		element && 'function' === typeof element.closest
+			? element.closest( '[data-field-kit-build]' )
+			: null;
+
+	return ! marked || marked.getAttribute( 'data-field-kit-build' ) === build;
+}
+
+/**
+ * Every element under a root that matches a selector and is this build's.
+ *
+ * What a module's init() looks for its controls with, in place of
+ * querySelectorAll(): another copy's controls are never found here.
+ *
+ * @param {Element|Document} root     Where to look.
+ * @param {string}           selector CSS selector.
+ * @return {Element[]} The elements, in document order.
+ */
+export function ours( root, selector ) {
+	return Array.prototype.filter.call(
+		root.querySelectorAll( selector ),
+		mine
+	);
+}
 
 /**
  * Put one of the kit's icons in place of another element.
@@ -42,18 +81,23 @@ export function swapIcon( el, key ) {
  * bind a second handler each time: two copies to the clipboard, every
  * conditional field evaluated twice per keystroke.
  *
+ * Marked per build. The root is often the document, which every copy of the
+ * kit on the page shares: one shared mark let the first copy to run listen
+ * for every copy, and the others never listened at all.
+ *
  * @param {Element} root Container.
  * @param {string}  name Module name.
- * @return {boolean} True when the root was already bound.
+ * @return {boolean} True when the root was already bound by this build.
  */
 export function bound( root, name ) {
 	const marks = root.fieldKitBound || ( root.fieldKitBound = {} );
+	const key = build + ':' + name;
 
-	if ( marks[ name ] ) {
+	if ( marks[ key ] ) {
 		return true;
 	}
 
-	marks[ name ] = true;
+	marks[ key ] = true;
 
 	return false;
 }

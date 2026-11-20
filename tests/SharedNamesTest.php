@@ -10,8 +10,13 @@ declare( strict_types=1 );
 namespace SugarCommerce\Fields\Tests;
 
 use PHPUnit\Framework\TestCase;
+use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\Form;
 use SugarCommerce\Fields\Icons\Icons;
+use SugarCommerce\Fields\Registry;
+use SugarCommerce\Fields\Renderer;
+use SugarCommerce\Fields\Support\PanelTabs;
+use SugarCommerce\Fields\Support\Tooltip;
 use SugarCommerce\Fields\Utils\Runtime;
 
 /**
@@ -124,5 +129,35 @@ final class SharedNamesTest extends TestCase {
 	public function test_the_sent_form_field_is_the_builds_own(): void {
 		$this->assertSame( '_' . Runtime::key( 'form' ), Form::field() );
 		$this->assertSame( '_sugarcommerce_fields_form', Form::field() );
+	}
+
+	/**
+	 * What the scripts bind is stamped with the build that drew it: a
+	 * field's wrapper, a set of panel tabs, a tooltip.
+	 */
+	public function test_the_markup_names_its_build(): void {
+		$stamp = 'data-field-kit-build="' . Runtime::handle() . '"';
+		$field = new Field( 'demo', ( new Registry() )->get( 'text' ), [ 'label' => 'Demo' ] );
+
+		$this->assertSame( ' ' . $stamp, Runtime::stamp() );
+		$this->assertMatchesRegularExpression( '/^<div class="field-kit__field[^"]*"[^>]*\s' . preg_quote( $stamp, '/' ) . '/', ( new Renderer() )->render( $field ) );
+		$this->assertStringContainsString( '<div class="field-kit__panel-tabs" ' . $stamp, PanelTabs::render( 'box', [ 'a' => [ 'label' => 'A', 'content' => '' ] ] ) );
+		$this->assertStringContainsString( '<span class="field-kit__tooltip" ' . $stamp . '>', Tooltip::render( 'Help', 'tip' ) );
+	}
+
+	/**
+	 * Every module looks for its controls with ours(), which passes over
+	 * another build's, rather than querySelectorAll() on the root.
+	 */
+	public function test_every_module_finds_only_its_own_builds_controls(): void {
+		$found = [];
+
+		foreach ( $this->scripts() as $path => $code ) {
+			if ( ( str_starts_with( $path, 'fields/' ) || str_starts_with( $path, 'forms/' ) ) && preg_match( '/\b(?:root|document)\.querySelectorAll\(/', $code ) ) {
+				$found[] = $path;
+			}
+		}
+
+		$this->assertSame( [], $found, "A module that would find another build's controls:\n" . implode( "\n", $found ) );
 	}
 }

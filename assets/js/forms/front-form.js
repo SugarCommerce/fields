@@ -8,6 +8,7 @@ import Address from '../fields/address';
 import { config, t } from '../lib/config';
 import { ask, fieldOf } from '../lib/lookups';
 import Guard from './guard';
+import { ours } from '../lib/dom';
 
 const FrontForm = {
 	init( root ) {
@@ -17,7 +18,7 @@ const FrontForm = {
 			forms.push( root );
 		}
 
-		root.querySelectorAll( 'form[data-sugarcommerce-form]' ).forEach(
+		ours( root, 'form[data-sugarcommerce-form]' ).forEach(
 			function ( form ) {
 				forms.push( form );
 			}

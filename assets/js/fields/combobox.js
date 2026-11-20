@@ -8,7 +8,7 @@
  */
 
 import { config, icon, t } from '../lib/config';
-import { announce } from '../lib/dom';
+import { announce, ours } from '../lib/dom';
 import { request } from '../lib/request';
 
 const Combobox = {
@@ -159,7 +159,7 @@ const Combobox = {
 		const selector =
 			'select.field-kit__relational, select.field-kit__select--enhanced';
 
-		root.querySelectorAll( selector ).forEach( function ( select ) {
+		ours( root, selector ).forEach( function ( select ) {
 			if ( select.dataset.fkBound ) {
 				return;
 			}

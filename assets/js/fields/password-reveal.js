@@ -3,7 +3,7 @@
  */
 
 import { t } from '../lib/config';
-import { swapIcon } from '../lib/dom';
+import { ours, swapIcon } from '../lib/dom';
 
 const PasswordReveal = {
 	/**
@@ -15,7 +15,7 @@ const PasswordReveal = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll( '.field-kit__password-toggle' ).forEach(
+		ours( root, '.field-kit__password-toggle' ).forEach(
 			function ( button ) {
 				if ( button.dataset.fkBound ) {
 					return;

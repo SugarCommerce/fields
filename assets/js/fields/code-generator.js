@@ -10,6 +10,8 @@
  * where that goes wrong.
  */
 
+import { ours } from '../lib/dom';
+
 const CodeGenerator = {
 	alphabets: {
 		alphanumeric_upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
@@ -26,42 +28,36 @@ const CodeGenerator = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll( '.field-kit__code-generate' ).forEach(
-			function ( button ) {
-				// Marked, because init() is called again for every repeater
-				// row and every flyout that opens, and a twice-bound button
-				// generates two codes and keeps the second.
-				if ( button.dataset.fkBound ) {
+		ours( root, '.field-kit__code-generate' ).forEach( function ( button ) {
+			// Marked, because init() is called again for every repeater
+			// row and every flyout that opens, and a twice-bound button
+			// generates two codes and keeps the second.
+			if ( button.dataset.fkBound ) {
+				return;
+			}
+
+			button.dataset.fkBound = '1';
+
+			button.addEventListener( 'click', function () {
+				const wrap = button.closest( '.field-kit__code-generator' );
+				const input =
+					wrap && wrap.querySelector( '.field-kit__code-value' );
+
+				if ( ! input ) {
 					return;
 				}
 
-				button.dataset.fkBound = '1';
+				input.value = CodeGenerator.build( button.dataset );
 
-				button.addEventListener( 'click', function () {
-					const wrap = button.closest( '.field-kit__code-generator' );
-					const input =
-						wrap && wrap.querySelector( '.field-kit__code-value' );
+				// So a conditional field watching this one, or anything
+				// else listening, hears about it. Setting .value fires
+				// nothing.
+				input.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+				input.dispatchEvent( new Event( 'change', { bubbles: true } ) );
 
-					if ( ! input ) {
-						return;
-					}
-
-					input.value = CodeGenerator.build( button.dataset );
-
-					// So a conditional field watching this one, or anything
-					// else listening, hears about it. Setting .value fires
-					// nothing.
-					input.dispatchEvent(
-						new Event( 'input', { bubbles: true } )
-					);
-					input.dispatchEvent(
-						new Event( 'change', { bubbles: true } )
-					);
-
-					input.focus();
-				} );
-			}
-		);
+				input.focus();
+			} );
+		} );
 	},
 
 	/**

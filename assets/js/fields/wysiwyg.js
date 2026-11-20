@@ -3,6 +3,8 @@
  * row -- started the way core starts the ones it printed.
  */
 
+import { ours } from '../lib/dom';
+
 const Wysiwyg = {
 	/**
 	 * Start every visual editor that nothing else has started.
@@ -21,37 +23,37 @@ const Wysiwyg = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll(
-			'.field-kit__wysiwyg-wrap[data-editor]'
-		).forEach( function ( wrap ) {
-			const id = wrap.dataset.editor;
-			const textarea = document.getElementById( id );
+		ours( root, '.field-kit__wysiwyg-wrap[data-editor]' ).forEach(
+			function ( wrap ) {
+				const id = wrap.dataset.editor;
+				const textarea = document.getElementById( id );
 
-			if (
-				wrap.dataset.fkBound ||
-				! textarea ||
-				! wrap.contains( textarea )
-			) {
-				return;
-			}
+				if (
+					wrap.dataset.fkBound ||
+					! textarea ||
+					! wrap.contains( textarea )
+				) {
+					return;
+				}
 
-			if ( Wysiwyg.startedByCore( id, textarea ) ) {
+				if ( Wysiwyg.startedByCore( id, textarea ) ) {
+					wrap.dataset.fkBound = '1';
+					return;
+				}
+
+				if (
+					! window.wp ||
+					! window.wp.editor ||
+					typeof window.wp.editor.getDefaultSettings !== 'function' ||
+					! window.tinymce
+				) {
+					return;
+				}
+
 				wrap.dataset.fkBound = '1';
-				return;
+				Wysiwyg.start( wrap, id, textarea );
 			}
-
-			if (
-				! window.wp ||
-				! window.wp.editor ||
-				typeof window.wp.editor.getDefaultSettings !== 'function' ||
-				! window.tinymce
-			) {
-				return;
-			}
-
-			wrap.dataset.fkBound = '1';
-			Wysiwyg.start( wrap, id, textarea );
-		} );
+		);
 	},
 
 	/**
@@ -253,17 +255,17 @@ const Wysiwyg = {
 	 * @param {Element} root Container.
 	 */
 	destroy( root ) {
-		root.querySelectorAll(
-			'.field-kit__wysiwyg-wrap[data-editor]'
-		).forEach( function ( wrap ) {
-			const id = wrap.dataset.editor;
+		ours( root, '.field-kit__wysiwyg-wrap[data-editor]' ).forEach(
+			function ( wrap ) {
+				const id = wrap.dataset.editor;
 
-			if ( Wysiwyg.ours[ id ] ) {
-				Wysiwyg.stop( id );
+				if ( Wysiwyg.ours[ id ] ) {
+					Wysiwyg.stop( id );
+				}
+
+				delete wrap.dataset.fkBound;
 			}
-
-			delete wrap.dataset.fkBound;
-		} );
+		);
 	},
 };
 

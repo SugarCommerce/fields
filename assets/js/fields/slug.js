@@ -4,66 +4,64 @@
  */
 
 import { t } from '../lib/config';
-import { sibling } from '../lib/dom';
+import { ours, sibling } from '../lib/dom';
 import { ask, endpoint, fieldOf } from '../lib/lookups';
 
 const Slug = {
 	init( root ) {
-		root.querySelectorAll( 'input[data-slug]' ).forEach(
-			function ( input ) {
-				if ( input.dataset.fkBound ) {
-					return;
-				}
+		ours( root, 'input[data-slug]' ).forEach( function ( input ) {
+			if ( input.dataset.fkBound ) {
+				return;
+			}
 
-				input.dataset.fkBound = '1';
+			input.dataset.fkBound = '1';
 
-				const field = fieldOf( input );
-				const status = field
-					? field.querySelector( '.field-kit__slug-status' )
-					: null;
-				const source = input.dataset.slugSource
-					? sibling( input, input.dataset.slugSource )
-					: null;
-				let timer = null;
+			const field = fieldOf( input );
+			const status = field
+				? field.querySelector( '.field-kit__slug-status' )
+				: null;
+			const source = input.dataset.slugSource
+				? sibling( input, input.dataset.slugSource )
+				: null;
+			let timer = null;
 
-				// Following the source until somebody writes a slug of their own.
-				input.fkFollowing = '' === input.value;
+			// Following the source until somebody writes a slug of their own.
+			input.fkFollowing = '' === input.value;
 
-				if ( source ) {
-					source.addEventListener( 'input', function () {
-						if ( input.fkFollowing ) {
-							input.value = Slug.make( source.value );
-							input.dispatchEvent(
-								new Event( 'input', { bubbles: true } )
-							);
-							input.fkFollowing = true;
-						}
-					} );
-				}
-
-				input.addEventListener( 'input', function ( event ) {
-					if ( event.isTrusted ) {
-						input.fkFollowing = '' === input.value;
-					}
-
-					window.clearTimeout( timer );
-					timer = window.setTimeout( function () {
-						Slug.check( input, status );
-					}, 350 );
-				} );
-
-				input.addEventListener( 'blur', function () {
-					const clean = Slug.make( input.value );
-
-					if ( clean !== input.value ) {
-						input.value = clean;
+			if ( source ) {
+				source.addEventListener( 'input', function () {
+					if ( input.fkFollowing ) {
+						input.value = Slug.make( source.value );
 						input.dispatchEvent(
-							new Event( 'change', { bubbles: true } )
+							new Event( 'input', { bubbles: true } )
 						);
+						input.fkFollowing = true;
 					}
 				} );
 			}
-		);
+
+			input.addEventListener( 'input', function ( event ) {
+				if ( event.isTrusted ) {
+					input.fkFollowing = '' === input.value;
+				}
+
+				window.clearTimeout( timer );
+				timer = window.setTimeout( function () {
+					Slug.check( input, status );
+				}, 350 );
+			} );
+
+			input.addEventListener( 'blur', function () {
+				const clean = Slug.make( input.value );
+
+				if ( clean !== input.value ) {
+					input.value = clean;
+					input.dispatchEvent(
+						new Event( 'change', { bubbles: true } )
+					);
+				}
+			} );
+		} );
 	},
 
 	/**

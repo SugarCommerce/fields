@@ -2,6 +2,8 @@
  * Email panels: a merge tag goes in where the author was last typing.
  */
 
+import { ours } from '../lib/dom';
+
 const EmailPanel = {
 	/**
 	 * Bind every email panel within a root.
@@ -14,17 +16,15 @@ const EmailPanel = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll( '.field-kit__email' ).forEach(
-			function ( panel ) {
-				if ( panel.dataset.fkBound ) {
-					return;
-				}
-
-				panel.dataset.fkBound = '1';
-				EmailPanel.bindTags( panel );
-				EmailPanel.bindStatus( panel );
+		ours( root, '.field-kit__email' ).forEach( function ( panel ) {
+			if ( panel.dataset.fkBound ) {
+				return;
 			}
-		);
+
+			panel.dataset.fkBound = '1';
+			EmailPanel.bindTags( panel );
+			EmailPanel.bindStatus( panel );
+		} );
 	},
 
 	/**

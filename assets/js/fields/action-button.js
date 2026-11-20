@@ -5,7 +5,7 @@
  */
 
 import { config, t } from '../lib/config';
-import { announce, bound, swapIcon } from '../lib/dom';
+import { announce, bound, mine, swapIcon } from '../lib/dom';
 import { request } from '../lib/request';
 
 const ActionButton = {
@@ -28,7 +28,8 @@ const ActionButton = {
 				'[data-endpoint][data-action]'
 			);
 
-			if ( ! button || button.disabled ) {
+			// Another plugin's copy of the kit runs its own.
+			if ( ! button || button.disabled || ! mine( button ) ) {
 				return;
 			}
 

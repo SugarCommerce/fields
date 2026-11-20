@@ -3,6 +3,8 @@
  * kept on screen.
  */
 
+import { ours } from '../lib/dom';
+
 const Tooltip = {
 	/**
 	 * Bind every tooltip within a root.
@@ -15,62 +17,58 @@ const Tooltip = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll( '.field-kit__tooltip' ).forEach(
-			function ( wrap ) {
-				if ( wrap.dataset.fkBound ) {
-					return;
-				}
-
-				wrap.dataset.fkBound = '1';
-
-				const button = wrap.querySelector(
-					'.field-kit__tooltip-toggle'
-				);
-				const panel = wrap.querySelector( '.field-kit__tooltip-panel' );
-
-				if ( ! button || ! panel ) {
-					return;
-				}
-
-				function open() {
-					panel.hidden = false;
-					button.setAttribute( 'aria-expanded', 'true' );
-					Tooltip.place( panel, button );
-				}
-
-				function close() {
-					panel.hidden = true;
-					button.setAttribute( 'aria-expanded', 'false' );
-				}
-
-				// Hover and focus both, because a tooltip that only opens on
-				// hover is one that does not exist for anyone using a
-				// keyboard — which is the failing this component was written
-				// to avoid.
-				wrap.addEventListener( 'mouseenter', open );
-				wrap.addEventListener( 'mouseleave', close );
-				button.addEventListener( 'focus', open );
-				button.addEventListener( 'blur', close );
-
-				// Click as well, for touch, where there is no hover at all.
-				button.addEventListener( 'click', function ( event ) {
-					event.preventDefault();
-
-					if ( panel.hidden ) {
-						open();
-					} else {
-						close();
-					}
-				} );
-
-				button.addEventListener( 'keydown', function ( event ) {
-					if ( 'Escape' === event.key && ! panel.hidden ) {
-						event.stopPropagation();
-						close();
-					}
-				} );
+		ours( root, '.field-kit__tooltip' ).forEach( function ( wrap ) {
+			if ( wrap.dataset.fkBound ) {
+				return;
 			}
-		);
+
+			wrap.dataset.fkBound = '1';
+
+			const button = wrap.querySelector( '.field-kit__tooltip-toggle' );
+			const panel = wrap.querySelector( '.field-kit__tooltip-panel' );
+
+			if ( ! button || ! panel ) {
+				return;
+			}
+
+			function open() {
+				panel.hidden = false;
+				button.setAttribute( 'aria-expanded', 'true' );
+				Tooltip.place( panel, button );
+			}
+
+			function close() {
+				panel.hidden = true;
+				button.setAttribute( 'aria-expanded', 'false' );
+			}
+
+			// Hover and focus both, because a tooltip that only opens on
+			// hover is one that does not exist for anyone using a
+			// keyboard — which is the failing this component was written
+			// to avoid.
+			wrap.addEventListener( 'mouseenter', open );
+			wrap.addEventListener( 'mouseleave', close );
+			button.addEventListener( 'focus', open );
+			button.addEventListener( 'blur', close );
+
+			// Click as well, for touch, where there is no hover at all.
+			button.addEventListener( 'click', function ( event ) {
+				event.preventDefault();
+
+				if ( panel.hidden ) {
+					open();
+				} else {
+					close();
+				}
+			} );
+
+			button.addEventListener( 'keydown', function ( event ) {
+				if ( 'Escape' === event.key && ! panel.hidden ) {
+					event.stopPropagation();
+					close();
+				}
+			} );
+		} );
 	},
 
 	/**

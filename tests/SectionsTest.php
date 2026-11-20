@@ -162,7 +162,7 @@ final class SectionsTest extends TestCase {
 		$this->assertSame( 2, substr_count( $markup, 'privacy-settings-accordion-trigger' ) );
 		$this->assertSame( 2, substr_count( $markup, 'class="field-kit__accordion-panel"' ) );
 		$this->assertStringNotContainsString( 'privacy-settings-accordion-panel', $markup );
-		$this->assertStringContainsString( '<div class="privacy-settings-accordion field-kit__accordion">', $markup );
+		$this->assertStringContainsString( '<div class="privacy-settings-accordion field-kit__accordion" data-field-kit-build="sugarcommerce-fields">', $markup );
 		$this->assertStringNotContainsString( '<details', $markup );
 		$this->assertStringNotContainsString( 'field-kit__panel-tabs', $markup );
 	}

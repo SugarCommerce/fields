@@ -4,7 +4,7 @@
  */
 
 import { t } from '../lib/config';
-import { announce } from '../lib/dom';
+import { announce, ours } from '../lib/dom';
 import Reorder from './reorder';
 
 const Gallery = {
@@ -17,34 +17,32 @@ const Gallery = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll( '.field-kit__gallery' ).forEach(
-			function ( wrap ) {
-				if ( wrap.dataset.fkBound ) {
-					return;
+		ours( root, '.field-kit__gallery' ).forEach( function ( wrap ) {
+			if ( wrap.dataset.fkBound ) {
+				return;
+			}
+
+			wrap.dataset.fkBound = '1';
+
+			wrap.addEventListener( 'click', function ( event ) {
+				if ( event.target.closest( '.field-kit__gallery-add' ) ) {
+					event.preventDefault();
+					Gallery.open( wrap );
 				}
 
-				wrap.dataset.fkBound = '1';
+				const remove = event.target.closest(
+					'.field-kit__gallery-remove'
+				);
 
-				wrap.addEventListener( 'click', function ( event ) {
-					if ( event.target.closest( '.field-kit__gallery-add' ) ) {
-						event.preventDefault();
-						Gallery.open( wrap );
-					}
-
-					const remove = event.target.closest(
-						'.field-kit__gallery-remove'
+				if ( remove ) {
+					event.preventDefault();
+					Gallery.remove(
+						wrap,
+						remove.closest( '.field-kit__gallery-item' )
 					);
-
-					if ( remove ) {
-						event.preventDefault();
-						Gallery.remove(
-							wrap,
-							remove.closest( '.field-kit__gallery-item' )
-						);
-					}
-				} );
-			}
-		);
+				}
+			} );
+		} );
 	},
 
 	/**

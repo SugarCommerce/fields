@@ -15,6 +15,7 @@ namespace SugarCommerce\Fields;
 use SugarCommerce\Fields\Support\Badge;
 use SugarCommerce\Fields\Support\Tooltip;
 use SugarCommerce\Fields\Support\Markup;
+use SugarCommerce\Fields\Utils\Runtime;
 
 /**
  * Wraps a control in its label, description and accessibility associations.
@@ -396,6 +397,10 @@ final class Renderer {
 
 		$attributes->add_class( 'field-kit__field', 'field-kit__field--' . $field->type()->id() );
 		$attributes->set( 'data-field-key', $field->key() );
+
+		// Whose script drives what is inside: another plugin's copy of the
+		// kit on the same page leaves it alone.
+		$attributes->set( Runtime::BUILD_ATTRIBUTE, Runtime::handle() );
 
 		// A width is a share of the line, not a measurement: the wrapper is a
 		// flex child and the class sets its basis, so two halves sit beside

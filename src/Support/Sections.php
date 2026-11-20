@@ -145,7 +145,7 @@ final class Sections {
 			// a left rule -- and a form's labels, inputs and descriptions
 			// are exactly those children. The panel is ours, painted to
 			// match, and nothing inside it inherits a quotation.
-			$markup .= '<div class="privacy-settings-accordion field-kit__accordion">';
+			$markup .= '<div class="privacy-settings-accordion field-kit__accordion"' . Runtime::stamp() . '>';
 
 			foreach ( $layout['sections'] as $index => $section ) {
 				$open  = AccordionType::starts_open( $section['field'], $index );

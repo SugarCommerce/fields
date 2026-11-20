@@ -3,7 +3,7 @@
  * `data-conditions` names hold what they say.
  */
 
-import { bound } from '../lib/dom';
+import { bound, ours } from '../lib/dom';
 
 const Conditions = {
 	/**
@@ -12,11 +12,9 @@ const Conditions = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll( '[data-conditions]' ).forEach(
-			function ( field ) {
-				Conditions.evaluate( field );
-			}
-		);
+		ours( root, '[data-conditions]' ).forEach( function ( field ) {
+			Conditions.evaluate( field );
+		} );
 
 		if ( bound( root, 'Conditions' ) ) {
 			return;
@@ -35,7 +33,7 @@ const Conditions = {
 			root.addEventListener(
 				type,
 				function () {
-					root.querySelectorAll( '[data-conditions]' ).forEach(
+					ours( root, '[data-conditions]' ).forEach(
 						function ( field ) {
 							Conditions.evaluate( field );
 						}

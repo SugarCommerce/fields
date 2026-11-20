@@ -5,6 +5,7 @@
  */
 
 import { config } from '../lib/config';
+import { ours } from '../lib/dom';
 
 const CodeEditor = {
 	/**
@@ -23,7 +24,7 @@ const CodeEditor = {
 			return;
 		}
 
-		root.querySelectorAll( 'textarea.field-kit__code' ).forEach(
+		ours( root, 'textarea.field-kit__code' ).forEach(
 			function ( textarea ) {
 				if ( textarea.dataset.fkBound ) {
 					return;

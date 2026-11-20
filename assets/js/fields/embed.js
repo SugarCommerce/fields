@@ -3,34 +3,33 @@
  */
 
 import { ask, endpoint } from '../lib/lookups';
+import { ours } from '../lib/dom';
 
 const Embed = {
 	init( root ) {
-		root.querySelectorAll( '.field-kit__embed' ).forEach(
-			function ( wrap ) {
-				if ( wrap.dataset.fkBound ) {
-					return;
-				}
-
-				wrap.dataset.fkBound = '1';
-
-				const input = wrap.querySelector( '.field-kit__embed-url' );
-				let timer = null;
-
-				if ( ! input ) {
-					return;
-				}
-
-				wrap.fkShown = input.value.trim();
-
-				input.addEventListener( 'input', function () {
-					window.clearTimeout( timer );
-					timer = window.setTimeout( function () {
-						Embed.load( wrap, input );
-					}, 400 );
-				} );
+		ours( root, '.field-kit__embed' ).forEach( function ( wrap ) {
+			if ( wrap.dataset.fkBound ) {
+				return;
 			}
-		);
+
+			wrap.dataset.fkBound = '1';
+
+			const input = wrap.querySelector( '.field-kit__embed-url' );
+			let timer = null;
+
+			if ( ! input ) {
+				return;
+			}
+
+			wrap.fkShown = input.value.trim();
+
+			input.addEventListener( 'input', function () {
+				window.clearTimeout( timer );
+				timer = window.setTimeout( function () {
+					Embed.load( wrap, input );
+				}, 400 );
+			} );
+		} );
 	},
 
 	load( wrap, input ) {

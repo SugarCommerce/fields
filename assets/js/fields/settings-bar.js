@@ -23,25 +23,28 @@
  */
 
 import { t } from '../lib/config';
+import { ours } from '../lib/dom';
 
 const SettingsBar = {
 	init( root ) {
 		// On a phone the tabs are one row that scrolls sideways, and
 		// the tab being shown may be off the end of it.
-		root.querySelectorAll(
-			'.field-kit__settings-sidebar-link--current'
-		).forEach( function ( link ) {
-			const list = link.closest( '.field-kit__settings-sidebar-list' );
+		ours( root, '.field-kit__settings-sidebar-link--current' ).forEach(
+			function ( link ) {
+				const list = link.closest(
+					'.field-kit__settings-sidebar-list'
+				);
 
-			if ( list && list.scrollWidth > list.clientWidth ) {
-				list.scrollLeft =
-					link.offsetLeft -
-					list.offsetLeft -
-					( list.clientWidth - link.offsetWidth ) / 2;
+				if ( list && list.scrollWidth > list.clientWidth ) {
+					list.scrollLeft =
+						link.offsetLeft -
+						list.offsetLeft -
+						( list.clientWidth - link.offsetWidth ) / 2;
+				}
 			}
-		} );
+		);
 
-		root.querySelectorAll( '.field-kit__settings--modern form' ).forEach(
+		ours( root, '.field-kit__settings--modern form' ).forEach(
 			function ( form ) {
 				if ( form.dataset.fkBarBound ) {
 					return;

@@ -57,6 +57,17 @@ final class Runtime {
 	private const int OWN_SEGMENTS = 3;
 
 	/**
+	 * The attribute that says which build drew a piece of markup.
+	 *
+	 * A field's wrapper, a public form, a set of panel tabs, a tooltip and a
+	 * section carry it, holding handle(). Each build's script binds only the
+	 * controls inside markup stamped with its own handle (assets/js/lib/dom.js,
+	 * mine()), so two plugins' copies of the kit on one page each drive
+	 * their own fields and leave the other's alone.
+	 */
+	public const string BUILD_ATTRIBUTE = 'data-field-kit-build';
+
+	/**
 	 * The per-build prefix.
 	 *
 	 * "sugarcommerce-fields" for a plain Composer install -- development, or a single
@@ -137,6 +148,16 @@ final class Runtime {
 	 */
 	public static function handle( string $suffix = '' ): string {
 		return '' === $suffix ? self::prefix() : self::prefix() . '-' . $suffix;
+	}
+
+	/**
+	 * The build's stamp, as an attribute to write into a tag:
+	 * ` data-field-kit-build="{handle}"`, escaped, with its leading space.
+	 *
+	 * @return string
+	 */
+	public static function stamp(): string {
+		return sprintf( ' %s="%s"', self::BUILD_ATTRIBUTE, esc_attr( self::handle() ) );
 	}
 
 	/**

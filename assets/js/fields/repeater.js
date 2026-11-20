@@ -4,7 +4,7 @@
  */
 
 import { t } from '../lib/config';
-import { announce } from '../lib/dom';
+import { announce, ours } from '../lib/dom';
 import { destroy, init } from '../lib/lifecycle';
 import Reorder from './reorder';
 
@@ -15,127 +15,122 @@ const Repeater = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll( '.field-kit__repeater' ).forEach(
-			function ( wrap ) {
-				if ( wrap.dataset.fkBound ) {
-					return;
-				}
+		ours( root, '.field-kit__repeater' ).forEach( function ( wrap ) {
+			if ( wrap.dataset.fkBound ) {
+				return;
+			}
 
-				wrap.dataset.fkBound = '1';
+			wrap.dataset.fkBound = '1';
 
-				wrap.addEventListener( 'click', function ( event ) {
-					const addButton = event.target.closest(
-						'.field-kit__repeater-add'
-					);
-
-					// This repeater's own button. A click inside a repeater
-					// nested in one of the rows bubbles up to this listener
-					// as well, and without the check "Add a file" inside a
-					// price also added a row to the list of prices.
-					if ( addButton && Repeater.owns( wrap, addButton ) ) {
-						event.preventDefault();
-
-						// Flexible content has a template per layout: the
-						// button names one, or the list beside it does.
-						const picker = Repeater.own(
-							wrap,
-							'.field-kit__flexible-layout'
-						);
-
-						Repeater.add(
-							wrap,
-							addButton.dataset.layout ||
-								( picker ? picker.value : '' )
-						);
-					}
-
-					const duplicate = event.target.closest(
-						'.field-kit__repeater-duplicate'
-					);
-
-					if ( duplicate && Repeater.owns( wrap, duplicate ) ) {
-						event.preventDefault();
-						Repeater.duplicate(
-							wrap,
-							duplicate.closest( '.field-kit__repeater-row' )
-						);
-					}
-
-					const remove = event.target.closest(
-						'.field-kit__repeater-remove'
-					);
-
-					if ( remove && Repeater.owns( wrap, remove ) ) {
-						event.preventDefault();
-						Repeater.remove(
-							wrap,
-							remove.closest( '.field-kit__repeater-row' )
-						);
-					}
-
-					// The whole header, not just the chevron on it. A title
-					// that says which row this is, next to a control that
-					// opens it, and only the control opening it, is a target
-					// the width of an icon on a strip the width of the panel.
-					const header = event.target.closest(
-						'.field-kit__repeater-header'
-					);
-
-					if (
-						header &&
-						Repeater.owns( wrap, header ) &&
-						! event.target.closest( '.field-kit__repeater-actions' )
-					) {
-						event.preventDefault();
-						Repeater.toggle(
-							header.closest( '.field-kit__repeater-row' )
-						);
-					}
-				} );
-
-				// A collapsed row is known by its title, so the title has to
-				// follow what is typed into the field it comes from --
-				// otherwise renaming a tier and folding it away shows the
-				// name it used to have until the page is reloaded.
-				// A flexible field's layouts are each titled by a field of
-				// their own, so its rows carry the key.
-				const key = wrap.dataset.rowTitle;
-
-				if ( key || wrap.classList.contains( 'field-kit__flexible' ) ) {
-					wrap.addEventListener( 'input', function ( event ) {
-						const row = event.target.closest(
-							'.field-kit__repeater-row'
-						);
-						const own = row ? row.dataset.rowTitle || key : '';
-
-						if (
-							! row ||
-							! own ||
-							! Repeater.owns( wrap, row ) ||
-							! Repeater.namesField( event.target, own )
-						) {
-							return;
-						}
-
-						Repeater.retitle( row, event.target.value );
-					} );
-				}
-
-				// A layout's picker offers only what there is room for.
-				const picker = Repeater.own(
-					wrap,
-					'.field-kit__flexible-layout'
+			wrap.addEventListener( 'click', function ( event ) {
+				const addButton = event.target.closest(
+					'.field-kit__repeater-add'
 				);
 
-				if ( picker ) {
-					picker.addEventListener( 'change', function () {
-						Repeater.limits( wrap );
-					} );
+				// This repeater's own button. A click inside a repeater
+				// nested in one of the rows bubbles up to this listener
+				// as well, and without the check "Add a file" inside a
+				// price also added a row to the list of prices.
+				if ( addButton && Repeater.owns( wrap, addButton ) ) {
+					event.preventDefault();
+
+					// Flexible content has a template per layout: the
+					// button names one, or the list beside it does.
+					const picker = Repeater.own(
+						wrap,
+						'.field-kit__flexible-layout'
+					);
+
+					Repeater.add(
+						wrap,
+						addButton.dataset.layout ||
+							( picker ? picker.value : '' )
+					);
 				}
 
-				Repeater.limits( wrap );
+				const duplicate = event.target.closest(
+					'.field-kit__repeater-duplicate'
+				);
+
+				if ( duplicate && Repeater.owns( wrap, duplicate ) ) {
+					event.preventDefault();
+					Repeater.duplicate(
+						wrap,
+						duplicate.closest( '.field-kit__repeater-row' )
+					);
+				}
+
+				const remove = event.target.closest(
+					'.field-kit__repeater-remove'
+				);
+
+				if ( remove && Repeater.owns( wrap, remove ) ) {
+					event.preventDefault();
+					Repeater.remove(
+						wrap,
+						remove.closest( '.field-kit__repeater-row' )
+					);
+				}
+
+				// The whole header, not just the chevron on it. A title
+				// that says which row this is, next to a control that
+				// opens it, and only the control opening it, is a target
+				// the width of an icon on a strip the width of the panel.
+				const header = event.target.closest(
+					'.field-kit__repeater-header'
+				);
+
+				if (
+					header &&
+					Repeater.owns( wrap, header ) &&
+					! event.target.closest( '.field-kit__repeater-actions' )
+				) {
+					event.preventDefault();
+					Repeater.toggle(
+						header.closest( '.field-kit__repeater-row' )
+					);
+				}
+			} );
+
+			// A collapsed row is known by its title, so the title has to
+			// follow what is typed into the field it comes from --
+			// otherwise renaming a tier and folding it away shows the
+			// name it used to have until the page is reloaded.
+			// A flexible field's layouts are each titled by a field of
+			// their own, so its rows carry the key.
+			const key = wrap.dataset.rowTitle;
+
+			if ( key || wrap.classList.contains( 'field-kit__flexible' ) ) {
+				wrap.addEventListener( 'input', function ( event ) {
+					const row = event.target.closest(
+						'.field-kit__repeater-row'
+					);
+					const own = row ? row.dataset.rowTitle || key : '';
+
+					if (
+						! row ||
+						! own ||
+						! Repeater.owns( wrap, row ) ||
+						! Repeater.namesField( event.target, own )
+					) {
+						return;
+					}
+
+					Repeater.retitle( row, event.target.value );
+				} );
 			}
-		);
+
+			// A layout's picker offers only what there is room for.
+			const picker = Repeater.own( wrap, '.field-kit__flexible-layout' );
+
+			if ( picker ) {
+				picker.addEventListener( 'change', function () {
+					Repeater.limits( wrap );
+				} );
+			}
+
+			Repeater.limits( wrap );
+		} );
 	},
 
 	/**
@@ -747,16 +742,16 @@ const Repeater = {
 	 * @param {string}                   prefix  Its new one.
 	 */
 	rename( root, pattern, prefix ) {
-		root.querySelectorAll(
-			'.field-kit__repeater[data-field-name]'
-		).forEach( function ( nested ) {
-			nested.dataset.fieldName = nested.dataset.fieldName.replace(
-				pattern,
-				prefix
-			);
-		} );
+		ours( root, '.field-kit__repeater[data-field-name]' ).forEach(
+			function ( nested ) {
+				nested.dataset.fieldName = nested.dataset.fieldName.replace(
+					pattern,
+					prefix
+				);
+			}
+		);
 
-		root.querySelectorAll( 'template' ).forEach( function ( template ) {
+		ours( root, 'template' ).forEach( function ( template ) {
 			template.content
 				.querySelectorAll( '[name]' )
 				.forEach( function ( input ) {

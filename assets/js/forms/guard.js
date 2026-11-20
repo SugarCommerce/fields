@@ -11,6 +11,7 @@
 
 import { config, t } from '../lib/config';
 import { fieldOf } from '../lib/lookups';
+import { mine, ours } from '../lib/dom';
 
 const Guard = {
 	forms: [],
@@ -23,11 +24,15 @@ const Guard = {
 			const found = [];
 
 			try {
-				if ( root.matches && root.matches( selector ) ) {
+				if (
+					root.matches &&
+					root.matches( selector ) &&
+					mine( root )
+				) {
 					found.push( root );
 				}
 
-				root.querySelectorAll( selector ).forEach( function ( el ) {
+				ours( root, selector ).forEach( function ( el ) {
 					found.push( el );
 				} );
 			} catch {

@@ -10,6 +10,7 @@
 import { t } from '../lib/config';
 import { kit } from '../lib/kit';
 import Combobox from './combobox';
+import { ours } from '../lib/dom';
 
 const Reorder = {
 	/**
@@ -18,7 +19,8 @@ const Reorder = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll(
+		ours(
+			root,
 			'.field-kit__sortable, .field-kit__repeater-rows, .field-kit__gallery-items, .field-kit__combobox-chips[data-sortable]'
 		).forEach( function ( list ) {
 			if ( list.dataset.fkBound ) {

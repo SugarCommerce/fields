@@ -2,7 +2,7 @@
  * Money: each amount's symbol kept in step with the currency of its row.
  */
 
-import { sibling } from '../lib/dom';
+import { ours, sibling } from '../lib/dom';
 
 const Money = {
 	/**
@@ -14,7 +14,7 @@ const Money = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll( '.field-kit__money[data-currency-key]' ).forEach(
+		ours( root, '.field-kit__money[data-currency-key]' ).forEach(
 			function ( wrap ) {
 				if ( wrap.dataset.fkBound ) {
 					return;

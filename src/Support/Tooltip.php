@@ -14,6 +14,7 @@ namespace SugarCommerce\Fields\Support;
 
 use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\Icons\Glyphs;
+use SugarCommerce\Fields\Utils\Runtime;
 
 /**
  * A help icon beside a label, with a sentence or two behind it.
@@ -121,7 +122,7 @@ final class Tooltip {
 		$body .= wp_kses( $resolved['content'], self::ALLOWED );
 
 		return sprintf(
-			'<span class="field-kit__tooltip">' .
+			'<span class="field-kit__tooltip"' . Runtime::stamp() . '>' .
 			'<button type="button" class="field-kit__tooltip-toggle" aria-expanded="false" aria-describedby="%1$s">' .
 			'%4$s' .
 			'<span class="screen-reader-text">%2$s</span>' .

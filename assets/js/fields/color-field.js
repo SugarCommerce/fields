@@ -3,6 +3,8 @@
  * presets and a way back to no colour.
  */
 
+import { ours } from '../lib/dom';
+
 const ColorField = {
 	/**
 	 * A hex colour as the field stores it, or '' for anything else.
@@ -44,114 +46,106 @@ const ColorField = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll( '.field-kit__color-field' ).forEach(
-			function ( wrap ) {
-				if ( wrap.dataset.fkBound ) {
-					return;
+		ours( root, '.field-kit__color-field' ).forEach( function ( wrap ) {
+			if ( wrap.dataset.fkBound ) {
+				return;
+			}
+
+			wrap.dataset.fkBound = '1';
+
+			const swatch = wrap.querySelector( '.field-kit__color-swatch' );
+			const hex = wrap.querySelector( '.field-kit__color-hex' );
+
+			if ( ! swatch || ! hex ) {
+				return;
+			}
+
+			const clear = wrap.querySelector( '.field-kit__color-clear' );
+			const presets = wrap.querySelectorAll( '.field-kit__color-preset' );
+
+			/**
+			 * Show a colour everywhere but the box.
+			 *
+			 * @param {string} value `#rrggbb`, or '' for none.
+			 */
+			function paint( value ) {
+				wrap.dataset.empty = value ? 'false' : 'true';
+
+				if ( value ) {
+					swatch.value = value;
 				}
-
-				wrap.dataset.fkBound = '1';
-
-				const swatch = wrap.querySelector( '.field-kit__color-swatch' );
-				const hex = wrap.querySelector( '.field-kit__color-hex' );
-
-				if ( ! swatch || ! hex ) {
-					return;
-				}
-
-				const clear = wrap.querySelector( '.field-kit__color-clear' );
-				const presets = wrap.querySelectorAll(
-					'.field-kit__color-preset'
-				);
-
-				/**
-				 * Show a colour everywhere but the box.
-				 *
-				 * @param {string} value `#rrggbb`, or '' for none.
-				 */
-				function paint( value ) {
-					wrap.dataset.empty = value ? 'false' : 'true';
-
-					if ( value ) {
-						swatch.value = value;
-					}
-
-					if ( clear ) {
-						clear.hidden = ! value;
-					}
-
-					presets.forEach( function ( preset ) {
-						preset.setAttribute(
-							'aria-pressed',
-							preset.dataset.color === value ? 'true' : 'false'
-						);
-					} );
-				}
-
-				/**
-				 * Put a colour in the box, and say so.
-				 *
-				 * @param {string} value `#rrggbb`, or '' for none.
-				 */
-				function set( value ) {
-					hex.value = value;
-					paint( value );
-					hex.dispatchEvent(
-						new Event( 'input', { bubbles: true } )
-					);
-					hex.dispatchEvent(
-						new Event( 'change', { bubbles: true } )
-					);
-				}
-
-				// While the picker is open the swatch fires `input` as the
-				// colour moves, and the box follows it.
-				swatch.addEventListener( 'input', function () {
-					set( ColorField.normalize( swatch.value ) );
-				} );
-
-				// Typing: the swatch follows as soon as the box holds a
-				// colour, and the box is left alone until it is done with --
-				// rewriting "#E8A" to "#ee88aa" mid-word would fight the
-				// person typing it.
-				hex.addEventListener( 'input', function () {
-					const value = ColorField.normalize( hex.value );
-
-					if ( value || '' === hex.value.trim() ) {
-						paint( value );
-					}
-				} );
-
-				// Done with: tidied into the form it will be saved in.
-				hex.addEventListener( 'change', function () {
-					const value = ColorField.normalize( hex.value );
-
-					if ( value && value !== hex.value ) {
-						hex.value = value;
-					}
-
-					if ( value || '' === hex.value.trim() ) {
-						paint( value );
-					}
-				} );
 
 				if ( clear ) {
-					clear.addEventListener( 'click', function () {
-						set( '' );
-
-						// The button hides itself; focus goes where the next
-						// colour would be typed rather than to the page.
-						hex.focus();
-					} );
+					clear.hidden = ! value;
 				}
 
 				presets.forEach( function ( preset ) {
-					preset.addEventListener( 'click', function () {
-						set( ColorField.normalize( preset.dataset.color ) );
-					} );
+					preset.setAttribute(
+						'aria-pressed',
+						preset.dataset.color === value ? 'true' : 'false'
+					);
 				} );
 			}
-		);
+
+			/**
+			 * Put a colour in the box, and say so.
+			 *
+			 * @param {string} value `#rrggbb`, or '' for none.
+			 */
+			function set( value ) {
+				hex.value = value;
+				paint( value );
+				hex.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+				hex.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+			}
+
+			// While the picker is open the swatch fires `input` as the
+			// colour moves, and the box follows it.
+			swatch.addEventListener( 'input', function () {
+				set( ColorField.normalize( swatch.value ) );
+			} );
+
+			// Typing: the swatch follows as soon as the box holds a
+			// colour, and the box is left alone until it is done with --
+			// rewriting "#E8A" to "#ee88aa" mid-word would fight the
+			// person typing it.
+			hex.addEventListener( 'input', function () {
+				const value = ColorField.normalize( hex.value );
+
+				if ( value || '' === hex.value.trim() ) {
+					paint( value );
+				}
+			} );
+
+			// Done with: tidied into the form it will be saved in.
+			hex.addEventListener( 'change', function () {
+				const value = ColorField.normalize( hex.value );
+
+				if ( value && value !== hex.value ) {
+					hex.value = value;
+				}
+
+				if ( value || '' === hex.value.trim() ) {
+					paint( value );
+				}
+			} );
+
+			if ( clear ) {
+				clear.addEventListener( 'click', function () {
+					set( '' );
+
+					// The button hides itself; focus goes where the next
+					// colour would be typed rather than to the page.
+					hex.focus();
+				} );
+			}
+
+			presets.forEach( function ( preset ) {
+				preset.addEventListener( 'click', function () {
+					set( ColorField.normalize( preset.dataset.color ) );
+				} );
+			} );
+		} );
 	},
 };
 

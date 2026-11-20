@@ -56,6 +56,7 @@ trait Rendering {
 		$attributes->set( 'method', 'post' );
 		$attributes->set( 'action', '' === (string) $this->args['action'] ? '' : esc_url( (string) $this->args['action'] ) );
 		$attributes->set( 'data-sugarcommerce-form', $this->id );
+		$attributes->set( Runtime::BUILD_ATTRIBUTE, Runtime::handle() );
 		$attributes->set_if( (bool) $this->args['rest'] && isset( self::$forms[ $this->id ] ), 'data-rest', rest_url( Runtime::rest_namespace() . '/forms/' . $this->id ) );
 		$attributes->set_if( (bool) $this->args['guard'], Guard::ATTRIBUTE, true );
 		$attributes->set_if( null !== $this->args['context'], 'data-keep', true );

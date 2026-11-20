@@ -19,6 +19,12 @@
 const script = document.currentScript;
 
 /**
+ * This build's name: its script's handle, which PHP stamps on what it draws
+ * as `data-field-kit-build` (Runtime::BUILD_ATTRIBUTE).
+ */
+export const build = script && script.id ? script.id.replace( /-js$/, '' ) : '';
+
+/**
  * The entry a script's element names in a registry.
  *
  * @param {Element|null} element  The <script> element, or null.

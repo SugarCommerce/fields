@@ -2,6 +2,8 @@
  * Tags: the values typed into one input, shown and announced as a list.
  */
 
+import { ours } from '../lib/dom';
+
 const Tags = {
 	/**
 	 * Mirror each tags input into a visible, announced list.
@@ -12,7 +14,7 @@ const Tags = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll( '.field-kit__tags' ).forEach( function ( wrap ) {
+		ours( root, '.field-kit__tags' ).forEach( function ( wrap ) {
 			if ( wrap.dataset.fkBound ) {
 				return;
 			}

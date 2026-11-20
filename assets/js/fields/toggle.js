@@ -2,7 +2,7 @@
  * Toggle: a switch's aria-checked, kept in step with its checkbox.
  */
 
-import { bound } from '../lib/dom';
+import { bound, mine } from '../lib/dom';
 
 const Toggle = {
 	/**
@@ -22,7 +22,7 @@ const Toggle = {
 		root.addEventListener( 'change', function ( event ) {
 			const toggle = event.target.closest( '.field-kit__toggle' );
 
-			if ( toggle ) {
+			if ( toggle && mine( toggle ) ) {
 				toggle.setAttribute(
 					'aria-checked',
 					toggle.checked ? 'true' : 'false'

@@ -3,6 +3,8 @@
  * author was typing.
  */
 
+import { ours } from '../lib/dom';
+
 const TagModal = {
 	/**
 	 * Bind every Add Tag button within a root.
@@ -10,16 +12,14 @@ const TagModal = {
 	 * @param {Element} root Container.
 	 */
 	init( root ) {
-		root.querySelectorAll( '.field-kit__tag-button' ).forEach(
-			function ( button ) {
-				if ( button.dataset.fkBound ) {
-					return;
-				}
-
-				button.dataset.fkBound = '1';
-				TagModal.bind( button );
+		ours( root, '.field-kit__tag-button' ).forEach( function ( button ) {
+			if ( button.dataset.fkBound ) {
+				return;
 			}
-		);
+
+			button.dataset.fkBound = '1';
+			TagModal.bind( button );
+		} );
 	},
 
 	/**
