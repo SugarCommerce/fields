@@ -336,7 +336,11 @@ made from the salts in `wp-config.php` -- for a **purpose**. Encryption is the
 security package's: this one keeps only the `fkenc:` markers. A value that will
 not decrypt reads as empty and is never deleted by a blank save, and a field
 marked encrypted where encryption is not possible refuses to save rather than
-store plaintext.
+store plaintext. A value typed with the marker in front (`fkenc:…`) is refused
+with "This value can't start with fkenc:" -- stored, it would pass for
+ciphertext and read back as nothing. Ciphertext the store wrote and can open,
+which is what a reset or an import hands back, passes through as before (a
+context that seals says so through `Contracts\Sealer::opens()`).
 
 Each purpose seals under a key of its own, so a secret one plugin stored does
 not open under another's even though both start from the same salts. The
@@ -1068,6 +1072,8 @@ differs from what was committed.
 
 ## Security
 
+* A typed `fkenc:` value in an encrypted field: refused with a field error,
+  unless it is ciphertext the store itself wrote and can open.
 * Forged or cross-user saves: a metabox, term, profile, quick and bulk edit
   save checks its nonce and `edit_post` / `edit_term` / `edit_user`, then
   each field's `capability` and `permission_callback`.

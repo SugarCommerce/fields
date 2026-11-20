@@ -13,7 +13,9 @@ declare( strict_types=1 );
 namespace SugarCommerce\Fields\Traits\FieldSet;
 
 use SugarCommerce\Fields\Conditions;
+use SugarCommerce\Fields\Context\EncryptedContext;
 use SugarCommerce\Fields\Contracts\Flushable;
+use SugarCommerce\Fields\Contracts\Sealer;
 use SugarCommerce\Fields\Contracts\Unechoed;
 use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\Support\Badge;
@@ -298,6 +300,19 @@ trait Saving {
 	 * @return string
 	 */
 	private function check( Field $field, mixed $value ): string {
+		// Typed with the encrypted marker in front, it would be stored as
+		// "already encrypted" and read back as nothing. Ciphertext the store
+		// wrote and can open -- a reset or an import handing back what it
+		// read -- is not typed, and goes on.
+		if (
+			(bool) $field->get( 'encrypted', false )
+			&& is_string( $value )
+			&& EncryptedContext::is_ciphertext( $value )
+			&& ! ( $this->context instanceof Sealer && $this->context->opens( $field, $value ) )
+		) {
+			return __( "This value can't start with fkenc:", 'sugarcommerce' );
+		}
+
 		if ( ! $this->is_empty( $value ) ) {
 			return $field->type()->validate( $value, $field );
 		}

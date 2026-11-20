@@ -477,4 +477,61 @@ final class ContextTest extends TestCase {
 		$this->assertFalse( EncryptedContext::is_ciphertext( 5 ) );
 		$this->assertFalse( EncryptedContext::is_ciphertext( [ 'fkenc:j:abc' ] ) );
 	}
+
+	/**
+	 * Somebody typing a value that starts with the marker into an encrypted
+	 * field is refused with a field error -- not stored as it is, where it
+	 * would read back as nothing and look like ciphertext to every check.
+	 */
+	public function test_a_typed_marker_is_refused(): void {
+		if ( ! EncryptedContext::available() ) {
+			$this->markTestSkipped( 'OpenSSL or the salts are unavailable.' );
+		}
+
+		foreach ( [ 'fkenc:v3:not-really', 'fkenc:j:x', 'fkenc:' ] as $typed ) {
+			$GLOBALS['fk_options'] = [];
+
+			$inner = new OptionContext( 'fk_test' );
+			$set   = new FieldSet( [ 'api_key' => [ 'type' => 'text', 'encrypted' => true ] ], new ConstantContext( new EncryptedContext( $inner ) ), 'fk_test' );
+
+			$set->save( [ 'api_key' => $typed ] );
+
+			$this->assertSame( [ 'api_key' => "This value can't start with fkenc:" ], $set->errors(), $typed );
+			$this->assertSame( [ 'api_key' => "This value can't start with fkenc:" ], $set->validate( [ 'api_key' => $typed ] ) );
+			$this->assertArrayNotHasKey( 'api_key', $GLOBALS['fk_options']['fk_test'] ?? [], 'It was stored.' );
+		}
+
+		// Not encrypted: any text is text.
+		$plain = new FieldSet( [ 'note' => [ 'type' => 'text' ] ], new EncryptedContext( new OptionContext( 'fk_test' ) ), 'fk_test' );
+
+		$this->assertSame( [], $plain->validate( [ 'note' => 'fkenc:v3:just words' ] ) );
+	}
+
+	/**
+	 * What a reset or an import hands back -- ciphertext this site wrote and
+	 * can open -- still passes through a whole-value save untouched.
+	 */
+	public function test_real_ciphertext_still_passes_a_whole_value_save(): void {
+		if ( ! EncryptedContext::available() ) {
+			$this->markTestSkipped( 'OpenSSL or the salts are unavailable.' );
+		}
+
+		$inner   = new OptionContext( 'fk_test' );
+		$context = new ConstantContext( new EncryptedContext( $inner ) );
+		$set     = new FieldSet( [ 'api_key' => [ 'type' => 'text', 'encrypted' => true ] ], $context, 'fk_test' );
+
+		$set->save( [ 'api_key' => 'sk-secret-value' ] );
+
+		$ciphertext = $GLOBALS['fk_options']['fk_test']['api_key'];
+
+		$set->save( [ 'api_key' => $ciphertext ] );
+
+		$this->assertSame( [], $set->errors() );
+		$this->assertSame( $ciphertext, $GLOBALS['fk_options']['fk_test']['api_key'] );
+
+		// Ciphertext for another purpose does not open here, so it is typed.
+		$other = new FieldSet( [ 'api_key' => [ 'type' => 'text', 'encrypted' => 'someone-else/keys' ] ], $context, 'fk_test' );
+
+		$this->assertSame( [ 'api_key' => "This value can't start with fkenc:" ], $other->validate( [ 'api_key' => $ciphertext ] ) );
+	}
 }

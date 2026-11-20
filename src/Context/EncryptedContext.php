@@ -15,6 +15,7 @@ namespace SugarCommerce\Fields\Context;
 use SugarCommerce\Fields\Contracts\Context;
 use SugarCommerce\Fields\Contracts\Flushable;
 use SugarCommerce\Fields\Contracts\Registrable;
+use SugarCommerce\Fields\Contracts\Sealer;
 use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\Traits\EncryptedContext\Sealing;
 
@@ -48,7 +49,7 @@ use SugarCommerce\Fields\Traits\EncryptedContext\Sealing;
  * use one — but it means an encrypted field is not something to put in a
  * migration and expect to survive.
  */
-final class EncryptedContext implements Context, Flushable, Registrable {
+final class EncryptedContext implements Context, Flushable, Registrable, Sealer {
 
 	use Sealing;
 
@@ -208,6 +209,23 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 		}
 
 		$this->inner->write( $object_id, $field, $value );
+	}
+
+	/**
+	 * Whether a value is ciphertext this context wrote for the field and
+	 * can open -- what a whole-value write hands back -- rather than text
+	 * somebody typed with the marker in front.
+	 *
+	 * @param Field  $field The field.
+	 * @param string $value The value.
+	 *
+	 * @return bool
+	 */
+	#[\Override]
+	public function opens( Field $field, string $value ): bool {
+		return $this->applies( $field )
+			&& self::is_ciphertext( $value )
+			&& null !== self::decrypt( $value, $this->purpose_of( $field ) );
 	}
 
 	/**

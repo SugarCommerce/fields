@@ -15,6 +15,7 @@ namespace SugarCommerce\Fields\Context;
 use SugarCommerce\Fields\Contracts\Context;
 use SugarCommerce\Fields\Contracts\Flushable;
 use SugarCommerce\Fields\Contracts\Registrable;
+use SugarCommerce\Fields\Contracts\Sealer;
 use SugarCommerce\Fields\Field;
 
 /**
@@ -29,7 +30,7 @@ use SugarCommerce\Fields\Field;
  * that reappears the day the constant is removed, with no indication of where
  * it came from.
  */
-final class ConstantContext implements Context, Flushable, Registrable {
+final class ConstantContext implements Context, Flushable, Registrable, Sealer {
 
 	/**
 	 * The context being decorated.
@@ -174,5 +175,18 @@ final class ConstantContext implements Context, Flushable, Registrable {
 	#[\Override]
 	public function meta_type(): string {
 		return $this->inner instanceof Registrable ? $this->inner->meta_type() : '';
+	}
+
+	/**
+	 * Whether the store this wraps wrote the value and can open it.
+	 *
+	 * @param Field  $field The field.
+	 * @param string $value The value.
+	 *
+	 * @return bool
+	 */
+	#[\Override]
+	public function opens( Field $field, string $value ): bool {
+		return $this->inner instanceof Sealer && $this->inner->opens( $field, $value );
 	}
 }
