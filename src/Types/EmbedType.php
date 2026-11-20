@@ -13,7 +13,7 @@ declare( strict_types=1 );
 namespace SugarCommerce\Fields\Types;
 
 use SugarCommerce\Embeds\Embeds;
-use SugarCommerce\Embeds\Platform;
+use SugarCommerce\Embeds\Models\Platform;
 use SugarCommerce\Fields\Attributes;
 use SugarCommerce\Fields\Field;
 
