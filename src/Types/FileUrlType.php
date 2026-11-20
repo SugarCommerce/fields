@@ -41,6 +41,7 @@ final class FileUrlType extends FileType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$attributes->set( 'type', 'url' );
 		$attributes->set( 'value', (string) $field->value() );
@@ -208,6 +209,7 @@ final class FileUrlType extends FileType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	protected function has_selection( Field $field ): bool {
 		return '' !== trim( (string) $field->value() );
 	}
@@ -220,6 +222,7 @@ final class FileUrlType extends FileType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): string {
 		return esc_url_raw( $this->scalar( $value ), $this->protocols( $field ) );
 	}
@@ -229,6 +232,7 @@ final class FileUrlType extends FileType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_placeholder(): bool {
 		return true;
 	}
@@ -240,6 +244,7 @@ final class FileUrlType extends FileType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		return [
 			'type'   => 'string',
@@ -253,6 +258,7 @@ final class FileUrlType extends FileType {
 	 * @return string[]
 	 * @since 1.0.0
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge( parent::config_keys(), [ 'accept', 'protocols', 'sources' ] );
 	}

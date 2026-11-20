@@ -19,6 +19,7 @@ final class DateRangeType extends AbstractRangePairType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function input_type(): string {
 		return 'date';
 	}

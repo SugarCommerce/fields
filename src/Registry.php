@@ -31,7 +31,7 @@ final class Registry {
 	 *
 	 * @var array<string, class-string<FieldType>>
 	 */
-	private const TYPES = [
+	private const array TYPES = [
 		// Text and numeric inputs.
 		'text'            => Types\TextType::class,
 		'email'           => Types\EmailType::class,
@@ -129,7 +129,7 @@ final class Registry {
 	 *
 	 * @var array<string, string>
 	 */
-	private const ALIASES = [
+	private const array ALIASES = [
 		'switch'        => 'toggle',
 		'colour'        => 'color',
 		'term'          => 'taxonomy', // post-fields' name for the same field.

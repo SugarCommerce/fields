@@ -52,13 +52,14 @@ final class RegionType extends AbstractType {
 	 * that exists because the country has no list is not a text box for
 	 * anything at all.
 	 */
-	private const MAX_LENGTH = 32;
+	private const int MAX_LENGTH = 32;
 
 	/**
 	 * Config defaults.
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [
 			'country'     => '',
@@ -75,6 +76,7 @@ final class RegionType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$country = $this->fixed_country( $field );
 
@@ -270,6 +272,7 @@ final class RegionType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): string {
 		$value   = sanitize_text_field( $this->scalar( $value ) );
 		$country = $this->fixed_country( $field );
@@ -292,6 +295,7 @@ final class RegionType extends AbstractType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		$country = $this->fixed_country( $field );
 		$regions = '' === $country ? [] : $this->regions( $country );
@@ -315,6 +319,7 @@ final class RegionType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_placeholder(): bool {
 		return true;
 	}
@@ -356,6 +361,7 @@ final class RegionType extends AbstractType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

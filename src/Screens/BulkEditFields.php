@@ -48,7 +48,7 @@ class BulkEditFields {
 	 *
 	 * @var string
 	 */
-	private const COLUMN = 'field-kit-inline';
+	private const string COLUMN = 'field-kit-inline';
 
 	/**
 	 * Whether the panel has already been drawn this request.
@@ -63,12 +63,12 @@ class BulkEditFields {
 	 * A string no real value can collide with, because a text field can
 	 * contain anything — including the words "no change".
 	 */
-	private const NO_CHANGE = '__field_kit_no_change__';
+	private const string NO_CHANGE = '__field_kit_no_change__';
 
 	/**
 	 * The value meaning "clear this field".
 	 */
-	private const CLEAR = '__field_kit_clear__';
+	private const string CLEAR = '__field_kit_clear__';
 
 	/**
 	 * The post type these fields belong to.
@@ -105,6 +105,9 @@ class BulkEditFields {
 	 * @param string                              $post_type The post type.
 	 */
 	public function __construct( array $fields, string $post_type ) {
+		// Read here as in quick edit: the same array is usually given to both.
+		Field::allow_config_keys( [ 'permission_callback' ] );
+
 		$this->post_type = $post_type;
 		$this->fields    = $this->inline_only( $fields );
 		$this->set       = new FieldSet( $this->fields, new PostMetaContext(), '', new Registry() );
@@ -130,16 +133,7 @@ class BulkEditFields {
 	 * @return array<string, array<string, mixed>>
 	 */
 	private function inline_only( array $fields ): array {
-		$registry = new Registry();
-
-		return array_filter(
-			$fields,
-			static function ( $config ) use ( $registry ) {
-				$type = (string) ( $config['type'] ?? 'text' );
-
-				return $registry->has( $type ) && $registry->get( $type )->supports_inline();
-			}
-		);
+		return Inline::fields( $fields );
 	}
 
 	/**
@@ -206,7 +200,9 @@ class BulkEditFields {
 		echo '<fieldset class="inline-edit-col-right field-kit__bulk-edit"><div class="inline-edit-col">';
 
 		foreach ( $this->set->fields() as $field ) {
-			$this->render_field( $field );
+			if ( Inline::permitted( $field ) ) {
+				$this->render_field( $field );
+			}
 		}
 
 		echo '</div></fieldset>';
@@ -343,7 +339,22 @@ class BulkEditFields {
 		// Only the fields actually being changed. Handing the whole set to
 		// save() would read every untouched field as cleared, which across
 		// forty selected posts is the worst thing this library could do.
-		$changing = array_intersect_key( $this->fields, $input );
+		//
+		// And only the ones this user may change, by the same rules quick
+		// edit and the panel use: the request is anyone's to write.
+		$changing = array_filter(
+			array_intersect_key( $this->fields, $input ),
+			function ( string $key ) use ( $post_id ): bool {
+				$field = $this->set->field( $key );
+
+				return null !== $field && Inline::permitted( $field, $post_id );
+			},
+			ARRAY_FILTER_USE_KEY
+		);
+
+		if ( [] === $changing ) {
+			return;
+		}
 
 		// A value that fails validation is skipped on each post — kept as it
 		// was, with the rest stored — and nothing says so. The list table

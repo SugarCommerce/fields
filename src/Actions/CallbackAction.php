@@ -76,6 +76,7 @@ final class CallbackAction implements Action, RichPayload {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function rich(): array {
 		return $this->rich;
 	}
@@ -85,6 +86,7 @@ final class CallbackAction implements Action, RichPayload {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function name(): string {
 		return $this->name;
 	}
@@ -94,6 +96,7 @@ final class CallbackAction implements Action, RichPayload {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function capability(): string {
 		return $this->capability;
 	}
@@ -105,6 +108,7 @@ final class CallbackAction implements Action, RichPayload {
 	 *
 	 * @return array{success: bool, message?: string, data?: array<string, mixed>}
 	 */
+	#[\Override]
 	public function handle( array $payload ): array {
 		try {
 			$result = ( $this->callback )( $payload );

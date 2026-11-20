@@ -42,6 +42,7 @@ final class MoneyType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function id(): string {
 		return 'money';
 	}
@@ -51,6 +52,7 @@ final class MoneyType extends AbstractType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [
 			'symbol'       => '',
@@ -68,6 +70,7 @@ final class MoneyType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$attributes->set( 'type', 'text' );
 		$attributes->set( 'value', (string) $field->value() );
@@ -147,6 +150,7 @@ final class MoneyType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): string {
 		if ( ! is_scalar( $value ) ) {
 			return '';
@@ -162,6 +166,7 @@ final class MoneyType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_placeholder(): bool {
 		return true;
 	}
@@ -171,6 +176,7 @@ final class MoneyType extends AbstractType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

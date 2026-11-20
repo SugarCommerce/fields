@@ -45,6 +45,7 @@ final class PasswordType extends AbstractInputType implements Unechoed {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function input_type(): string {
 		return 'password';
 	}
@@ -60,6 +61,7 @@ final class PasswordType extends AbstractInputType implements Unechoed {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function control( Field $field, Attributes $attributes ): string {
 		$input  = parent::control( $field, $attributes );
 		$remove = $this->remove( $field );
@@ -149,6 +151,7 @@ final class PasswordType extends AbstractInputType implements Unechoed {
 	 *
 	 * @return mixed
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): mixed {
 		return sanitize_text_field( $this->scalar( $value ) );
 	}
@@ -160,6 +163,7 @@ final class PasswordType extends AbstractInputType implements Unechoed {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function render_value( Field $field ): string {
 		return '';
 	}
@@ -169,6 +173,7 @@ final class PasswordType extends AbstractInputType implements Unechoed {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

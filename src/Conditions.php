@@ -22,14 +22,14 @@ namespace SugarCommerce\Fields;
  * expects — the script previously received whatever the config happened to
  * be, and died on `conditions.forEach is not a function` when that was a map.
  */
-final class Conditions {
+final readonly class Conditions {
 
 	/**
 	 * Operators the evaluator understands.
 	 *
 	 * @var string[]
 	 */
-	private const OPERATORS = [
+	private const array OPERATORS = [
 		'=',
 		'!=',
 		'>',

@@ -19,6 +19,7 @@ final class TextType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function input_type(): string {
 		return 'text';
 	}

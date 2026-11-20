@@ -46,7 +46,7 @@ final class SearchController {
 	/**
 	 * Largest page a request may ask for.
 	 */
-	private const MAX_LIMIT = 50;
+	private const int MAX_LIMIT = 50;
 
 	/**
 	 * Longest name a create request may send.
@@ -54,7 +54,7 @@ final class SearchController {
 	 * A post title or a term name, typed into a search box. Anything longer
 	 * is not a name someone typed.
 	 */
-	private const MAX_NAME = 200;
+	private const int MAX_NAME = 200;
 
 	/**
 	 * The available sources.

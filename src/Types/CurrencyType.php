@@ -31,6 +31,7 @@ final class CurrencyType extends AbstractCodeType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return array_merge(
 			parent::defaults(),

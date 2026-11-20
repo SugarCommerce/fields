@@ -21,6 +21,7 @@ final class UserType extends AbstractRelationalType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function source(): string {
 		return 'user';
 	}
@@ -32,6 +33,7 @@ final class UserType extends AbstractRelationalType {
 	 *
 	 * @return array<string, scalar>
 	 */
+	#[\Override]
 	protected function search_args( Field $field ): array {
 		return $field->has( 'role' ) ? [ 'role' => (string) $field->get( 'role' ) ] : [];
 	}
@@ -44,14 +46,19 @@ final class UserType extends AbstractRelationalType {
 	 *
 	 * @return array<string, string>
 	 */
+	#[\Override]
 	protected function resolve_labels( array $ids, Field $field ): array {
 		$labels = [];
 
 		foreach ( $ids as $id ) {
 			$user = get_userdata( $id );
 
+			// The address only for someone who may list users: the id is
+			// whatever was submitted, and a label is printed for any of them.
 			if ( $user ) {
-				$labels[ (string) $id ] = $user->display_name . ' (' . $user->user_email . ')';
+				$labels[ (string) $id ] = current_user_can( 'list_users' )
+					? $user->display_name . ' (' . $user->user_email . ')'
+					: $user->display_name;
 			}
 		}
 
@@ -63,6 +70,7 @@ final class UserType extends AbstractRelationalType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),
@@ -78,6 +86,7 @@ final class UserType extends AbstractRelationalType {
 	 * @return string
 	 * @since 1.7.0
 	 */
+	#[\Override]
 	protected function default_create_noun( Field $field ): string {
 		return __( 'user', 'sugarcommerce' );
 	}
@@ -94,6 +103,7 @@ final class UserType extends AbstractRelationalType {
 	 * @return array<string, scalar>
 	 * @since 1.7.0
 	 */
+	#[\Override]
 	protected function create_args( Field $field ): array {
 		$role = $this->create_options( $field )['role'] ?? $field->get( 'role', '' );
 
@@ -106,6 +116,7 @@ final class UserType extends AbstractRelationalType {
 	 * @return string
 	 * @since 1.7.0
 	 */
+	#[\Override]
 	protected function create_input(): string {
 		return 'email';
 	}

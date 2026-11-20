@@ -28,6 +28,7 @@ final class UserSource implements Source, Creates {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function name(): string {
 		return 'user';
 	}
@@ -37,6 +38,7 @@ final class UserSource implements Source, Creates {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function capability(): string {
 		return 'list_users';
 	}
@@ -51,6 +53,7 @@ final class UserSource implements Source, Creates {
 	 *
 	 * @return array{results: array<int, array{id: string, text: string}>, more: bool}
 	 */
+	#[\Override]
 	public function search( string $term, array $args, int $page, int $limit ): array {
 		$query_args = [
 			'search'         => '' === $term ? '' : '*' . $term . '*',
@@ -98,6 +101,7 @@ final class UserSource implements Source, Creates {
 	 * @return bool
 	 * @since 1.7.0
 	 */
+	#[\Override]
 	public function can_create( array $args ): bool {
 		return current_user_can( 'create_users' ) && null !== $this->role( $args );
 	}
@@ -120,6 +124,7 @@ final class UserSource implements Source, Creates {
 	 * @return array{id: string, text: string, existing: bool}|WP_Error
 	 * @since 1.7.0
 	 */
+	#[\Override]
 	public function create( string $text, array $args ): array|WP_Error {
 		$email = sanitize_email( trim( $text ) );
 		$role  = $this->role( $args );

@@ -34,7 +34,7 @@ final class Field {
 	 *
 	 * @var string[]
 	 */
-	public const COMMON_KEYS = [
+	public const array COMMON_KEYS = [
 		// Identity and rendering.
 		'type',
 		'label',
@@ -142,28 +142,28 @@ final class Field {
 	 *
 	 * @var string
 	 */
-	private string $key;
+	private readonly string $key;
 
 	/**
 	 * The resolved type object.
 	 *
 	 * @var FieldType
 	 */
-	private FieldType $type;
+	private readonly FieldType $type;
 
 	/**
 	 * Merged configuration.
 	 *
 	 * @var array<string, mixed>
 	 */
-	private array $config;
+	private readonly array $config;
 
 	/**
 	 * Current value.
 	 *
 	 * @var mixed
 	 */
-	private mixed $value;
+	private readonly mixed $value;
 
 	/**
 	 * Construct.

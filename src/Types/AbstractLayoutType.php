@@ -25,6 +25,7 @@ abstract class AbstractLayoutType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function stores_value(): bool {
 		return false;
 	}
@@ -38,6 +39,7 @@ abstract class AbstractLayoutType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function is_self_labelling(): bool {
 		return true;
 	}
@@ -50,6 +52,7 @@ abstract class AbstractLayoutType extends AbstractType {
 	 *
 	 * @return null
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): mixed {
 		return null;
 	}
@@ -59,6 +62,7 @@ abstract class AbstractLayoutType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function spans_row(): bool {
 		return true;
 	}

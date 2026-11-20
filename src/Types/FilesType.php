@@ -38,6 +38,7 @@ final class FilesType extends RepeaterType implements AdminOnly {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function id(): string {
 		return 'files';
 	}
@@ -47,6 +48,7 @@ final class FilesType extends RepeaterType implements AdminOnly {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return array_merge(
 			parent::defaults(),

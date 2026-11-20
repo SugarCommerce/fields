@@ -37,6 +37,7 @@ final class TabType extends AbstractLayoutType {
 	 * @return string
 	 * @since 1.1.0
 	 */
+	#[\Override]
 	public function opens_section(): string {
 		return 'tab';
 	}
@@ -50,6 +51,7 @@ final class TabType extends AbstractLayoutType {
 	 * @return string
 	 * @since 1.1.0
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		return '';
 	}

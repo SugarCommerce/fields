@@ -11,7 +11,7 @@ import {
 	looseEquals,
 	shown,
 	truthy,
-} from '../../src/js/block-editor/conditions';
+} from '../../assets/js/block-editor/conditions';
 
 describe( 'looseEquals', () => {
 	test.each( [

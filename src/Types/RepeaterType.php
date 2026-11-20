@@ -11,8 +11,9 @@ namespace SugarCommerce\Fields\Types;
 
 use SugarCommerce\Fields\Attributes;
 use SugarCommerce\Fields\Field;
-use SugarCommerce\Fields\Icons\Glyphs;
-use SugarCommerce\Fields\Renderer;
+use SugarCommerce\Fields\Traits\RepeaterType\Rows;
+use SugarCommerce\Fields\Traits\RepeaterType\Table;
+use SugarCommerce\Fields\Traits\RepeaterType\Controls;
 
 /**
  * A repeating set of fields.
@@ -46,11 +47,16 @@ use SugarCommerce\Fields\Renderer;
  */
 class RepeaterType extends AbstractNestedType {
 
+	use Rows;
+	use Table;
+	use Controls;
+
 	/**
 	 * Config defaults.
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [
 			'add_label' => __( 'Add row', 'sugarcommerce' ),
@@ -67,6 +73,7 @@ class RepeaterType extends AbstractNestedType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$rows  = $this->rows( $field );
 		$total = count( $rows );
@@ -150,203 +157,11 @@ class RepeaterType extends AbstractNestedType {
 	}
 
 	/**
-	 * Render one row.
-	 *
-	 * @param Field                $field The field.
-	 * @param int                  $index Row index.
-	 * @param array<string, mixed> $row   Row values.
-	 * @param int                  $total Total rows.
-	 *
-	 * @return string
-	 */
-	private function render_row( Field $field, int $index, array $row, int $total ): string {
-		$position = sprintf(
-			/* translators: 1: row number, 2: total rows */
-			__( 'Row %1$d of %2$d', 'sugarcommerce' ),
-			$index + 1,
-			$total
-		);
-
-		if ( $this->is_table( $field ) ) {
-			return $this->render_table_row( $field, $index, $row, $position );
-		}
-
-		// Scoped by row: without it every row reuses the same child ids and
-		// each label after the first points at the wrong control.
-		$fields = $this->render_children(
-			$field,
-			$row,
-			$field->input_name() . '[' . $index . ']',
-			'row' . $index,
-			null,
-			$this->labels_rows( $field )
-		);
-
-		$actions = $this->row_handle( $index, $total )
-			. $this->row_button( 'remove', $position, __( 'Remove', 'sugarcommerce' ), 'trash', false );
-
-		if ( $this->is_collapsible( $field ) ) {
-			return $this->render_collapsible_row( $field, $index, $row, $position, $fields, $actions );
-		}
-
-		return sprintf(
-			'<li class="field-kit__repeater-row" data-index="%d">' .
-			'<span class="field-kit__repeater-position screen-reader-text">%s</span>' .
-			'<div class="field-kit__repeater-fields">%s</div>' .
-			'<div class="field-kit__repeater-actions">%s</div></li>',
-			$index,
-			esc_html( $position ),
-			$fields,
-			$actions
-		);
-	}
-
-	/**
-	 * A row that can be folded away, titled by one of its own fields.
-	 *
-	 * Three price tiers, each with a licence and its own files, is three
-	 * screens of form to scroll past to reach the third. Collapsed, the same
-	 * three are a list you can see at once -- which is also the only view
-	 * that makes reordering them mean anything.
-	 *
-	 * The header is a button so the whole strip is the target rather than a
-	 * chevron at the end of it, and the title doubles as the row's accessible
-	 * name: `aria-describedby` on a "Show or hide" button is what tells a
-	 * screen reader which row is being shown or hidden.
-	 *
-	 * @param Field                $field    The repeater.
-	 * @param int                  $index    Zero-based row index.
-	 * @param array<string, mixed> $row      The row's values.
-	 * @param string               $position Human row position.
-	 * @param string               $fields   The rendered children.
-	 * @param string               $actions  The rendered row controls.
-	 *
-	 * @return string
-	 */
-	private function render_collapsible_row(
-		Field $field,
-		int $index,
-		array $row,
-		string $position,
-		string $fields,
-		string $actions
-	): string {
-		$closed   = $this->starts_closed( $field, $row );
-		$title_id = $field->input_id() . '_row' . $index . '_title';
-
-		return sprintf(
-			'<li class="field-kit__repeater-row field-kit__repeater-row--collapsible%1$s" data-index="%2$d">' .
-			'<span class="field-kit__repeater-position screen-reader-text">%3$s</span>' .
-			'<div class="field-kit__repeater-header">' .
-			'<span class="field-kit__repeater-title" id="%5$s" data-fallback="%10$s">%7$s</span>' .
-			'<span class="field-kit__repeater-actions">%8$s</span>' .
-			'<button type="button" class="field-kit__repeater-toggle" aria-expanded="%4$s" aria-describedby="%5$s">' .
-			'<span class="screen-reader-text">%6$s</span>' .
-			'<span class="field-kit__repeater-indicator" aria-hidden="true">%11$s</span>' .
-			'</button>' .
-			'</div>' .
-			'<div class="field-kit__repeater-fields">%9$s</div></li>',
-			$closed ? ' is-closed' : '',
-			$index,
-			esc_html( $position ),
-			$closed ? 'false' : 'true',
-			esc_attr( $title_id ),
-			esc_html__( 'Show or hide this row', 'sugarcommerce' ),
-			esc_html( $this->row_title( $field, $row, $index ) ),
-			$actions,
-			$fields,
-			esc_attr( $this->position_title( $field, $index ) ),
-			Glyphs::get( 'up' )
-		);
-	}
-
-	/**
-	 * Whether rows fold away.
-	 *
-	 * @param Field $field The field.
-	 *
-	 * @return bool
-	 */
-	protected function is_collapsible( Field $field ): bool {
-		return (bool) $field->get( 'collapsible', false ) && ! $this->is_table( $field );
-	}
-
-	/**
-	 * Whether a row is drawn closed.
-	 *
-	 * A row with nothing in it is drawn open whatever the setting says: one
-	 * just added is empty, and folding it away hides the fields somebody
-	 * added it to fill in.
-	 *
-	 * @param Field                $field The field.
-	 * @param array<string, mixed> $row   The row's values.
-	 *
-	 * @return bool
-	 */
-	private function starts_closed( Field $field, array $row ): bool {
-		return (bool) $field->get( 'collapsed', true ) && $this->has_content( $row );
-	}
-
-	/**
-	 * What a collapsed row says.
-	 *
-	 * The field named by `row_title` where it holds anything, since that is
-	 * what the row is called -- a price tier's name, a rate's country. The
-	 * position otherwise, because a list of rows all saying "Untitled" is a
-	 * list you cannot tell apart, and an empty header is a strip of nothing
-	 * to click.
-	 *
-	 * @param Field                $field The field.
-	 * @param array<string, mixed> $row   The row's values.
-	 * @param int                  $index Zero-based row index.
-	 *
-	 * @return string
-	 */
-	private function row_title( Field $field, array $row, int $index ): string {
-		$key = (string) $field->get( 'row_title', '' );
-
-		if ( '' !== $key && isset( $row[ $key ] ) && is_scalar( $row[ $key ] ) && '' !== (string) $row[ $key ] ) {
-			return (string) $row[ $key ];
-		}
-
-		return $this->position_title( $field, $index );
-	}
-
-	/**
-	 * What a row is called while it has nothing to be called by.
-	 *
-	 * The field's own words where it has any: `row_title_fallback`. A new
-	 * price tier is a "New price" until somebody names it, which says what
-	 * the row is. Its position otherwise -- "Row 3" -- because a list of
-	 * rows all saying "Untitled" is a list you cannot tell apart.
-	 *
-	 * Clamped, because the template the script clones is rendered at index
-	 * -1 and read literally that is a row titled "Row 0".
-	 *
-	 * @param Field $field The field.
-	 * @param int   $index Zero-based row index.
-	 *
-	 * @return string
-	 */
-	private function position_title( Field $field, int $index ): string {
-		$fallback = trim( (string) $field->get( 'row_title_fallback', '' ) );
-
-		if ( '' !== $fallback ) {
-			return $fallback;
-		}
-
-		return sprintf(
-			/* translators: %d: row number */
-			__( 'Row %d', 'sugarcommerce' ),
-			max( 1, $index + 1 )
-		);
-	}
-
-	/**
 	 * A row's controls have one line to fit in.
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	protected function child_config_extras(): array {
 		return [ 'inline' => true ];
 	}
@@ -369,304 +184,6 @@ class RepeaterType extends AbstractNestedType {
 	 */
 	protected function labels_rows( Field $field ): bool {
 		return count( $field->sub_fields() ) > 1;
-	}
-
-	/**
-	 * Whether this repeater is drawn as a table.
-	 *
-	 * A stack of rows is right when a row is a handful of fields with long
-	 * labels. It is wrong when a row is three short columns repeated twenty
-	 * times — a tax rate, a price tier, a redirect — where the labels belong
-	 * once at the top and the rows want to line up under them.
-	 *
-	 * @param Field $field The field.
-	 *
-	 * @return bool
-	 */
-	private function is_table( Field $field ): bool {
-		return 'table' === (string) $field->get( 'layout', 'stacked' );
-	}
-
-	/**
-	 * The column headers, from the row's own fields.
-	 *
-	 * Derived rather than configured, so the columns cannot drift from the
-	 * fields underneath them.
-	 *
-	 * @param Field $field The field.
-	 *
-	 * @return string
-	 */
-	private function render_head( Field $field ): string {
-		$cells = '';
-
-		foreach ( $field->sub_fields() as $key => $config ) {
-			$width = (string) ( $config['column_width'] ?? '' );
-
-			$cells .= sprintf(
-				'<th scope="col"%s>%s</th>',
-				'' === $width ? '' : sprintf( ' style="width:%s"', esc_attr( $width ) ),
-				esc_html( (string) ( $config['label'] ?? $key ) )
-			);
-		}
-
-		// The actions column has no heading to give it, and an empty <th> is
-		// announced as a blank column header rather than skipped.
-		$cells .= sprintf(
-			'<td class="field-kit__repeater-actions-head"><span class="screen-reader-text">%s</span></td>',
-			esc_html__( 'Actions', 'sugarcommerce' )
-		);
-
-		return sprintf( '<thead><tr>%s</tr></thead>', $cells );
-	}
-
-	/**
-	 * One row of a table repeater.
-	 *
-	 * @param Field                $field    The field.
-	 * @param int                  $index    Row index.
-	 * @param array<string, mixed> $row      Row values.
-	 * @param string               $position Human row position.
-	 *
-	 * @return string
-	 */
-	private function render_table_row( Field $field, int $index, array $row, string $position ): string {
-		$total = count( $this->rows( $field ) );
-		$cells = '';
-
-		foreach ( array_keys( $field->sub_fields() ) as $key ) {
-			$child = $this->child(
-				$field,
-				(string) $key,
-				(array) $field->sub_fields()[ $key ],
-				$row[ $key ] ?? null,
-				$field->input_name() . '[' . $index . ']',
-				'row' . $index
-			);
-
-			$cells .= sprintf(
-				'<td data-colname="%s">%s</td>',
-				esc_attr( (string) ( $field->sub_fields()[ $key ]['label'] ?? $key ) ),
-				// The column header is the label, so the renderer draws none
-				// — but the control keeps its id and the header cell is not a
-				// <label>, so each control carries its own hidden one.
-				null === $child ? '' : ( new Renderer() )->render( $child, '', false )
-			);
-		}
-
-		// No position cell: it would be a column the header does not have, and
-		// every row action already carries the position in its own label.
-		return sprintf(
-			'<tr class="field-kit__repeater-row" data-index="%d">' .
-			'%s' .
-			'<td class="field-kit__repeater-actions">%s%s</td></tr>',
-			$index,
-			$cells,
-			$this->row_handle( $index, $total ),
-			$this->row_button( 'remove', $position, __( 'Remove', 'sugarcommerce' ), 'trash', false )
-		);
-	}
-
-	/**
-	 * The grab handle, which is also the keyboard's way to reorder.
-	 *
-	 * One control rather than the pair of chevrons this replaced. Those were
-	 * two buttons doing one job, they took a click per position so moving a
-	 * row four places took four, and the top and bottom rows each had a
-	 * permanently disabled one sitting in the actions column.
-	 *
-	 * A button and not a decorative span: dragging cannot be done from a
-	 * keyboard at all, so a handle that is only draggable makes the list
-	 * unorderable without a pointer. Focus it and press the arrow keys.
-	 *
-	 * The position is in the accessible name because a handle that only says
-	 * "Reorder row" gives no feedback that anything happened; announcing
-	 * "3 of 4" is how a keyboard user knows the move landed. It is kept as a
-	 * template so the script can rewrite the numbers after a move without a
-	 * second copy of the wording to translate.
-	 *
-	 * @param int $index Zero-based row index.
-	 * @param int $total How many rows there are.
-	 *
-	 * @return string
-	 */
-	protected function row_handle( int $index, int $total ): string {
-		$handle = new Attributes();
-		$handle->set( 'type', 'button' );
-		$handle->add_class( 'field-kit__drag-handle', 'field-kit__repeater-handle' );
-		$handle->set( 'aria-roledescription', __( 'Sortable', 'sugarcommerce' ) );
-		$handle->set( 'aria-keyshortcuts', 'ArrowUp ArrowDown' );
-
-		$template = sprintf(
-			/* translators: 1: row position, 2: how many rows there are */
-			__( 'Reorder row, %1$s of %2$s', 'sugarcommerce' ),
-			'{position}',
-			'{total}'
-		);
-
-		$handle->set( 'data-label-template', $template );
-		$handle->set(
-			'aria-label',
-			strtr(
-				$template,
-				[
-					'{position}' => (string) ( $index + 1 ),
-					'{total}'    => (string) $total,
-				]
-			)
-		);
-
-		return sprintf(
-			'<button%s>%s</button>',
-			$handle->render(),
-			Glyphs::get( 'drag' )
-		);
-	}
-
-	/**
-	 * A per-row action button.
-	 *
-	 * A bin rather than a cross: in a collapsible header the cross sits
-	 * beside the control that folds the row away, and the two read as the
-	 * same thing. One of them destroys the row.
-	 *
-	 * @param string $action   Action name for the script.
-	 * @param string $position Human row position, for the accessible label.
-	 * @param string $label    Action label.
-	 * @param string $icon     A key of Glyphs::DEFAULTS.
-	 * @param bool   $disabled Whether the action is available.
-	 *
-	 * @return string
-	 */
-	protected function row_button( string $action, string $position, string $label, string $icon, bool $disabled ): string {
-		$button = new Attributes();
-		$button->set( 'type', 'button' );
-		$button->add_class( 'button-link', 'field-kit__repeater-' . $action );
-		$button->set( 'data-action', $action );
-		$button->set_if( $disabled, 'disabled', true );
-		$button->set(
-			'aria-label',
-			sprintf(
-				/* translators: 1: action such as "Remove", 2: row position such as "Row 2 of 5" */
-				__( '%1$s — %2$s', 'sugarcommerce' ),
-				$label,
-				$position
-			)
-		);
-
-		return sprintf(
-			'<button%s>%s</button>',
-			$button->render(),
-			Glyphs::get( $icon )
-		);
-	}
-
-	/**
-	 * The empty state, as a row of the table itself.
-	 *
-	 * core writes `<tr class="no-items"><td class="colspanchange" colspan="N">`
-	 * and so does this. A message printed under the table instead leaves a
-	 * row of column headings sitting over nothing at all, which reads as a
-	 * table that failed to load rather than one with nothing in it yet.
-	 *
-	 * It stays in the markup and is hidden once there is a row, so the script
-	 * has something to show again when the last row is removed.
-	 *
-	 * @param Field $field The field.
-	 * @param int   $total How many rows there are.
-	 *
-	 * @return string
-	 */
-	private function render_empty_row( Field $field, int $total ): string {
-		return sprintf(
-			'<tbody class="field-kit__repeater-empty"%s><tr class="no-items">' .
-			'<td class="colspanchange" colspan="%d">%s</td></tr></tbody>',
-			$total > 0 ? ' hidden' : '',
-			// One per sub-field, plus the actions column.
-			count( $field->sub_fields() ) + 1,
-			esc_html( (string) $field->get( 'empty_label', __( 'No rows yet.', 'sugarcommerce' ) ) )
-		);
-	}
-
-	/**
-	 * The live region that says what adding and removing a row did.
-	 *
-	 * Its own element rather than the empty message, which is hidden the
-	 * moment a row exists -- and a hidden live region announces nothing.
-	 * Nor the first `[aria-live]` inside the repeater, which on a row that
-	 * holds a range or a tags field is that field's own readout.
-	 *
-	 * @return string
-	 */
-	protected function render_status(): string {
-		return '<span class="field-kit__repeater-status screen-reader-text" aria-live="polite"></span>';
-	}
-
-	/**
-	 * The message shown when there are no rows.
-	 *
-	 * Hidden, not removed, once a row exists, so the script can show it
-	 * again when the last row goes. It is not a live region: the status
-	 * element beside it does the announcing, because a hidden region
-	 * announces nothing and this one is hidden precisely when a row is
-	 * added.
-	 *
-	 * In the field's own words where it has any. The table layout has always
-	 * used `empty_label`; this one printed "No rows yet." whatever the field
-	 * said, so a list of features and a list of files both described
-	 * themselves as rows.
-	 *
-	 * @param Field $field The field.
-	 * @param int   $total How many rows there are.
-	 *
-	 * @return string
-	 */
-	protected function render_empty_message( Field $field, int $total ): string {
-		return sprintf(
-			'<p class="field-kit__repeater-empty description"%s>%s</p>',
-			$total > 0 ? ' hidden' : '',
-			esc_html( (string) $field->get( 'empty_label', __( 'No rows yet.', 'sugarcommerce' ) ) )
-		);
-	}
-
-	/**
-	 * The template a new row is cloned from.
-	 *
-	 * Inside a `<template>`, so its inputs are never submitted and never
-	 * reachable by tab, and rendered through the ordinary renderer so a new
-	 * row is built the same way an existing one is.
-	 *
-	 * @param Field $field The field.
-	 *
-	 * @return string
-	 */
-	private function render_template( Field $field ): string {
-		// Rendered at an index no real row can occupy, so the template's own
-		// ids never collide with a rendered row's. The script renumbers them
-		// when it clones the row.
-		return sprintf(
-			'<template class="field-kit__repeater-template">%s</template>',
-			$this->render_row( $field, -1, [], 0 )
-		);
-	}
-
-	/**
-	 * The add button.
-	 *
-	 * @param Field $field The field.
-	 *
-	 * @return string
-	 */
-	private function render_add_button( Field $field ): string {
-		$button = new Attributes();
-		$button->set( 'type', 'button' );
-		$button->add_class( 'button', 'field-kit__repeater-add' );
-
-		return sprintf(
-			'<p><button%s>%s</button></p>',
-			$button->render(),
-			esc_html( (string) $field->get( 'add_label', __( 'Add row', 'sugarcommerce' ) ) )
-		);
 	}
 
 	/**
@@ -698,6 +215,7 @@ class RepeaterType extends AbstractNestedType {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): array {
 		if ( ! is_array( $value ) ) {
 			return [];
@@ -761,6 +279,7 @@ class RepeaterType extends AbstractNestedType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function is_grouped(): bool {
 		return true;
 	}
@@ -770,6 +289,7 @@ class RepeaterType extends AbstractNestedType {
 	 *
 	 * @return array{scripts: string[], styles: string[]}
 	 */
+	#[\Override]
 	public function dependencies(): array {
 		// No jquery-ui-sortable: reordering is native pointer and drag
 		// events plus the move buttons, so pulling in a jQuery UI module
@@ -787,6 +307,7 @@ class RepeaterType extends AbstractNestedType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		return [
 			'type'  => 'array',
@@ -799,6 +320,7 @@ class RepeaterType extends AbstractNestedType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

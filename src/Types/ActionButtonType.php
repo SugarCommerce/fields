@@ -31,6 +31,7 @@ final class ActionButtonType extends AbstractType implements AdminOnly {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$attributes->set( 'type', 'button' );
 		$attributes->add_class(
@@ -70,6 +71,7 @@ final class ActionButtonType extends AbstractType implements AdminOnly {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function stores_value(): bool {
 		return false;
 	}
@@ -82,6 +84,7 @@ final class ActionButtonType extends AbstractType implements AdminOnly {
 	 *
 	 * @return null
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): mixed {
 		return null;
 	}
@@ -91,6 +94,7 @@ final class ActionButtonType extends AbstractType implements AdminOnly {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

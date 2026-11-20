@@ -23,6 +23,7 @@ class TextareaType extends AbstractType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [ 'rows' => 5 ];
 	}
@@ -35,6 +36,7 @@ class TextareaType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$attributes->add_class( 'large-text', 'field-kit__textarea' );
 		$attributes->set( 'rows', (int) $field->get( 'rows', 5 ) );
@@ -68,6 +70,7 @@ class TextareaType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function validate( mixed $value, Field $field ): string {
 		$message = Markup::too_long( $value, $field );
 
@@ -85,6 +88,7 @@ class TextareaType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): string {
 		return sanitize_textarea_field( $this->scalar( $value ) );
 	}
@@ -94,6 +98,7 @@ class TextareaType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_placeholder(): bool {
 		return true;
 	}
@@ -105,6 +110,7 @@ class TextareaType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_inline(): bool {
 		return true;
 	}
@@ -114,6 +120,7 @@ class TextareaType extends AbstractType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

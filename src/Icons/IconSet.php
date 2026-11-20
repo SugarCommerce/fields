@@ -33,8 +33,8 @@ final class IconSet {
 	 * Both end up in a stored value (`set:name`), a class attribute and a
 	 * URL, so neither may hold anything that needs escaping in any of them.
 	 */
-	public const ID_PATTERN   = '/^[a-z0-9][a-z0-9-]*$/';
-	public const NAME_PATTERN = '/^[a-z0-9][a-z0-9_-]*$/';
+	public const string ID_PATTERN = '/^[a-z0-9][a-z0-9-]*$/';
+	public const string NAME_PATTERN = '/^[a-z0-9][a-z0-9_-]*$/';
 
 	/**
 	 * The set's id, the part of a value before the colon.

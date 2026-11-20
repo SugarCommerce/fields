@@ -37,6 +37,13 @@ final class QuickEditFieldsTest extends TestCase {
 	}
 
 	/**
+	 * Leave no capability denied for the suites that run after.
+	 */
+	protected function tearDown(): void {
+		qe_reset_globals();
+	}
+
+	/**
 	 * Build a quick edit set.
 	 *
 	 * @param array<string, array<string, mixed>> $fields    Field configuration.
@@ -281,4 +288,118 @@ final class QuickEditFieldsTest extends TestCase {
 		);
 	}
 
+	/**
+	 * A row carries only what this user may change, and only a row they
+	 * may quick edit.
+	 *
+	 * The values are printed into the page, and a list table shows other
+	 * authors' posts: every field's stored value went into the footer,
+	 * restricted ones included.
+	 */
+	public function test_a_rows_values_hold_only_what_the_user_may_change(): void {
+		$GLOBALS['fk_meta']['post'][7] = [
+			'colour' => 'blue',
+			'secret' => 'restricted value',
+			'margin' => 'cost price',
+		];
+
+		$this->fields(
+			[
+				'colour' => [ 'type' => 'text' ],
+				'secret' => [
+					'type'                => 'text',
+					'permission_callback' => static fn( $field ): bool => false,
+				],
+				'margin' => [
+					'type'       => 'text',
+					'capability' => 'manage_options',
+				],
+			]
+		)->add_row_values( [ 'post' ], [], 7 );
+
+		$GLOBALS['qe_denied'] = [ 'manage_options' ];
+
+		ob_start();
+
+		foreach ( $GLOBALS['fk_actions']['admin_footer'] ?? [] as $callback ) {
+			$callback();
+		}
+
+		$printed = (string) ob_get_clean();
+
+		$this->assertStringContainsString( 'blue', $printed );
+		$this->assertStringNotContainsString( 'restricted value', $printed );
+	}
+
+	/**
+	 * A field limited by `capability` is neither printed nor written.
+	 */
+	public function test_a_fields_capability_is_honoured(): void {
+		$GLOBALS['qe_denied']          = [ 'manage_options' ];
+		$GLOBALS['fk_meta']['post'][7] = [ 'margin' => 'cost price' ];
+
+		$fields = $this->fields(
+			[
+				'colour' => [ 'type' => 'text' ],
+				'margin' => [
+					'type'       => 'text',
+					'capability' => 'manage_options',
+				],
+			]
+		);
+
+		$fields->add_row_values( [ 'post' ], [], 7 );
+
+		ob_start();
+
+		foreach ( $GLOBALS['fk_actions']['admin_footer'] ?? [] as $callback ) {
+			$callback();
+		}
+
+		$this->assertStringNotContainsString( 'cost price', (string) ob_get_clean() );
+
+		$_POST = [
+			'field_kit_quick_edit_post' => 'nonce',
+			'colour'                    => 'blue',
+			'margin'                    => 'zero',
+		];
+
+		$fields->save( 7 );
+
+		$this->assertSame( 'cost price', $GLOBALS['fk_meta']['post'][7]['margin'] );
+	}
+
+	/**
+	 * A row the user cannot edit carries nothing.
+	 */
+	public function test_a_row_the_user_cannot_edit_carries_nothing(): void {
+		$GLOBALS['qe_denied']          = [ 'edit_post' ];
+		$GLOBALS['fk_meta']['post'][7] = [ 'colour' => 'blue' ];
+
+		$this->fields()->add_row_values( [ 'post' ], [], 7 );
+
+		$this->assertArrayNotHasKey( 'admin_footer', $GLOBALS['fk_actions'] );
+	}
+
+	/**
+	 * A password and an encrypted field are never in a row.
+	 *
+	 * A password is never shown back, and a row prints every value it edits;
+	 * an encrypted field would be printed as ciphertext and written back by
+	 * the list table as plain text.
+	 */
+	public function test_secrets_are_never_inline(): void {
+		$fields = $this->fields(
+			[
+				'colour' => [ 'type' => 'text' ],
+				'pass'   => [ 'type' => 'password' ],
+				'key'    => [
+					'type'      => 'text',
+					'encrypted' => true,
+				],
+			]
+		);
+
+		$this->assertSame( [ 'colour' ], array_keys( $fields->get_fields() ) );
+	}
 }

@@ -25,6 +25,7 @@ final class CheckboxGroupType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$name    = (string) $attributes->get( 'name' );
 		$current = array_map( 'strval', (array) $field->value() );
@@ -67,6 +68,7 @@ final class CheckboxGroupType extends AbstractType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): array {
 		$allowed = array_map( 'strval', array_keys( $field->options() ) );
 		$values  = array_filter( array_map( 'strval', (array) $value ), static fn( $v ) => '' !== $v );
@@ -79,6 +81,7 @@ final class CheckboxGroupType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function is_grouped(): bool {
 		return true;
 	}
@@ -90,6 +93,7 @@ final class CheckboxGroupType extends AbstractType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		return [
 			'type'  => 'array',
@@ -102,6 +106,7 @@ final class CheckboxGroupType extends AbstractType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

@@ -19,6 +19,7 @@ final class TimeRangeType extends AbstractRangePairType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function input_type(): string {
 		return 'time';
 	}

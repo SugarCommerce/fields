@@ -21,6 +21,7 @@ class PostType extends AbstractRelationalType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function source(): string {
 		return 'post';
 	}
@@ -32,6 +33,7 @@ class PostType extends AbstractRelationalType {
 	 *
 	 * @return array<string, scalar>
 	 */
+	#[\Override]
 	protected function search_args( Field $field ): array {
 		return [ 'post_type' => (string) $field->get( 'post_type', 'post' ) ];
 	}
@@ -44,10 +46,20 @@ class PostType extends AbstractRelationalType {
 	 *
 	 * @return array<string, string>
 	 */
+	#[\Override]
 	protected function resolve_labels( array $ids, Field $field ): array {
 		$labels = [];
 
 		foreach ( $ids as $id ) {
+			// A post this user may not read is named by its number: the id
+			// is whatever was submitted, and a draft's or a private post's
+			// title is not theirs to see. Still labelled, so it stays chosen.
+			if ( ! current_user_can( 'read_post', $id ) ) {
+				$labels[ (string) $id ] = '#' . $id;
+
+				continue;
+			}
+
 			$title = get_the_title( $id );
 
 			if ( '' !== $title ) {
@@ -63,6 +75,7 @@ class PostType extends AbstractRelationalType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),
@@ -81,6 +94,7 @@ class PostType extends AbstractRelationalType {
 	 * @return string
 	 * @since 1.7.0
 	 */
+	#[\Override]
 	protected function default_create_noun( Field $field ): string {
 		$object = get_post_type_object( (string) ( $this->search_args( $field )['post_type'] ?? 'post' ) );
 		$label  = $object->labels->singular_name ?? '';
@@ -99,6 +113,7 @@ class PostType extends AbstractRelationalType {
 	 * @return array<string, scalar>
 	 * @since 1.7.0
 	 */
+	#[\Override]
 	protected function create_args( Field $field ): array {
 		$status = $this->create_options( $field )['status'] ?? '';
 

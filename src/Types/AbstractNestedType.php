@@ -165,6 +165,7 @@ abstract class AbstractNestedType extends AbstractType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		$registry   = $this->registry ?? new Registry();
 		$properties = [];

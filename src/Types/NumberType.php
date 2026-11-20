@@ -21,6 +21,7 @@ class NumberType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function input_type(): string {
 		return 'number';
 	}
@@ -32,6 +33,7 @@ class NumberType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function width_class( Field $field ): string {
 		return $field->has( 'size' ) ? parent::width_class( $field ) : 'small-text';
 	}
@@ -48,6 +50,7 @@ class NumberType extends AbstractInputType {
 	 *
 	 * @return int|float
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): int|float {
 		$min = $field->get( 'min' );
 		$max = $field->get( 'max' );
@@ -103,6 +106,7 @@ class NumberType extends AbstractInputType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		$schema = [ 'type' => $this->is_fractional( $field ) ? 'number' : 'integer' ];
 
@@ -122,6 +126,7 @@ class NumberType extends AbstractInputType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

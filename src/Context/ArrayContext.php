@@ -56,6 +56,7 @@ final class ArrayContext implements Context {
 	 *
 	 * @return mixed
 	 */
+	#[\Override]
 	public function read( int|string $object_id, Field $field ): mixed {
 		return $this->values[ $field->key() ] ?? null;
 	}
@@ -69,6 +70,7 @@ final class ArrayContext implements Context {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	public function write( int|string $object_id, Field $field, mixed $value ): void {
 		$this->values[ $field->key() ] = $value;
 	}
@@ -81,6 +83,7 @@ final class ArrayContext implements Context {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	public function delete( int|string $object_id, Field $field ): void {
 		unset( $this->values[ $field->key() ] );
 	}

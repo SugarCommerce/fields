@@ -26,13 +26,14 @@ final class MessageType extends AbstractLayoutType {
 	 *
 	 * @var string[]
 	 */
-	private const LEVELS = [ 'info', 'success', 'warning', 'error' ];
+	private const array LEVELS = [ 'info', 'success', 'warning', 'error' ];
 
 	/**
 	 * Config defaults.
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [ 'level' => 'info' ];
 	}
@@ -45,6 +46,7 @@ final class MessageType extends AbstractLayoutType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$level = (string) $field->get( 'level', 'info' );
 		$level = in_array( $level, self::LEVELS, true ) ? $level : 'info';
@@ -70,6 +72,7 @@ final class MessageType extends AbstractLayoutType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

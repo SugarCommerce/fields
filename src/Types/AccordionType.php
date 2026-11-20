@@ -38,6 +38,7 @@ final class AccordionType extends AbstractLayoutType {
 	 * @return string
 	 * @since 1.1.0
 	 */
+	#[\Override]
 	public function opens_section(): string {
 		return 'accordion';
 	}
@@ -51,6 +52,7 @@ final class AccordionType extends AbstractLayoutType {
 	 * @return string
 	 * @since 1.1.0
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		return '';
 	}
@@ -76,6 +78,7 @@ final class AccordionType extends AbstractLayoutType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge( parent::config_keys(), [ 'open' ] );
 	}

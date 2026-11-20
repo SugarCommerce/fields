@@ -21,6 +21,7 @@ final class HiddenType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function input_type(): string {
 		return 'hidden';
 	}
@@ -33,6 +34,7 @@ final class HiddenType extends AbstractInputType {
 	 *
 	 * @return mixed
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): mixed {
 		return sanitize_text_field( $this->scalar( $value ) );
 	}
@@ -44,6 +46,7 @@ final class HiddenType extends AbstractInputType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_inline(): bool {
 		return false;
 	}

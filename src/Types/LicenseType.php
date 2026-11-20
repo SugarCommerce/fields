@@ -33,6 +33,7 @@ final class LicenseType extends AbstractInputType implements AdminOnly {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function input_type(): string {
 		return 'text';
 	}
@@ -45,6 +46,7 @@ final class LicenseType extends AbstractInputType implements AdminOnly {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$active = (bool) $field->get( 'is_active', false );
 
@@ -164,6 +166,7 @@ final class LicenseType extends AbstractInputType implements AdminOnly {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function render_value( Field $field ): string {
 		$key = (string) $field->value();
 
@@ -184,6 +187,7 @@ final class LicenseType extends AbstractInputType implements AdminOnly {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): string {
 		$value = sanitize_text_field( $this->scalar( $value ) );
 
@@ -197,6 +201,7 @@ final class LicenseType extends AbstractInputType implements AdminOnly {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_inline(): bool {
 		return false;
 	}
@@ -206,6 +211,7 @@ final class LicenseType extends AbstractInputType implements AdminOnly {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

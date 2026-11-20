@@ -231,7 +231,7 @@ beforeAll( async () => {
 		},
 	};
 
-	await import( '../../src/js/block-editor.js' );
+	await import( '../../assets/js/block-editor.js' );
 } );
 
 describe( 'the block editor sidebar', () => {
@@ -305,7 +305,7 @@ describe( 'the block editor sidebar', () => {
 		const first = editor.plugins[ handle + '-demo-box' ];
 
 		vi.resetModules();
-		await import( '../../src/js/block-editor.js' );
+		await import( '../../assets/js/block-editor.js' );
 
 		expect( editor.plugins[ handle + '-demo-box' ] ).toBe( first );
 	} );

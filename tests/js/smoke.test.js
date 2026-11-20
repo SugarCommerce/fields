@@ -64,7 +64,7 @@ vi.mock( '@wordpress/api-fetch', () => ( {
 	},
 } ) );
 
-vi.mock( '../../src/js/lib/dom', async ( original ) => {
+vi.mock( '../../assets/js/lib/dom', async ( original ) => {
 	const actual = await original();
 
 	return {
@@ -74,7 +74,7 @@ vi.mock( '../../src/js/lib/dom', async ( original ) => {
 	};
 } );
 
-vi.mock( '../../src/js/lib/lifecycle', async ( original ) => {
+vi.mock( '../../assets/js/lib/lifecycle', async ( original ) => {
 	const actual = await original();
 
 	return {
@@ -86,7 +86,7 @@ vi.mock( '../../src/js/lib/lifecycle', async ( original ) => {
 /**
  * Every module's source, as one text.
  *
- * @return {string} The sources under src/js, in a stable order.
+ * @return {string} The sources under assets/js, in a stable order.
  */
 function kitSource() {
 	const files = [];
@@ -100,7 +100,7 @@ function kitSource() {
 					: files.push( path.join( dir, entry.name ) )
 			);
 
-	walk( path.join( packageRoot, 'src', 'js' ) );
+	walk( path.join( packageRoot, 'assets', 'js' ) );
 
 	return files
 		.filter( ( file ) => ! file.includes( 'block-editor' ) )
@@ -226,7 +226,7 @@ beforeAll( async () => {
 		},
 	};
 
-	await import( '../../src/js/field-kit.js' );
+	await import( '../../assets/js/field-kit.js' );
 
 	modules = context.window.SugarCommerceFieldsModules;
 } );
@@ -257,7 +257,7 @@ smoke( 'icon() reads the configured icons', () => {
  * broken.
  */
 smoke( 'every module on the init list is published and starts', async () => {
-	const { ORDER: expected } = await import( '../../src/js/lib/lifecycle' );
+	const { ORDER: expected } = await import( '../../assets/js/lib/lifecycle' );
 
 	if ( expected.length < 30 ) {
 		complain( `  the init list has ${ expected.length } modules` );

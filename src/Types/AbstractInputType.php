@@ -47,6 +47,7 @@ abstract class AbstractInputType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$value = $this->render_value( $field );
 
@@ -211,6 +212,7 @@ abstract class AbstractInputType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function validate( mixed $value, Field $field ): string {
 		$message = Markup::too_long( $value, $field );
 
@@ -269,6 +271,7 @@ abstract class AbstractInputType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_placeholder(): bool {
 		return true;
 	}
@@ -280,6 +283,7 @@ abstract class AbstractInputType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_inline(): bool {
 		return true;
 	}
@@ -289,6 +293,7 @@ abstract class AbstractInputType extends AbstractType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

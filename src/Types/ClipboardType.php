@@ -30,6 +30,7 @@ final class ClipboardType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$attributes->set( 'type', 'text' );
 		$attributes->set( 'value', (string) $field->value() );
@@ -68,6 +69,7 @@ final class ClipboardType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function stores_value(): bool {
 		return false;
 	}
@@ -80,6 +82,7 @@ final class ClipboardType extends AbstractType {
 	 *
 	 * @return null
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): mixed {
 		return null;
 	}

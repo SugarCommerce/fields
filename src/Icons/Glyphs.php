@@ -38,7 +38,7 @@ final class Glyphs {
 	 *
 	 * @var array<string, string>
 	 */
-	public const DEFAULTS = [
+	public const array DEFAULTS = [
 		'help'      => 'heroicons-outline:question-mark-circle',
 		'close'     => 'heroicons-outline:x-mark',
 		'drag'      => 'heroicons-outline:bars-3',

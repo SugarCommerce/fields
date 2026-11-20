@@ -39,7 +39,7 @@ final class Guard {
 	/**
 	 * The attribute that turns the guard on for a form or its container.
 	 */
-	public const ATTRIBUTE = 'data-fk-guard';
+	public const string ATTRIBUTE = 'data-fk-guard';
 
 	/**
 	 * Guard the forms a selector matches, on the page being built.

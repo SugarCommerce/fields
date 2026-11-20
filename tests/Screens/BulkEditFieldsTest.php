@@ -35,6 +35,13 @@ final class BulkEditFieldsTest extends TestCase {
 	}
 
 	/**
+	 * Leave no capability denied for the suites that run after.
+	 */
+	protected function tearDown(): void {
+		be_reset_globals();
+	}
+
+	/**
 	 * Build a bulk edit set.
 	 *
 	 * @param array<string, array<string, mixed>> $fields Field configuration.
@@ -442,4 +449,49 @@ final class BulkEditFieldsTest extends TestCase {
 		);
 	}
 
+	/**
+	 * A field the user may not change cannot be written by a crafted bulk
+	 * edit.
+	 *
+	 * Quick edit honoured `permission_callback`; bulk edit, usually given the
+	 * same array, wrote whatever the request named.
+	 */
+	public function test_a_field_the_user_may_not_change_is_not_written(): void {
+		$GLOBALS['be_denied'] = [ 'manage_options' ];
+
+		$this->submit(
+			[
+				'colour' => 'blue',
+				'secret' => 'sneaked in',
+				'margin' => 'zero',
+			]
+		);
+
+		$fields = $this->fields(
+			[
+				'colour' => [ 'type' => 'text' ],
+				'secret' => [
+					'type'                => 'text',
+					'permission_callback' => static fn( $field ): bool => false,
+				],
+				'margin' => [
+					'type'       => 'text',
+					'capability' => 'manage_options',
+				],
+			]
+		);
+
+		$fields->save( 7, $this->post() );
+
+		$this->assertSame( 'blue', $GLOBALS['fk_meta']['post'][7]['colour'] );
+		$this->assertArrayNotHasKey( 'secret', $GLOBALS['fk_meta']['post'][7] );
+		$this->assertArrayNotHasKey( 'margin', $GLOBALS['fk_meta']['post'][7] );
+
+		ob_start();
+		$fields->render( 'title', 'post' );
+		$html = (string) ob_get_clean();
+
+		$this->assertStringNotContainsString( 'secret', $html );
+		$this->assertStringNotContainsString( 'margin', $html );
+	}
 }

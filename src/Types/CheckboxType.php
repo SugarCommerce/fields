@@ -31,6 +31,7 @@ class CheckboxType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$name = (string) $attributes->get( 'name' );
 
@@ -99,6 +100,7 @@ class CheckboxType extends AbstractType {
 	 *
 	 * @return int
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): int {
 		return in_array( $value, [ 1, '1', true, 'yes', 'on' ], true ) ? 1 : 0;
 	}
@@ -116,6 +118,7 @@ class CheckboxType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function validate( mixed $value, Field $field ): string {
 		if ( $field->is_required() && 1 !== $value ) {
 			return sprintf(
@@ -133,6 +136,7 @@ class CheckboxType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function is_self_labelling(): bool {
 		return true;
 	}
@@ -147,6 +151,7 @@ class CheckboxType extends AbstractType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		return [
 			'type' => 'integer',
@@ -161,6 +166,7 @@ class CheckboxType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_inline(): bool {
 		return true;
 	}
@@ -170,6 +176,7 @@ class CheckboxType extends AbstractType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

@@ -41,6 +41,7 @@ final class SlugType extends AbstractInputType implements Lookup {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function input_type(): string {
 		return 'text';
 	}
@@ -53,6 +54,7 @@ final class SlugType extends AbstractInputType implements Lookup {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$attributes->add_class( 'field-kit__slug' );
 		$attributes->set( 'spellcheck', 'false' );
@@ -84,6 +86,7 @@ final class SlugType extends AbstractInputType implements Lookup {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function control( Field $field, Attributes $attributes ): string {
 		$base = (string) $field->get( 'prefix', '' );
 
@@ -111,6 +114,7 @@ final class SlugType extends AbstractInputType implements Lookup {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): string {
 		return sanitize_title( $this->scalar( $value ) );
 	}
@@ -123,6 +127,7 @@ final class SlugType extends AbstractInputType implements Lookup {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function validate( mixed $value, Field $field ): string {
 		$message = parent::validate( $value, $field );
 
@@ -174,6 +179,7 @@ final class SlugType extends AbstractInputType implements Lookup {
 	 *
 	 * @return callable|null
 	 */
+	#[\Override]
 	public function lookup_handler( array $config ): ?callable {
 		if ( ! is_callable( $config['unique_callback'] ?? null ) ) {
 			return null;
@@ -189,6 +195,7 @@ final class SlugType extends AbstractInputType implements Lookup {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function lookup_capability( array $config ): string {
 		return (string) ( $config['lookup_capability'] ?? 'edit_posts' );
 	}
@@ -198,6 +205,7 @@ final class SlugType extends AbstractInputType implements Lookup {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge( parent::config_keys(), [ 'source', 'unique_callback' ] );
 	}

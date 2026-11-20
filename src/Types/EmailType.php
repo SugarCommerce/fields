@@ -22,6 +22,7 @@ final class EmailType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function input_type(): string {
 		return 'email';
 	}
@@ -34,6 +35,7 @@ final class EmailType extends AbstractInputType {
 	 *
 	 * @return mixed
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): mixed {
 		return sanitize_email( $this->scalar( $value ) );
 	}

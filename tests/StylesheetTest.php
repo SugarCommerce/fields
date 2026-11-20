@@ -157,7 +157,7 @@ final class StylesheetTest extends TestCase {
 	private function emitted_classes(): array {
 		$found = [];
 
-		foreach ( [ '/src' ] as $directory ) {
+		foreach ( [ '/src', '/assets/js' ] as $directory ) {
 			$iterator = new RecursiveIteratorIterator(
 				new RecursiveDirectoryIterator( dirname( __DIR__ ) . $directory )
 			);
@@ -247,7 +247,7 @@ final class StylesheetTest extends TestCase {
 	public function test_runtime_classes_have_a_stem_in_source(): void {
 		$source = '';
 
-		foreach ( [ '/src' ] as $directory ) {
+		foreach ( [ '/src', '/assets/js' ] as $directory ) {
 			$iterator = new RecursiveIteratorIterator(
 				new RecursiveDirectoryIterator( dirname( __DIR__ ) . $directory )
 			);

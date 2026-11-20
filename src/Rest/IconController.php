@@ -42,24 +42,24 @@ final class IconController {
 	/**
 	 * Icons per page when the request does not say.
 	 */
-	public const PER_PAGE = 96;
+	public const int PER_PAGE = 96;
 
 	/**
 	 * The most icons a page may ask for.
 	 */
-	public const MAX_PER_PAGE = 200;
+	public const int MAX_PER_PAGE = 200;
 
 	/**
 	 * How long a browser may keep a page without asking, in seconds.
 	 */
-	private const MAX_AGE = 86400;
+	private const int MAX_AGE = 86400;
 
 	/**
 	 * Changes when what a page of results looks like changes, so a page
 	 * cached under the old shape is not served to a script expecting the
 	 * new one.
 	 */
-	private const SHAPE = '1';
+	private const string SHAPE = '1';
 
 	/**
 	 * Paths already claimed, so a second instance cannot double-register.

@@ -26,6 +26,7 @@ final class HeadingType extends AbstractLayoutType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [ 'level' => 3 ];
 	}
@@ -38,6 +39,7 @@ final class HeadingType extends AbstractLayoutType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$level = (int) $field->get( 'level', 3 );
 		$level = min( 6, max( 2, $level ) );
@@ -56,6 +58,7 @@ final class HeadingType extends AbstractLayoutType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

@@ -51,6 +51,7 @@ final class EmailEditorType extends AbstractNestedType implements AdminOnly {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [
 			'recipient' => false,
@@ -153,6 +154,7 @@ final class EmailEditorType extends AbstractNestedType implements AdminOnly {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$values    = is_array( $field->value() ) ? $field->value() : [];
 		$title_id  = $field->input_id() . '__title';
@@ -360,6 +362,7 @@ final class EmailEditorType extends AbstractNestedType implements AdminOnly {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): array {
 		return $this->sanitize_children( $this->with_parts( $field ), $value );
 	}
@@ -371,6 +374,7 @@ final class EmailEditorType extends AbstractNestedType implements AdminOnly {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function is_self_labelling(): bool {
 		return true;
 	}
@@ -380,6 +384,7 @@ final class EmailEditorType extends AbstractNestedType implements AdminOnly {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function is_grouped(): bool {
 		return false;
 	}
@@ -389,6 +394,7 @@ final class EmailEditorType extends AbstractNestedType implements AdminOnly {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function spans_row(): bool {
 		return true;
 	}
@@ -399,6 +405,7 @@ final class EmailEditorType extends AbstractNestedType implements AdminOnly {
 	 * @return array{scripts: string[], styles: string[], editor: bool}
 	 * @since 1.6.0
 	 */
+	#[\Override]
 	public function dependencies(): array {
 		return [
 			'scripts' => [ 'media-upload', 'media-views' ],
@@ -412,6 +419,7 @@ final class EmailEditorType extends AbstractNestedType implements AdminOnly {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

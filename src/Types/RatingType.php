@@ -43,13 +43,14 @@ final class RatingType extends AbstractType {
 	 * The stylesheet fills the strip from a rule per possible value, and
 	 * has rules up to here.
 	 */
-	public const MOST = 10;
+	public const int MOST = 10;
 
 	/**
 	 * Defaults.
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [
 			'max'  => 5,
@@ -65,6 +66,7 @@ final class RatingType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$max   = self::max( $field );
 		$half  = (bool) $field->get( 'half', false );
@@ -207,6 +209,7 @@ final class RatingType extends AbstractType {
 	 *
 	 * @return int|float|string
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): int|float|string {
 		if ( ! is_numeric( $value ) ) {
 			return '';
@@ -255,6 +258,7 @@ final class RatingType extends AbstractType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		return [
 			'type'    => [ 'number', 'string' ],
@@ -268,6 +272,7 @@ final class RatingType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function is_grouped(): bool {
 		return true;
 	}
@@ -277,6 +282,7 @@ final class RatingType extends AbstractType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge( parent::config_keys(), [ 'max', 'half', 'display' ] );
 	}

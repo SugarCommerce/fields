@@ -29,6 +29,7 @@ abstract class AbstractMetaContext implements Context, Registrable {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	abstract public function meta_type(): string;
 
 	/**
@@ -66,6 +67,7 @@ abstract class AbstractMetaContext implements Context, Registrable {
 	 *
 	 * @return mixed
 	 */
+	#[\Override]
 	public function read( int|string $object_id, Field $field ): mixed {
 		return get_metadata( $this->meta_type(), (int) $object_id, $this->meta_key( $field ), true );
 	}
@@ -79,6 +81,7 @@ abstract class AbstractMetaContext implements Context, Registrable {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	public function write( int|string $object_id, Field $field, mixed $value ): void {
 		// Slashed on the way in because update_metadata() unslashes.
 		update_metadata( $this->meta_type(), (int) $object_id, $this->meta_key( $field ), wp_slash( $value ) );
@@ -92,6 +95,7 @@ abstract class AbstractMetaContext implements Context, Registrable {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	public function delete( int|string $object_id, Field $field ): void {
 		delete_metadata( $this->meta_type(), (int) $object_id, $this->meta_key( $field ) );
 	}

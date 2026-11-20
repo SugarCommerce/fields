@@ -36,6 +36,7 @@ abstract class AbstractRangePairType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$value = is_array( $field->value() ) ? $field->value() : [];
 
@@ -69,6 +70,7 @@ abstract class AbstractRangePairType extends AbstractType {
 	 *
 	 * @return array{from: string, to: string}
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): array {
 		$value = is_array( $value ) ? $value : [];
 
@@ -83,6 +85,7 @@ abstract class AbstractRangePairType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function is_grouped(): bool {
 		return true;
 	}
@@ -94,6 +97,7 @@ abstract class AbstractRangePairType extends AbstractType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		return [
 			'type'       => 'object',

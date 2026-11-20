@@ -27,6 +27,7 @@ final class AjaxType extends AbstractRelationalType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function source(): string {
 		return 'callback';
 	}
@@ -43,6 +44,7 @@ final class AjaxType extends AbstractRelationalType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function source_for( Field $field ): string {
 		return (string) $field->get( 'search_source', $this->source() );
 	}
@@ -58,6 +60,7 @@ final class AjaxType extends AbstractRelationalType {
 	 *
 	 * @return array<string, string>
 	 */
+	#[\Override]
 	protected function resolve_labels( array $ids, Field $field ): array {
 		if ( [] === $ids ) {
 			return [];
@@ -109,6 +112,7 @@ final class AjaxType extends AbstractRelationalType {
 	 * @return array<int, string>
 	 * @since 1.6.0
 	 */
+	#[\Override]
 	protected function selected_ids( Field $field ): array {
 		$values = array_map( 'strval', array_filter( (array) $this->selected_values( $field ), 'is_scalar' ) );
 
@@ -126,6 +130,7 @@ final class AjaxType extends AbstractRelationalType {
 	 *
 	 * @return string|string[]
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): string|array {
 		if ( $this->is_multiple( $field ) ) {
 			$values = array_map( 'sanitize_text_field', array_filter( (array) $value, 'is_scalar' ) );
@@ -143,6 +148,7 @@ final class AjaxType extends AbstractRelationalType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		// 'search_callback' is already declared by AbstractRelationalType.
 		return array_merge(
@@ -163,6 +169,7 @@ final class AjaxType extends AbstractRelationalType {
 	 * @return bool
 	 * @since 1.7.0
 	 */
+	#[\Override]
 	protected function creates( Field $field ): bool {
 		return parent::creates( $field ) && is_callable( $this->create_options( $field )['callback'] ?? null );
 	}

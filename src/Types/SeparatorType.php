@@ -29,6 +29,7 @@ final class SeparatorType extends AbstractLayoutType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		return '<hr class="field-kit__separator" aria-hidden="true" />';
 	}

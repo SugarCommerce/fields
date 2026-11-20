@@ -45,6 +45,7 @@ final class IconType extends AbstractType implements AdminOnly {
 	 * @return string
 	 * @since 1.1.0
 	 */
+	#[\Override]
 	public function id(): string {
 		return 'icon';
 	}
@@ -66,6 +67,7 @@ final class IconType extends AbstractType implements AdminOnly {
 	 * @return string
 	 * @since 1.1.0
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$sets  = self::allowed( $field );
 		$value = Icons::sanitize( $field->value(), $sets );
@@ -144,6 +146,7 @@ final class IconType extends AbstractType implements AdminOnly {
 	 * @return string
 	 * @since 1.1.0
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): string {
 		return Icons::sanitize( $value, self::allowed( $field ) );
 	}
@@ -167,6 +170,7 @@ final class IconType extends AbstractType implements AdminOnly {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_placeholder(): bool {
 		return false;
 	}
@@ -176,6 +180,7 @@ final class IconType extends AbstractType implements AdminOnly {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_inline(): bool {
 		return true;
 	}
@@ -185,6 +190,7 @@ final class IconType extends AbstractType implements AdminOnly {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge( parent::config_keys(), [ 'sets' ] );
 	}

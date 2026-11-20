@@ -37,13 +37,14 @@ final class ListType extends RepeaterType {
 	 *
 	 * @var string
 	 */
-	private const COLUMN = 'item';
+	private const string COLUMN = 'item';
 
 	/**
 	 * The type's id.
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function id(): string {
 		return 'list';
 	}
@@ -53,6 +54,7 @@ final class ListType extends RepeaterType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return array_merge(
 			parent::defaults(),
@@ -76,6 +78,7 @@ final class ListType extends RepeaterType {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
+	#[\Override]
 	protected function rows( Field $field ): array {
 		$value = $field->value();
 
@@ -103,6 +106,7 @@ final class ListType extends RepeaterType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): array {
 		$entries = [];
 
@@ -130,6 +134,7 @@ final class ListType extends RepeaterType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function validate( mixed $value, Field $field ): string {
 		$rule = $this->rule( $field );
 
@@ -153,6 +158,7 @@ final class ListType extends RepeaterType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		return [
 			'type'  => 'array',

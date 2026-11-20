@@ -29,6 +29,7 @@ final class GroupType extends AbstractNestedType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$values = is_array( $field->value() ) ? $field->value() : [];
 
@@ -46,6 +47,7 @@ final class GroupType extends AbstractNestedType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): array {
 		return $this->sanitize_children( $field, $value, null, (array) $field->value() );
 	}
@@ -55,6 +57,7 @@ final class GroupType extends AbstractNestedType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function is_grouped(): bool {
 		return true;
 	}

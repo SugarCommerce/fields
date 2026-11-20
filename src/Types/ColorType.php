@@ -41,6 +41,7 @@ final class ColorType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function input_type(): string {
 		return 'text';
 	}
@@ -72,6 +73,7 @@ final class ColorType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		if ( self::uses_wordpress( $field->get( 'picker' ), $field->get( 'alpha' ) ) ) {
 			return $this->render_wordpress( $field, $attributes );
@@ -242,6 +244,7 @@ final class ColorType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): string {
 		$value = trim( $this->scalar( $value ) );
 
@@ -261,6 +264,7 @@ final class ColorType extends AbstractInputType {
 	 *
 	 * @return array{scripts: string[], styles: string[]}
 	 */
+	#[\Override]
 	public function dependencies(): array {
 		return [
 			'scripts' => [],
@@ -296,6 +300,7 @@ final class ColorType extends AbstractInputType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

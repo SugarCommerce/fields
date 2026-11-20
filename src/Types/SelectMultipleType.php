@@ -27,6 +27,7 @@ final class SelectMultipleType extends SelectType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	protected function is_multiple( Field $field ): bool {
 		return true;
 	}
@@ -44,6 +45,7 @@ final class SelectMultipleType extends SelectType {
 	 * @return bool
 	 * @since 1.6.0
 	 */
+	#[\Override]
 	protected function uses_enhanced_ui( Field $field ): bool {
 		return (bool) $field->get( 'searchable', true );
 	}

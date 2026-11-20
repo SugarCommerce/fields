@@ -237,7 +237,7 @@ if ( ! function_exists( 'get_post_meta' ) ) {
 
 if ( ! function_exists( 'get_userdata' ) ) {
 	function get_userdata( $user_id ) {
-		return null;
+		return $GLOBALS['fk_userdata'][ (int) $user_id ] ?? null;
 	}
 }
 

@@ -37,6 +37,7 @@ final class AmountType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function id(): string {
 		return 'amount_type';
 	}
@@ -46,6 +47,7 @@ final class AmountType extends AbstractType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [
 			'type_options'  => [
@@ -68,6 +70,7 @@ final class AmountType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$attributes->set( 'type', 'number' );
 		$attributes->set( 'value', (string) $field->value() );
@@ -221,6 +224,7 @@ final class AmountType extends AbstractType {
 	 *
 	 * @return float|string
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): float|string {
 		if ( ! is_numeric( $value ) ) {
 			return '';
@@ -246,6 +250,7 @@ final class AmountType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_placeholder(): bool {
 		return true;
 	}
@@ -257,6 +262,7 @@ final class AmountType extends AbstractType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		return [ 'type' => [ 'number', 'string' ] ];
 	}
@@ -268,6 +274,7 @@ final class AmountType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_inline(): bool {
 		return true;
 	}
@@ -277,6 +284,7 @@ final class AmountType extends AbstractType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

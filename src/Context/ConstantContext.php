@@ -64,6 +64,7 @@ final class ConstantContext implements Context, Flushable, Registrable {
 	 *
 	 * @return mixed
 	 */
+	#[\Override]
 	public function read( int|string $object_id, Field $field ): mixed {
 		$constant = $this->constant_for( $field );
 
@@ -83,6 +84,7 @@ final class ConstantContext implements Context, Flushable, Registrable {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	public function write( int|string $object_id, Field $field, mixed $value ): void {
 		if ( null !== $this->constant_for( $field ) ) {
 			return;
@@ -99,6 +101,7 @@ final class ConstantContext implements Context, Flushable, Registrable {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	public function delete( int|string $object_id, Field $field ): void {
 		if ( null !== $this->constant_for( $field ) ) {
 			return;
@@ -152,6 +155,7 @@ final class ConstantContext implements Context, Flushable, Registrable {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	public function save(): void {
 		if ( $this->inner instanceof Flushable ) {
 			$this->inner->save();
@@ -167,6 +171,7 @@ final class ConstantContext implements Context, Flushable, Registrable {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function meta_type(): string {
 		return $this->inner instanceof Registrable ? $this->inner->meta_type() : '';
 	}

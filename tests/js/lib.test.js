@@ -33,7 +33,7 @@ async function load( id, registry, legacy ) {
 	window.SugarCommerceFields = registry;
 	window.FieldKit = legacy;
 
-	return import( '../../src/js/lib/config' );
+	return import( '../../assets/js/lib/config' );
 }
 
 afterEach( () => {
@@ -103,7 +103,7 @@ describe( 'request', () => {
 
 	beforeEach( async () => {
 		await load( 'sugarcommerce-fields-js', {} );
-		( { request } = await import( '../../src/js/lib/request' ) );
+		( { request } = await import( '../../assets/js/lib/request' ) );
 	} );
 
 	test( 'asks apiFetch, keeping the method, headers and body', async () => {
@@ -208,7 +208,7 @@ describe( 'lookups', () => {
 			},
 		} );
 
-		const { endpoint } = await import( '../../src/js/lib/lookups' );
+		const { endpoint } = await import( '../../assets/js/lib/lookups' );
 		const url = endpoint( 'embed', {
 			url: 'https://v.test/1',
 			platforms: [ 'youtube', 'vimeo' ],
@@ -229,7 +229,7 @@ describe( 'lookups', () => {
 			},
 		} );
 
-		const { endpoint } = await import( '../../src/js/lib/lookups' );
+		const { endpoint } = await import( '../../assets/js/lib/lookups' );
 		const url = endpoint( 'slug', { slug: 'a' } );
 
 		expect( url.searchParams.get( 'rest_route' ) ).toBe(
@@ -241,7 +241,7 @@ describe( 'lookups', () => {
 	test( 'endpoint() is null without a REST root', async () => {
 		await load( 'sugarcommerce-fields-js', {} );
 
-		const { endpoint } = await import( '../../src/js/lib/lookups' );
+		const { endpoint } = await import( '../../assets/js/lib/lookups' );
 
 		expect( endpoint( 'slug', {} ) ).toBeNull();
 	} );
@@ -251,7 +251,7 @@ describe( 'lookups', () => {
 			'sugarcommerce-fields': { restNonce: 'abc' },
 		} );
 
-		const { ask } = await import( '../../src/js/lib/lookups' );
+		const { ask } = await import( '../../assets/js/lib/lookups' );
 
 		api.reply = () => Promise.resolve( null );
 
@@ -283,7 +283,7 @@ describe( 'lookups', () => {
 	test( 'fieldOf() is the closest field wrapper', async () => {
 		await load( 'sugarcommerce-fields-js', {} );
 
-		const { fieldOf } = await import( '../../src/js/lib/lookups' );
+		const { fieldOf } = await import( '../../assets/js/lib/lookups' );
 
 		document.body.innerHTML =
 			'<div data-field-key="a"><span><input></span></div><input id="loose">';
@@ -298,7 +298,7 @@ describe( 'lookups', () => {
 
 describe( 'dom', () => {
 	test( 'bound() marks a root once per module', async () => {
-		const { bound } = await import( '../../src/js/lib/dom' );
+		const { bound } = await import( '../../assets/js/lib/dom' );
 		const root = document.createElement( 'div' );
 
 		expect( bound( root, 'A' ) ).toBe( false );
@@ -313,7 +313,7 @@ describe( 'dom', () => {
 			},
 		} );
 
-		const { swapIcon } = await import( '../../src/js/lib/dom' );
+		const { swapIcon } = await import( '../../assets/js/lib/dom' );
 		const holder = document.createElement( 'span' );
 
 		holder.innerHTML = '<svg data-icon="show"></svg>';
@@ -331,7 +331,7 @@ describe( 'dom', () => {
 	test( 'announce() clears the region first, then says it', async () => {
 		vi.useFakeTimers();
 
-		const { announce } = await import( '../../src/js/lib/dom' );
+		const { announce } = await import( '../../assets/js/lib/dom' );
 		const region = document.createElement( 'div' );
 
 		region.textContent = 'Saved.';
@@ -348,7 +348,7 @@ describe( 'dom', () => {
 	} );
 
 	test( 'sibling() finds the row’s own control, then the form’s, by its key', async () => {
-		const { sibling } = await import( '../../src/js/lib/dom' );
+		const { sibling } = await import( '../../assets/js/lib/dom' );
 
 		document.body.innerHTML = `
 			<form>

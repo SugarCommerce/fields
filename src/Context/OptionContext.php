@@ -56,6 +56,7 @@ final class OptionContext implements Context, Flushable {
 	 *
 	 * @return mixed
 	 */
+	#[\Override]
 	public function read( int|string $object_id, Field $field ): mixed {
 		$values = $this->values();
 
@@ -71,6 +72,7 @@ final class OptionContext implements Context, Flushable {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	public function write( int|string $object_id, Field $field, mixed $value ): void {
 		$this->stage();
 
@@ -85,6 +87,7 @@ final class OptionContext implements Context, Flushable {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	public function delete( int|string $object_id, Field $field ): void {
 		$this->stage();
 
@@ -99,6 +102,7 @@ final class OptionContext implements Context, Flushable {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	public function save(): void {
 		if ( null === $this->pending ) {
 			return;

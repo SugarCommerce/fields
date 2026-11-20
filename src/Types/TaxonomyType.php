@@ -25,6 +25,7 @@ final class TaxonomyType extends AbstractRelationalType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function source(): string {
 		return 'term';
 	}
@@ -36,6 +37,7 @@ final class TaxonomyType extends AbstractRelationalType {
 	 *
 	 * @return array<string, scalar>
 	 */
+	#[\Override]
 	protected function search_args( Field $field ): array {
 		return [ 'taxonomy' => (string) $field->get( 'taxonomy', 'category' ) ];
 	}
@@ -48,6 +50,7 @@ final class TaxonomyType extends AbstractRelationalType {
 	 *
 	 * @return array<string, string>
 	 */
+	#[\Override]
 	protected function resolve_labels( array $ids, Field $field ): array {
 		$labels = [];
 
@@ -67,6 +70,7 @@ final class TaxonomyType extends AbstractRelationalType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),
@@ -82,6 +86,7 @@ final class TaxonomyType extends AbstractRelationalType {
 	 * @return string
 	 * @since 1.7.0
 	 */
+	#[\Override]
 	protected function default_create_noun( Field $field ): string {
 		$taxonomy = get_taxonomy( (string) $field->get( 'taxonomy', 'category' ) );
 		$label    = $taxonomy ? (string) ( $taxonomy->labels->singular_name ?? '' ) : '';

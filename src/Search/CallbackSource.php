@@ -97,6 +97,7 @@ final class CallbackSource implements Source, Creates {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function name(): string {
 		return $this->name;
 	}
@@ -106,6 +107,7 @@ final class CallbackSource implements Source, Creates {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function capability(): string {
 		return $this->capability;
 	}
@@ -120,6 +122,7 @@ final class CallbackSource implements Source, Creates {
 	 *
 	 * @return array{results: array<int, array{id: string, text: string}>, more: bool}
 	 */
+	#[\Override]
 	public function search( string $term, array $args, int $page, int $limit ): array {
 		$results = $this->normalize( ( $this->callback )( $term, [], $this->declared( $args ) ) );
 
@@ -245,6 +248,7 @@ final class CallbackSource implements Source, Creates {
 	 * @return bool
 	 * @since 1.7.0
 	 */
+	#[\Override]
 	public function can_create( array $args ): bool {
 		return null !== $this->creator && current_user_can( $this->create_capability );
 	}
@@ -263,6 +267,7 @@ final class CallbackSource implements Source, Creates {
 	 * @return array{id: string, text: string, existing: bool}|WP_Error
 	 * @since 1.7.0
 	 */
+	#[\Override]
 	public function create( string $text, array $args ): array|WP_Error {
 		$made = null === $this->creator ? null : ( $this->creator )( $text, $this->declared( $args ) );
 

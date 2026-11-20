@@ -39,7 +39,7 @@ class QuickEditFields {
 	 *
 	 * @var string
 	 */
-	private const COLUMN = 'field-kit-inline';
+	private const string COLUMN = 'field-kit-inline';
 
 	/**
 	 * Where values are read from and written to.
@@ -133,16 +133,7 @@ class QuickEditFields {
 	 * @return array<string, array<string, mixed>>
 	 */
 	private function inline_only( array $fields ): array {
-		$registry = new Registry();
-
-		return array_filter(
-			$fields,
-			static function ( $config ) use ( $registry ) {
-				$type = (string) ( $config['type'] ?? 'text' );
-
-				return $registry->has( $type ) && $registry->get( $type )->supports_inline();
-			}
-		);
+		return Inline::fields( $fields );
 	}
 
 	/**
@@ -238,14 +229,19 @@ class QuickEditFields {
 	 * @return string[]
 	 */
 	public function add_row_values( array $classes, array $css, int $post_id ): array {
-		if ( get_post_type( $post_id ) !== $this->post_type ) {
+		// Only a row this user can quick edit, and only the fields they may
+		// change: the values are printed into the page, and a list table
+		// shows other authors' posts too.
+		if ( get_post_type( $post_id ) !== $this->post_type || ! current_user_can( 'edit_post', $post_id ) ) {
 			return $classes;
 		}
 
 		$values = [];
 
-		foreach ( array_keys( $this->fields ) as $key ) {
-			$values[ $key ] = get_post_meta( $post_id, (string) $key, true );
+		foreach ( $this->set->fields() as $field ) {
+			if ( $this->permitted( $field, $post_id ) ) {
+				$values[ $field->key() ] = get_post_meta( $post_id, $field->key(), true );
+			}
 		}
 
 		// Carried on the row rather than printed separately, so it travels
@@ -256,7 +252,7 @@ class QuickEditFields {
 				printf(
 					'<script type="application/json" class="field-kit-inline-values" data-post="%d">%s</script>',
 					absint( $post_id ),
-					wp_json_encode( $values )
+					wp_json_encode( $values, JSON_HEX_TAG | JSON_HEX_AMP )
 				);
 			}
 		);
@@ -303,7 +299,7 @@ class QuickEditFields {
 		// Quick edit is answered over AJAX with the redrawn row, so there is
 		// no screen load to carry a notice to; the row shows the value that
 		// stayed.
-		$this->permitted_set()->save( $input, $post_id );
+		$this->permitted_set( $post_id )->save( $input, $post_id );
 	}
 
 	/**
@@ -313,13 +309,15 @@ class QuickEditFields {
 	 * it" and "may they set it" cannot drift apart. The full set is reused
 	 * when nothing was withheld.
 	 *
+	 * @param int $post_id The post being saved.
+	 *
 	 * @return FieldSet
 	 */
-	private function permitted_set(): FieldSet {
+	private function permitted_set( int $post_id ): FieldSet {
 		$keys = [];
 
 		foreach ( $this->set->fields() as $field ) {
-			if ( $this->permitted( $field ) ) {
+			if ( $this->permitted( $field, $post_id ) ) {
 				$keys[] = $field->key();
 			}
 		}
@@ -341,16 +339,15 @@ class QuickEditFields {
 	}
 
 	/**
-	 * Whether the current user may see a field.
+	 * Whether the current user may see and change a field.
 	 *
-	 * @param \SugarCommerce\Fields\Field $field The field.
+	 * @param Field $field   The field.
+	 * @param int   $post_id The post, or 0 for the panel as a whole.
 	 *
 	 * @return bool
 	 */
-	private function permitted( $field ): bool {
-		$callback = $field->get( 'permission_callback' );
-
-		return ! is_callable( $callback ) || (bool) $callback( $field );
+	private function permitted( Field $field, int $post_id = 0 ): bool {
+		return Inline::permitted( $field, $post_id );
 	}
 
 	/**

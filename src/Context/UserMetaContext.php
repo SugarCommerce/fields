@@ -19,6 +19,7 @@ final class UserMetaContext extends AbstractMetaContext {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function meta_type(): string {
 		return 'user';
 	}

@@ -44,6 +44,7 @@ final class CardChoiceType extends RadioType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function id(): string {
 		return 'card_choice';
 	}
@@ -53,6 +54,7 @@ final class CardChoiceType extends RadioType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [ 'columns' => 3 ];
 	}
@@ -65,6 +67,7 @@ final class CardChoiceType extends RadioType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$name     = (string) $attributes->get( 'name' );
 		$current  = (string) $field->value();
@@ -168,6 +171,7 @@ final class CardChoiceType extends RadioType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_inline(): bool {
 		return false;
 	}
@@ -177,6 +181,7 @@ final class CardChoiceType extends RadioType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge( parent::config_keys(), [ 'columns' ] );
 	}

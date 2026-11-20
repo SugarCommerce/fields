@@ -38,7 +38,7 @@ final class Rules {
 	 *
 	 * @var string[]
 	 */
-	public const NAMES = [ 'email', 'url', 'numeric', 'integer', 'slug', 'alphanumeric' ];
+	public const array NAMES = [ 'email', 'url', 'numeric', 'integer', 'slug', 'alphanumeric' ];
 
 	/**
 	 * How many failing items a per-item message names.
@@ -48,7 +48,7 @@ final class Rules {
 	 *
 	 * @var int
 	 */
-	private const SHOWN = 3;
+	private const int SHOWN = 3;
 
 	/**
 	 * The longest an item is echoed back at, in characters.
@@ -59,7 +59,7 @@ final class Rules {
 	 *
 	 * @var int
 	 */
-	private const ITEM_LENGTH = 30;
+	private const int ITEM_LENGTH = 30;
 
 	/**
 	 * Check one value against a rule.

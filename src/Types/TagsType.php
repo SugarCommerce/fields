@@ -29,6 +29,7 @@ final class TagsType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function input_type(): string {
 		return 'text';
 	}
@@ -41,6 +42,7 @@ final class TagsType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$separator = (string) $field->get( 'separator', ',' );
 
@@ -78,6 +80,7 @@ final class TagsType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function render_value( Field $field ): string {
 		$value     = $field->value();
 		$separator = (string) $field->get( 'separator', ',' );
@@ -96,6 +99,7 @@ final class TagsType extends AbstractInputType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): array {
 		$separator = (string) $field->get( 'separator', ',' );
 		$parts     = is_array( $value ) ? $value : explode( $separator, (string) $value );
@@ -117,6 +121,7 @@ final class TagsType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function validate( mixed $value, Field $field ): string {
 		$rule = $this->rule( $field );
 
@@ -134,6 +139,7 @@ final class TagsType extends AbstractInputType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		return [
 			'type'  => 'array',
@@ -146,6 +152,7 @@ final class TagsType extends AbstractInputType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

@@ -28,6 +28,7 @@ final class ButtonGroupType extends RadioType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function wrapper_class(): string {
 		// Deliberately not core's .button-group. That rule sets font-size: 0
 		// to collapse the whitespace between inline-block children and
@@ -55,6 +56,7 @@ final class ButtonGroupType extends RadioType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function render_option( Attributes $option, string $label, Field $field ): string {
 		$id = sanitize_key( $field->input_id() . '_' . (string) $option->get( 'value' ) );
 

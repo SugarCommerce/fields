@@ -39,6 +39,7 @@ final class RegionSource implements Source {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function name(): string {
 		return 'region';
 	}
@@ -52,6 +53,7 @@ final class RegionSource implements Source {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function capability(): string {
 		return 'read';
 	}
@@ -71,6 +73,7 @@ final class RegionSource implements Source {
 	 *
 	 * @return array{results: array<int, array{id: string, text: string}>, more: bool}
 	 */
+	#[\Override]
 	public function search( string $term, array $args, int $page, int $limit ): array {
 		$term    = trim( $term );
 		$results = [];

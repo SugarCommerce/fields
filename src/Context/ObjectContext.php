@@ -69,6 +69,7 @@ final class ObjectContext implements Context {
 	 *
 	 * @return mixed
 	 */
+	#[\Override]
 	public function read( int|string $object_id, Field $field ): mixed {
 		$key = $this->key( $field );
 
@@ -90,6 +91,7 @@ final class ObjectContext implements Context {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	public function write( int|string $object_id, Field $field, mixed $value ): void {
 		$this->written[ $this->key( $field ) ] = $value;
 	}
@@ -108,6 +110,7 @@ final class ObjectContext implements Context {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	public function delete( int|string $object_id, Field $field ): void {
 		$this->written[ $this->key( $field ) ] = null;
 	}

@@ -5,11 +5,11 @@
   "description": "The fields' scripts -- every field type's control, the unsaved-changes guard and public forms, and the block editor's sidebar -- built to assets/build with @wordpress/scripts.",
   "license": "GPL-2.0-or-later",
   "scripts": {
-    "build": "wp-scripts build field-kit=./src/js/field-kit.js block-editor=./src/js/block-editor.js --output-path=assets/build",
-    "start": "wp-scripts start field-kit=./src/js/field-kit.js block-editor=./src/js/block-editor.js --output-path=assets/build",
+    "build": "wp-scripts build field-kit=./assets/js/field-kit.js block-editor=./assets/js/block-editor.js --output-path=assets/build",
+    "start": "wp-scripts start field-kit=./assets/js/field-kit.js block-editor=./assets/js/block-editor.js --output-path=assets/build",
     "test:js": "wp-scripts test-unit-js",
-    "lint:js": "wp-scripts lint-js src/js tests/js",
-    "format:js": "wp-scripts format src/js tests/js"
+    "lint:js": "wp-scripts lint-js assets/js tests/js",
+    "format:js": "wp-scripts format assets/js tests/js"
   },
   "devDependencies": {
     "@wordpress/api-fetch": "^8.1.0",

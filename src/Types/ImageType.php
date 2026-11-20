@@ -21,6 +21,7 @@ final class ImageType extends AbstractMediaType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function frame_title( ?Field $field = null ): string {
 		return __( 'Choose an image', 'sugarcommerce' );
 	}
@@ -33,6 +34,7 @@ final class ImageType extends AbstractMediaType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function choose_label( ?Field $field = null ): string {
 		$own = $field ? (string) $field->get( 'choose_label' ) : '';
 
@@ -44,6 +46,7 @@ final class ImageType extends AbstractMediaType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function replace_label( ?Field $field = null ): string {
 		$own = $field ? (string) $field->get( 'replace_label' ) : '';
 
@@ -55,6 +58,7 @@ final class ImageType extends AbstractMediaType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function mime_type(): string {
 		return 'image';
 	}
@@ -70,6 +74,7 @@ final class ImageType extends AbstractMediaType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function render_preview( Field $field ): string {
 		$id = absint( $field->value() );
 
@@ -91,6 +96,7 @@ final class ImageType extends AbstractMediaType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

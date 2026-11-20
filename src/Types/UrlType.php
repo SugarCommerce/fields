@@ -21,6 +21,7 @@ final class UrlType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function input_type(): string {
 		return 'url';
 	}
@@ -33,6 +34,7 @@ final class UrlType extends AbstractInputType {
 	 *
 	 * @return mixed
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): mixed {
 		return esc_url_raw( $this->scalar( $value ) );
 	}

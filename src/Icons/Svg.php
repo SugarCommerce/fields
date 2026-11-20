@@ -48,7 +48,7 @@ final class Svg {
 	 *
 	 * @var array<string, true>
 	 */
-	private const ELEMENTS = [
+	private const array ELEMENTS = [
 		'svg'            => true,
 		'g'              => true,
 		'path'           => true,
@@ -78,7 +78,7 @@ final class Svg {
 	 *
 	 * @var array<string, true>
 	 */
-	private const ATTRIBUTES = [
+	private const array ATTRIBUTES = [
 		'viewbox'             => true,
 		'xmlns'               => true,
 		'id'                  => true,
@@ -136,7 +136,7 @@ final class Svg {
 	 *
 	 * @var array<string, true>
 	 */
-	private const ROOT_ATTRIBUTES = [
+	private const array ROOT_ATTRIBUTES = [
 		'viewbox'           => true,
 		'fill'              => true,
 		'fill-rule'         => true,
@@ -153,7 +153,7 @@ final class Svg {
 	 *
 	 * @var array<string, true>
 	 */
-	private const LINKS = [
+	private const array LINKS = [
 		'href'       => true,
 		'xlink:href' => true,
 	];
@@ -165,7 +165,7 @@ final class Svg {
 	 * icon folder is not an icon, and parsing it on every page that draws one
 	 * is a cost somebody else chose.
 	 */
-	private const MAX_BYTES = 65536;
+	private const int MAX_BYTES = 65536;
 
 	/**
 	 * Clean icon markup into a self-contained `<svg>`.

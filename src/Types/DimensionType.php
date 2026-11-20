@@ -37,7 +37,7 @@ final class DimensionType extends AbstractType {
 	 *
 	 * @var array<string, string[]>
 	 */
-	public const UNITS = [
+	public const array UNITS = [
 		'length' => [ 'px', 'em', 'rem', '%', 'vw', 'vh' ],
 		'size'   => [ 'cm', 'mm', 'm', 'in', 'ft' ],
 		'weight' => [ 'kg', 'g', 'lb', 'oz' ],
@@ -48,6 +48,7 @@ final class DimensionType extends AbstractType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [
 			'units' => 'length',
@@ -63,6 +64,7 @@ final class DimensionType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$value = $this->read( $field->value(), $field );
 		$units = self::units( $field );
@@ -126,6 +128,7 @@ final class DimensionType extends AbstractType {
 	 *
 	 * @return array{value?: int|float, unit?: string}
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): array {
 		$read = $this->read( $value, $field );
 
@@ -250,6 +253,7 @@ final class DimensionType extends AbstractType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		return [
 			'type'       => 'object',
@@ -268,6 +272,7 @@ final class DimensionType extends AbstractType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge( parent::config_keys(), [ 'units', 'unit_default', 'min', 'max', 'step' ] );
 	}

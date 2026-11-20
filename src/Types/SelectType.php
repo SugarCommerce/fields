@@ -25,6 +25,7 @@ class SelectType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$attributes->add_class( 'field-kit__select' );
 
@@ -276,6 +277,7 @@ class SelectType extends AbstractType {
 	 *
 	 * @return mixed
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): mixed {
 		$allowed = $this->allowed_values( $field );
 
@@ -335,6 +337,7 @@ class SelectType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_placeholder(): bool {
 		return true;
 	}
@@ -350,6 +353,7 @@ class SelectType extends AbstractType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		$one = [ 'type' => 'string' ];
 
@@ -376,6 +380,7 @@ class SelectType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_inline(): bool {
 		return true;
 	}
@@ -385,6 +390,7 @@ class SelectType extends AbstractType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

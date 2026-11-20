@@ -30,6 +30,7 @@ final class PostSource implements Source, Creates {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function name(): string {
 		return 'post';
 	}
@@ -39,6 +40,7 @@ final class PostSource implements Source, Creates {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function capability(): string {
 		return 'edit_posts';
 	}
@@ -53,6 +55,7 @@ final class PostSource implements Source, Creates {
 	 *
 	 * @return array{results: array<int, array{id: string, text: string}>, more: bool}
 	 */
+	#[\Override]
 	public function search( string $term, array $args, int $page, int $limit ): array {
 		$post_types = $this->post_type( $args );
 
@@ -149,6 +152,7 @@ final class PostSource implements Source, Creates {
 	 * @return bool
 	 * @since 1.7.0
 	 */
+	#[\Override]
 	public function can_create( array $args ): bool {
 		$object = $this->creatable_type( $args );
 
@@ -176,6 +180,7 @@ final class PostSource implements Source, Creates {
 	 * @return array{id: string, text: string, existing: bool}|WP_Error
 	 * @since 1.7.0
 	 */
+	#[\Override]
 	public function create( string $text, array $args ): array|WP_Error {
 		$object = $this->creatable_type( $args );
 		$title  = trim( $text );

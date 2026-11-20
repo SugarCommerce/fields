@@ -200,11 +200,14 @@ $exempt = UserFields::value( $user_id, 'tax_exempt', false );
 `QuickEditFields::register( $post_types, $fields )` and
 `BulkEditFields::register( $post_types, $fields )` put the inline types on a
 list table's quick and bulk edit panels. Bulk edit leaves a field alone unless
-it is changed — an empty box or a "No change" choice writes nothing.
+it is changed — an empty box or a "No change" choice writes nothing. A
+password or an encrypted field is never put in a row: a row carries every
+value it edits in the page, and the list table writes post meta directly.
 
 A metabox takes `prefix` (applied to every meta key), `capability` (per field
 too), `context`, `priority` and `panels` for tabs; a term or quick edit field
-takes a `permission_callback`; a user field takes `own_capability` for when
+takes a `permission_callback` (and so does a bulk edit one), as well as
+`capability`; a user field takes `own_capability` for when
 someone edits their own profile and `show_on_add` to keep it off the add-user
 screen. A value a rule refuses is not stored, and the post, term or profile
 screen says why when it reloads.
@@ -442,7 +445,10 @@ flow.
 Other arguments: `success`, `action`, `class`, `capability` (empty for
 anyone), `nonce` (`false` only for a page a cache serves to everybody, which a
 nonce would break), `honeypot` (on; a robot that fills it is told it worked
-and nothing happens).
+and nothing happens), `limiter` and `limit` (a
+`SugarCommerce\Security\RateLimit\Limiter` to count sends per visitor, and
+`[ sends, seconds ]`, five in ten minutes by default: past it a send is
+refused before any field is checked or `on_submit` runs).
 
 The markup is the engine's -- labels, fieldsets and legends, descriptions --
 and the stylesheet is `css/fields-front.css`, not wp-admin's: spacing, a
@@ -984,7 +990,7 @@ best match first, with an ETag and `Cache-Control: private, max-age=86400`.
 
 ## The scripts
 
-Plain JavaScript in ES modules (`src/js`), each with one job, built by
+Plain JavaScript in ES modules (`assets/js`), each with one job, built by
 `@wordpress/scripts` into `assets/build` -- one file per script, with an
 `.asset.php` naming the WordPress scripts it imports and a version that
 changes with its contents. `SugarCommerce\Plugin\Assets::register_built_script()`
@@ -1057,64 +1063,46 @@ npm run lint:js
 The build's files are what ship. CI builds again and fails when the result
 differs from what was committed.
 
-## Moving from arraypress/wp-*
+## Security
 
-`arraypress/wp-field-kit` is this package, and `arraypress/wp-register-fields`
-— the post, term, user, quick edit and bulk edit screens built on it — is
-`SugarCommerce\Fields\Screens`. There is one field engine; the screens add no
-types, renderers or sanitisers of their own. `ArrayPress\FieldKit\X` is now
-`SugarCommerce\Fields\X`, `ArrayPress\RegisterFields\X` is
-`SugarCommerce\Fields\Screens\X`, and every class, method, field type,
-configuration key and stored value keeps its name. Text domain `arraypress` is
-now `sugarcommerce`.
+* Forged or cross-user saves: a metabox, term, profile, quick and bulk edit
+  save checks its nonce and `edit_post` / `edit_term` / `edit_user`, then
+  each field's `capability` and `permission_callback`.
+* Writing what the form never offered: only the set's own fields are read; a
+  hidden-by-condition field is cleared, and a disabled, locked or read-only
+  one (a rating drawn for `display`) keeps what it holds.
+* Reading through a picker: a user field shows an address only to someone
+  who may list users, and a post field names a post the user may not read by
+  its number, whatever ids a request stored.
+* Secrets in the page: a password is never drawn back, a licence key is
+  masked, encrypted and password fields are refused for REST, and quick edit
+  carries only the fields, and rows, the user may change.
+* The REST routes: every search, action, lookup and create asks its own
+  capability; searches name only sources registered for a field.
+* Script in a value: every attribute is escaped as it is built, markup goes
+  through `wp_kses_post()` (raw code only with `unfiltered_html`), URLs refuse
+  `javascript:`, `vbscript:` and `data:`, and an SVG icon is rebuilt from an
+  allow-list with no DOCTYPE, entities, scripts or outside references.
+* Public forms: a user-bound nonce, a honeypot, `wp_safe_redirect()`, the
+  admin-only types left out, and a per-visitor limit when given a limiter.
 
-| Old | New |
-|---|---|
-| `ArrayPress\FieldKit\*` | `SugarCommerce\Fields\*` |
-| `ArrayPress\RegisterFields\{PostFields,TermFields,UserFields,QuickEditFields,BulkEditFields,Errors}` | `SugarCommerce\Fields\Screens\*` |
-| `register_post_fields( $id, $config )` | `PostFields::register( $id, $config )` |
-| `get_post_field_value( $post_id, $key, $metabox_id )` | `PostFields::value( $post_id, $key, $metabox_id )` |
-| `get_post_fields( $metabox_id )` | `PostFields::get_metabox_fields( $metabox_id )` |
-| `get_post_field_config( $metabox_id, $key )` | `PostFields::get_field_config( $metabox_id, $key )` |
-| `get_all_post_field_groups()` | `PostFields::get_all_metaboxes()` |
-| `register_term_fields( $taxonomies, $fields )` | `TermFields::register( $taxonomies, $fields )` |
-| `get_term_field_value( $term_id, $key, $fallback )` | `TermFields::value( $term_id, $key, $fallback )` |
-| `get_term_fields( $taxonomy )` | `TermFields::get_instance( $taxonomy )` |
-| `register_user_fields( $fields, $title )` | `UserFields::register( $fields, $title )` |
-| `get_user_field_value( $user_id, $key, $fallback )` | `UserFields::value( $user_id, $key, $fallback )` |
-| `register_quick_edit_fields( $post_types, $fields )` | `QuickEditFields::register( $post_types, $fields )` (returns the instances) |
-| `register_bulk_edit_fields( $post_types, $fields )` | `BulkEditFields::register( $post_types, $fields )` (returns the instances) |
-| `arraypress/wp-countries`, `arraypress/wp-money` | `sugarcommerce/geo` (required), `sugarcommerce/money` (suggested) |
-| filter `arraypress_icon_sets` | `sugarcommerce_icon_sets` (shared by every copy, as before) |
-| class `arraypress-icon` (`Icons::ICON_CLASS`) | `sugarcommerce-icon` |
-| filter `field_kit_preset_options` | `sugarcommerce_fields_preset_options` (`Runtime::hook( 'preset_options' )`) |
-| REST `field-kit/v1/search`, `/action`, `/icons` | `sugarcommerce-fields/v1/…` (`Runtime::rest_namespace()`) |
-| script and style handle `field-kit` | `sugarcommerce-fields` (`Runtime::handle()`); prefixed builds `{prefix}-sugarcommerce-fields` |
-| transient and key prefix `field_kit_` (save errors) | `sugarcommerce_fields_` (`Runtime::key()`) |
-| REST error codes `field_kit_forbidden`, `_unknown_source`, `_unknown_action`, `_unknown_icon_set` | `sugarcommerce_fields_…` |
-| `window.ArrayPressFieldKit`, `window.ArrayPressFieldKitModules` | `window.SugarCommerceFields`, `window.SugarCommerceFieldsModules` |
-| `EncryptedContext`'s own AES-256-GCM and key | `sugarcommerce/security`'s `Encryption\Cipher` (required); old `fkenc:` values read, new ones are `fkenc:v3:` under a per-purpose key (`new EncryptedContext( $inner, $purpose )`, or `'encrypted' => 'purpose'` on a field) |
-| `Assets`' own path and URL guessing, `new Assets( $path, $url )` | `SugarCommerce\Plugin\Assets` (required), the family's one asset resolver; `new Assets()` keeps the handles and configuration, and the `$path` and `$url` arguments are gone (nothing passed them) |
-| field types `providers`, `gradient`, `dimensions`, `link`, `oembed`, `nav_menu` (and the JS modules `Providers`, `Oembed`) | removed: nothing used them (SugarCart is Stripe-only, so no gateway list). Use `repeater` for rows, `color`, `url`, `select` with your own options, or a `custom` field |
-| field type `flexible`: rows stored with their layout under `_layout`, mixed in with the values; `max_rows` only | `flexible`, rebuilt: rows are `[ 'layout' => …, 'values' => [ … ] ]`; per-layout `min`, `max` and `row_title`, Duplicate, `min_rows` checked on the server, `FlexibleType::display()` for the front |
-| field type `gallery`: `max_items`, any `mime_type`, files drawn as a list | `gallery`, rebuilt: images only (several files are `files`), `min` and `max`, the attachment's alt text on each tile, `GalleryType::images()` for the front |
-| `Glyphs` key `link` | removed with the `link` type |
-| icon set `wordpress`: 344 bundled `@wordpress/icons` 20.0.0 files, `Icons::WORDPRESS_ICONS_VERSION` | core's own icon library (88 icons) from WP 7.1's Icons API. A stored `wordpress:name` outside core's set no longer validates or draws; `cart`, `star-filled` and the like are in it, drawn as core draws them |
-| `SugarCommerce\Fields\Support\Color` (`hex`, `rgb`, `contrast`, `ratio`, `readable`) | `SugarCommerce\Text\Display\Color` (required), same methods and WCAG rule; `##fff` with two hashes is no longer read as a colour |
-| `vendor/arraypress/wp-field-kit/bin/verify-docs.php` | `vendor/sugarcommerce/fields/bin/verify-docs.php`; `--calls=` also takes `PostFields::register` and the like |
+## Layout
 
-Kept as they were, because renaming them would only churn every stylesheet
-and script that targets them: the `field-kit__*` CSS classes, the
-`assets/css/field-kit.css` file name (the script is built to
-`assets/build/field-kit.js` now), the quick and bulk edit column
-`field-kit-inline`, and bulk edit's `__field_kit_no_change__` and
-`__field_kit_clear__` sentinels. A site that filtered the old names, or
-targeted the old icon class, needs the new one.
-
-A Strauss prefix that itself starts `SugarCommerce\` keeps all its segments --
-`SugarCommerce\Playground\Vendor\` gives
-`sugarcommerce-playground-vendor-sugarcommerce-fields/v1` -- so a plugin of the
-family is never taken for an unprefixed copy.
+* At the top: `FieldSet` (a set of fields on one store), `Form` (a public
+  form), `Field`, `Registry`, `Renderer`, `Attributes`, `Conditions`,
+  `Value`, `MetaRegistrar`, `Assets`.
+* `src/Types/`: one class per field type, on the abstracts beside them.
+* `src/Context/`: where values live (post, term, user and comment meta, an
+  option, an array, a constant, and the encrypting decorator).
+* `src/Screens/`: posts, terms, users, quick and bulk edit, the block
+  editor's sidebar. `src/Rest/`, `src/Search/` and `src/Actions/`: the
+  routes, the search sources and the buttons' actions. `src/Icons/`: icon
+  sets and the SVG cleaner. `src/Support/`: shared pieces of markup and rules.
+* `src/Traits/<Class>/`: the jobs of the larger classes, one trait each
+  (`FieldSet`, `Form`, `PostFields`, `TermFields`, `UserFields`,
+  `BlockEditorPanel`, `RepeaterType`, `FlexibleType`, `AddressType`,
+  `AbstractRelationalType`, `EncryptedContext`).
+* `assets/js/`: the scripts' sources, built to `assets/build/`.
 
 ## Requirements
 

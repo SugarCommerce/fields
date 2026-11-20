@@ -113,7 +113,7 @@ final class GlyphsTest extends TestCase {
 		$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $root . '/src', \FilesystemIterator::SKIP_DOTS ) );
 
 		foreach ( $files as $file ) {
-			if ( str_contains( $file->getPathname(), '/src/Icons/' ) || str_contains( $file->getPathname(), '/src/js/' ) || str_ends_with( $file->getPathname(), '/IconType.php' ) ) {
+			if ( str_contains( $file->getPathname(), '/src/Icons/' ) || str_ends_with( $file->getPathname(), '/IconType.php' ) ) {
 				continue;
 			}
 

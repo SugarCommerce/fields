@@ -49,7 +49,7 @@ final class Button {
 	 *
 	 * @var array<string, string>
 	 */
-	private const VARIANTS = [
+	private const array VARIANTS = [
 		'primary'     => 'button button-primary',
 		'secondary'   => 'button button-secondary',
 		'link'        => 'button-link',
@@ -66,7 +66,7 @@ final class Button {
 	 *
 	 * @var string[]
 	 */
-	private const SIZES = [ 'small', 'large', 'hero', 'compact' ];
+	private const array SIZES = [ 'small', 'large', 'hero', 'compact' ];
 
 	/**
 	 * Render a button.

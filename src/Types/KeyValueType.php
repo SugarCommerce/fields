@@ -31,6 +31,7 @@ final class KeyValueType extends RepeaterType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function id(): string {
 		return 'key_value';
 	}
@@ -40,6 +41,7 @@ final class KeyValueType extends RepeaterType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return array_merge(
 			parent::defaults(),

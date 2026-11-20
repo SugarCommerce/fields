@@ -44,7 +44,7 @@ final class Icons {
 	/**
 	 * The filter every copy of the kit reads its sets through.
 	 */
-	public const FILTER = 'sugarcommerce_icon_sets';
+	public const string FILTER = 'sugarcommerce_icon_sets';
 
 	/**
 	 * The class render() puts on every icon it draws, SVG or font.
@@ -52,12 +52,12 @@ final class Icons {
 	 * Fixed, not derived from the namespace, so a stylesheet written for one
 	 * copy of the kit sizes the icons any other copy draws.
 	 */
-	public const ICON_CLASS = 'sugarcommerce-icon';
+	public const string ICON_CLASS = 'sugarcommerce-icon';
 
 	/**
 	 * The Heroicons release in assets/icons/heroicons.
 	 */
-	public const HEROICONS_VERSION = '2.2.0';
+	public const string HEROICONS_VERSION = '2.2.0';
 
 	/**
 	 * Sets registered from code, as their arguments, by id.

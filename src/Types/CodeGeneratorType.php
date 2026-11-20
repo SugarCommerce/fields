@@ -41,7 +41,7 @@ final class CodeGeneratorType extends AbstractInputType {
 	 *
 	 * @var array<string, string>
 	 */
-	public const ALPHABETS = [
+	public const array ALPHABETS = [
 		'alphanumeric_upper' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
 		'alphanumeric'       => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
 		'alpha_upper'        => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
@@ -54,6 +54,7 @@ final class CodeGeneratorType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function id(): string {
 		return 'code_generator';
 	}
@@ -63,6 +64,7 @@ final class CodeGeneratorType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function input_type(): string {
 		return 'text';
 	}
@@ -72,6 +74,7 @@ final class CodeGeneratorType extends AbstractInputType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [
 			'length'         => 8,
@@ -91,6 +94,7 @@ final class CodeGeneratorType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$attributes->set( 'type', 'text' );
 		$attributes->set( 'value', (string) $field->value() );
@@ -132,6 +136,7 @@ final class CodeGeneratorType extends AbstractInputType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_inline(): bool {
 		return false;
 	}
@@ -141,6 +146,7 @@ final class CodeGeneratorType extends AbstractInputType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

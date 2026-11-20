@@ -42,13 +42,14 @@ final class LocationType extends AbstractType implements Lookup {
 	 * Decimal places kept: about a centimetre, well past what any geocoder
 	 * knows.
 	 */
-	private const PLACES = 7;
+	private const int PLACES = 7;
 
 	/**
 	 * Defaults.
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [ 'map' => true ];
 	}
@@ -61,6 +62,7 @@ final class LocationType extends AbstractType implements Lookup {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$value = $this->sanitize( $field->value(), $field );
 		$id    = (string) $attributes->get( 'id', '' );
@@ -187,6 +189,7 @@ final class LocationType extends AbstractType implements Lookup {
 	 *
 	 * @return array{address?: string, lat?: float, lng?: float}
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): array {
 		if ( ! is_array( $value ) ) {
 			return [];
@@ -217,6 +220,7 @@ final class LocationType extends AbstractType implements Lookup {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function validate( mixed $value, Field $field ): string {
 		if ( ! is_array( $value ) || ! isset( $value['lat'], $value['lng'] ) ) {
 			return parent::validate( $value, $field );
@@ -240,6 +244,7 @@ final class LocationType extends AbstractType implements Lookup {
 	 *
 	 * @return callable|null
 	 */
+	#[\Override]
 	public function lookup_handler( array $config ): ?callable {
 		$geocoder = $config['geocoder'] ?? null;
 
@@ -305,6 +310,7 @@ final class LocationType extends AbstractType implements Lookup {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function lookup_capability( array $config ): string {
 		return (string) ( $config['lookup_capability'] ?? 'edit_posts' );
 	}
@@ -329,6 +335,7 @@ final class LocationType extends AbstractType implements Lookup {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		return [
 			'type'       => 'object',
@@ -345,6 +352,7 @@ final class LocationType extends AbstractType implements Lookup {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_placeholder(): bool {
 		return true;
 	}
@@ -354,6 +362,7 @@ final class LocationType extends AbstractType implements Lookup {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge( parent::config_keys(), [ 'geocoder', 'map' ] );
 	}

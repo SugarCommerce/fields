@@ -30,6 +30,7 @@ final class HtmlType extends AbstractLayoutType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$content = $field->get( 'html', $field->get( 'content', '' ) );
 
@@ -48,6 +49,7 @@ final class HtmlType extends AbstractLayoutType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

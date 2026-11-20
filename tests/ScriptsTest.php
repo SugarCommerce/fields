@@ -19,7 +19,7 @@ use SugarCommerce\Plugin\Assets as Files;
 require_once __DIR__ . '/stubs/Assets.php';
 
 /**
- * The scripts are built from src/js into assets/build, and the build is
+ * The scripts are built from assets/js into assets/build, and the build is
  * committed: Composer and Strauss copy a package as it is, with nothing run
  * at install. These keep the build and the PHP that loads it in step.
  */
@@ -86,14 +86,14 @@ final class ScriptsTest extends TestCase {
 	}
 
 	/**
-	 * The sources ship beside the build, and nothing loads a script from
-	 * the old hand-written folder.
+	 * The sources ship beside the build, in assets/js -- src/ is PHP only --
+	 * and no PHP loads a script by a hand-written path.
 	 */
 	public function test_nothing_loads_the_old_scripts(): void {
-		$this->assertDirectoryDoesNotExist( dirname( __DIR__ ) . '/assets/js' );
+		$this->assertDirectoryDoesNotExist( dirname( __DIR__ ) . '/src/js' );
 
 		foreach ( array_keys( self::ENTRIES ) as $entry ) {
-			$this->assertFileExists( dirname( __DIR__ ) . '/src/js/' . $entry . '.js' );
+			$this->assertFileExists( dirname( __DIR__ ) . '/assets/js/' . $entry . '.js' );
 		}
 
 		$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( dirname( __DIR__ ) . '/src', \FilesystemIterator::SKIP_DOTS ) );

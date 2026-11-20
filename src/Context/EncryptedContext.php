@@ -12,12 +12,11 @@ declare( strict_types=1 );
 
 namespace SugarCommerce\Fields\Context;
 
-use RuntimeException;
 use SugarCommerce\Fields\Contracts\Context;
 use SugarCommerce\Fields\Contracts\Flushable;
 use SugarCommerce\Fields\Contracts\Registrable;
 use SugarCommerce\Fields\Field;
-use SugarCommerce\Security\Encryption\Cipher;
+use SugarCommerce\Fields\Traits\EncryptedContext\Sealing;
 
 /**
  * Encrypts fields marked `encrypted` at rest, whatever they are stored in.
@@ -51,12 +50,14 @@ use SugarCommerce\Security\Encryption\Cipher;
  */
 final class EncryptedContext implements Context, Flushable, Registrable {
 
+	use Sealing;
+
 	/**
 	 * Marker identifying a value this class wrote, before it encoded types.
 	 *
 	 * The payload is the plain string. Read only — nothing writes it now.
 	 */
-	private const PREFIX = 'fkenc:';
+	private const string PREFIX = 'fkenc:';
 
 	/**
 	 * Marker identifying a value whose payload is JSON.
@@ -66,7 +67,7 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	 * string and an int respectively, and guessing would silently change the
 	 * type of every stored number.
 	 */
-	private const PREFIX_JSON = 'fkenc:j:';
+	private const string PREFIX_JSON = 'fkenc:j:';
 
 	/**
 	 * Marker identifying a JSON payload sealed under a purpose's own key.
@@ -75,12 +76,12 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	 * payload carries no word about its key, and a reader has to know which
 	 * value is on the shared key to know which to move.
 	 */
-	private const PREFIX_PURPOSE = 'fkenc:v3:';
+	private const string PREFIX_PURPOSE = 'fkenc:v3:';
 
 	/**
 	 * The purpose a context seals for when it is not told one.
 	 */
-	public const DEFAULT_PURPOSE = 'sugarcommerce/fields';
+	public const string DEFAULT_PURPOSE = 'sugarcommerce/fields';
 
 	/**
 	 * The constants this class once made its own key from, in that order.
@@ -89,7 +90,7 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	 * sha256 of these joined; the cipher tries that key when the site's
 	 * fails. Nothing is written under it.
 	 */
-	private const OLD_KEY_CONSTANTS = [ 'LOGGED_IN_KEY', 'LOGGED_IN_SALT', 'AUTH_KEY', 'SECURE_AUTH_KEY' ];
+	private const array OLD_KEY_CONSTANTS = [ 'LOGGED_IN_KEY', 'LOGGED_IN_SALT', 'AUTH_KEY', 'SECURE_AUTH_KEY' ];
 
 	/**
 	 * The cipher for each purpose, once made; false when it cannot be.
@@ -135,6 +136,7 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	 *
 	 * @return mixed
 	 */
+	#[\Override]
 	public function read( int|string $object_id, Field $field ): mixed {
 		$value = $this->inner->read( $object_id, $field );
 
@@ -174,6 +176,7 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	public function write( int|string $object_id, Field $field, mixed $value ): void {
 		// Asked for and not possible is a refusal, not a downgrade. Storing
 		// the plaintext because OpenSSL or the salts were missing is the one
@@ -237,6 +240,7 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	public function delete( int|string $object_id, Field $field ): void {
 		// An unreadable secret is not an empty one. The form showed a blank
 		// because the value would not decrypt -- the salts were rotated, or
@@ -301,71 +305,6 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	}
 
 	/**
-	 * Whether a stored value is ciphertext this class wrote before purposes:
-	 * `fkenc:j:` on the shared key, or `fkenc:` on the key this package made
-	 * before the move.
-	 *
-	 * Both still read. For a one-off move to per-purpose keys: find the
-	 * values this is true of and write each back -- `write( $id, $field,
-	 * read( $id, $field ) )` through the context, or {@see self::reseal()}
-	 * on the raw stored string.
-	 *
-	 * @param mixed $value The value as stored.
-	 *
-	 * @return bool
-	 */
-	public static function is_legacy( mixed $value ): bool {
-		return self::is_ciphertext( $value ) && ! str_starts_with( (string) $value, self::PREFIX_PURPOSE );
-	}
-
-	/**
-	 * A stored value, sealed again under a purpose's own key.
-	 *
-	 * Reads any of the formats this class has written, under any key it has
-	 * used, and returns `fkenc:v3:` for the purpose. A plain value, never
-	 * encrypted, is encrypted. Safe to run twice.
-	 *
-	 *     $stored = EncryptedContext::reseal( $stored, 'my-plugin/stripe' );
-	 *
-	 * @param string $stored  The value as stored.
-	 * @param string $purpose The purpose it belongs to.
-	 *
-	 * @return string|null The new stored value, or null when it does not
-	 *                     open (or encryption is not possible here) -- stop
-	 *                     rather than overwrite it.
-	 */
-	public static function reseal( string $stored, string $purpose ): ?string {
-		$purpose = self::clean_purpose( $purpose ) ?: self::DEFAULT_PURPOSE;
-
-		if ( ! self::available() ) {
-			return null;
-		}
-
-		if ( ! self::is_ciphertext( $stored ) ) {
-			$encoded = wp_json_encode( $stored );
-
-			return false === $encoded ? null : self::encrypt( $encoded, $purpose );
-		}
-
-		$plain = self::decrypt( $stored, $purpose );
-
-		if ( null === $plain ) {
-			return null;
-		}
-
-		// A v0 payload is the string itself; the others are JSON already.
-		if ( ! self::is_json( $stored ) ) {
-			$plain = wp_json_encode( $plain );
-
-			if ( false === $plain ) {
-				return null;
-			}
-		}
-
-		return self::encrypt( $plain, $purpose );
-	}
-
-	/**
 	 * Whether a stored value is ciphertext this class cannot read.
 	 *
 	 * @param mixed  $stored  The value as stored.
@@ -397,149 +336,6 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	}
 
 	/**
-	 * Whether a value is something this class wrote.
-	 *
-	 * Public because the meta registrar has to know: `update_metadata()`
-	 * runs a registered sanitizer on whatever it is handed, and a number
-	 * type asked to sanitize ciphertext returns zero.
-	 *
-	 * @param mixed $value The value as stored.
-	 *
-	 * @return bool
-	 */
-	public static function is_ciphertext( mixed $value ): bool {
-		return is_string( $value ) && str_starts_with( $value, self::PREFIX );
-	}
-
-	/**
-	 * Whether encryption is possible in this environment.
-	 *
-	 * @return bool
-	 */
-	public static function available(): bool {
-		return null !== self::cipher( self::DEFAULT_PURPOSE );
-	}
-
-	/**
-	 * The cipher for a purpose: its own key derived from the site's, and
-	 * the shared key and the key this class used before, to read with.
-	 *
-	 * @param string $purpose The purpose.
-	 *
-	 * @return Cipher|null Null without OpenSSL's AES-256-GCM or any key
-	 *                     material.
-	 */
-	private static function cipher( string $purpose ): ?Cipher {
-		if ( ! isset( self::$ciphers[ $purpose ] ) ) {
-			try {
-				self::$ciphers[ $purpose ] = ( new Cipher( 'fields', null, $purpose ) )->also_open( self::old_key_material() );
-			} catch ( RuntimeException ) {
-				self::$ciphers[ $purpose ] = false;
-			}
-		}
-
-		return self::$ciphers[ $purpose ] ?: null;
-	}
-
-	/**
-	 * Forget the ciphers, so the next ones are made from the salts as they
-	 * are now. For tests that change them.
-	 *
-	 * @return void
-	 */
-	public static function reset(): void {
-		self::$ciphers = [];
-	}
-
-	/**
-	 * What this class hashed into its key before the move.
-	 *
-	 * The constants that are set, joined; or, on a site that defines none
-	 * of them, three of core's salts, as it used then. A site on the
-	 * wp-config-sample.php placeholders gets the placeholders, which is a
-	 * public key -- harmless to try, since the site's key is no longer made
-	 * from them, and it lets those values be read and saved again.
-	 *
-	 * @return string
-	 */
-	private static function old_key_material(): string {
-		$material = '';
-
-		foreach ( self::OLD_KEY_CONSTANTS as $constant ) {
-			$material .= defined( $constant ) ? (string) constant( $constant ) : '';
-		}
-
-		if ( '' === $material && function_exists( 'wp_salt' ) ) {
-			$material = wp_salt( 'auth' ) . wp_salt( 'secure_auth' ) . wp_salt( 'logged_in' );
-		}
-
-		return $material;
-	}
-
-	/**
-	 * Encrypt a JSON payload for a purpose.
-	 *
-	 * @param string $json    The value, JSON-encoded.
-	 * @param string $purpose The purpose.
-	 *
-	 * @return string|null Null when encryption failed.
-	 */
-	private static function encrypt( string $json, string $purpose ): ?string {
-		$sealed = self::cipher( $purpose )?->seal( $json );
-
-		return is_string( $sealed ) ? self::PREFIX_PURPOSE . $sealed : null;
-	}
-
-	/**
-	 * Whether a stored value's payload is JSON rather than the bare string.
-	 *
-	 * @param string $value Stored value.
-	 *
-	 * @return bool
-	 */
-	private static function is_json( string $value ): bool {
-		return str_starts_with( $value, self::PREFIX_PURPOSE ) || str_starts_with( $value, self::PREFIX_JSON );
-	}
-
-	/**
-	 * Decrypt a value.
-	 *
-	 * A value without the marker is returned as it is: a field that was
-	 * marked encrypted after it already held something must not lose it.
-	 *
-	 * @param string $value   Stored value.
-	 * @param string $purpose The purpose it was sealed for.
-	 *
-	 * @return string|null Null when the value is unreadable.
-	 */
-	private static function decrypt( string $value, string $purpose ): ?string {
-		// Longest markers first: both JSON ones begin with the legacy one,
-		// so testing in the other order strips too little and the payload
-		// no longer base64-decodes.
-		$prefix = '';
-
-		foreach ( [ self::PREFIX_PURPOSE, self::PREFIX_JSON, self::PREFIX ] as $marker ) {
-			if ( str_starts_with( $value, $marker ) ) {
-				$prefix = $marker;
-				break;
-			}
-		}
-
-		if ( '' === $prefix ) {
-			return $value;
-		}
-
-		// A named cipher opens a payload under the purpose's key first, then
-		// under the shared key and the old one, which is where a `fkenc:j:`
-		// or a `fkenc:` value is. GCM authenticates: a payload that was cut
-		// short, changed, or made under none of them does not open, and
-		// nothing derived from it is returned.
-		$plain = self::cipher( $purpose )?->open( substr( $value, strlen( $prefix ) ) );
-
-		return is_string( $plain ) ? $plain : null;
-	}
-
-	/**
 	 * Flush the wrapped store.
 	 *
 	 * A decorator is what the field set holds, so if it did not pass this on
@@ -547,6 +343,7 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	public function save(): void {
 		if ( $this->inner instanceof Flushable ) {
 			$this->inner->save();
@@ -562,6 +359,7 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function meta_type(): string {
 		return $this->inner instanceof Registrable ? $this->inner->meta_type() : '';
 	}

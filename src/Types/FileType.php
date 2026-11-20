@@ -22,6 +22,7 @@ class FileType extends AbstractMediaType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function frame_title( ?Field $field = null ): string {
 		return __( 'Choose a file', 'sugarcommerce' );
 	}
@@ -31,6 +32,7 @@ class FileType extends AbstractMediaType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function choose_label( ?Field $field = null ): string {
 		return __( 'Choose file', 'sugarcommerce' );
 	}
@@ -53,6 +55,7 @@ class FileType extends AbstractMediaType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		if ( ! $field->get( 'inline', false ) ) {
 			return parent::render( $field, $attributes );
@@ -147,6 +150,7 @@ class FileType extends AbstractMediaType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function render_preview( Field $field ): string {
 		$name = $this->filename( $field );
 
@@ -165,6 +169,7 @@ class FileType extends AbstractMediaType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_placeholder(): bool {
 		return true;
 	}

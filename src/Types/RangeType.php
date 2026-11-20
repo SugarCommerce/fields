@@ -26,6 +26,7 @@ final class RangeType extends NumberType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function input_type(): string {
 		return 'range';
 	}
@@ -35,6 +36,7 @@ final class RangeType extends NumberType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_placeholder(): bool {
 		return false;
 	}
@@ -44,6 +46,7 @@ final class RangeType extends NumberType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [
 			'min'  => 0,
@@ -95,6 +98,7 @@ final class RangeType extends NumberType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$unit  = (string) $field->get( 'unit', '' );
 		$value = $this->current_value( $field );
@@ -124,6 +128,7 @@ final class RangeType extends NumberType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

@@ -26,6 +26,7 @@ final class CodeType extends TextareaType implements AdminOnly {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [
 			'rows'     => 10,
@@ -41,6 +42,7 @@ final class CodeType extends TextareaType implements AdminOnly {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$attributes->add_class( 'field-kit__code' );
 		$attributes->set( 'data-language', (string) $field->get( 'language', 'text/html' ) );
@@ -65,6 +67,7 @@ final class CodeType extends TextareaType implements AdminOnly {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): string {
 		$value = $this->scalar( $value );
 
@@ -81,6 +84,7 @@ final class CodeType extends TextareaType implements AdminOnly {
 	 *
 	 * @return array{scripts: string[], styles: string[], code_editors: string[]}
 	 */
+	#[\Override]
 	public function dependencies(): array {
 		return [
 			'scripts'      => [],
@@ -117,6 +121,7 @@ final class CodeType extends TextareaType implements AdminOnly {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_inline(): bool {
 		return false;
 	}
@@ -126,6 +131,7 @@ final class CodeType extends TextareaType implements AdminOnly {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

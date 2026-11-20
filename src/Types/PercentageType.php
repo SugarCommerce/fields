@@ -30,6 +30,7 @@ final class PercentageType extends NumberType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [
 			'min'    => 0,

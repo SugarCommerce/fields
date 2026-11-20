@@ -36,7 +36,7 @@ final class CoreIcons {
 	 *
 	 * @since 1.5.0
 	 */
-	public const COLLECTION = 'core';
+	public const string COLLECTION = 'core';
 
 	/**
 	 * Every icon in core's collection, by its name without the collection.

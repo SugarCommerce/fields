@@ -33,6 +33,7 @@ abstract class AbstractCodeType extends SelectType {
 	 *
 	 * @return mixed
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): mixed {
 		return parent::sanitize( $this->uppercase( $value ), $field );
 	}
@@ -67,6 +68,7 @@ abstract class AbstractCodeType extends SelectType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	protected function uses_enhanced_ui( Field $field ): bool {
 		return (bool) $field->get( 'enhanced', true );
 	}
@@ -76,6 +78,7 @@ abstract class AbstractCodeType extends SelectType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge( parent::config_keys(), [ 'enhanced' ] );
 	}

@@ -43,13 +43,14 @@ final class EmbedType extends AbstractInputType {
 	 *
 	 * The platforms the embeds package can draw a player for.
 	 */
-	public const PLATFORMS = [ 'youtube', 'vimeo', 'soundcloud', 'spotify', 'bandcamp' ];
+	public const array PLATFORMS = [ 'youtube', 'vimeo', 'soundcloud', 'spotify', 'bandcamp' ];
 
 	/**
 	 * The type's id.
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function id(): string {
 		return 'embed';
 	}
@@ -59,6 +60,7 @@ final class EmbedType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function input_type(): string {
 		return 'url';
 	}
@@ -68,6 +70,7 @@ final class EmbedType extends AbstractInputType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [ 'preview' => true ];
 	}
@@ -80,6 +83,7 @@ final class EmbedType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$platforms = self::platforms( (array) $field->get( 'platforms', [] ) );
 
@@ -112,6 +116,7 @@ final class EmbedType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): string {
 		return esc_url_raw( trim( $this->scalar( $value ) ) );
 	}
@@ -124,6 +129,7 @@ final class EmbedType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function validate( mixed $value, Field $field ): string {
 		$message = parent::validate( $value, $field );
 
@@ -231,6 +237,7 @@ final class EmbedType extends AbstractInputType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_inline(): bool {
 		return false;
 	}
@@ -240,6 +247,7 @@ final class EmbedType extends AbstractInputType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge( parent::config_keys(), [ 'platforms', 'preview' ] );
 	}

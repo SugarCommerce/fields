@@ -86,6 +86,7 @@ abstract class AbstractMediaType extends AbstractType implements AdminOnly {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$attributes->set( 'type', 'hidden' );
 		$attributes->set( 'value', (string) $field->value() );
@@ -295,6 +296,7 @@ abstract class AbstractMediaType extends AbstractType implements AdminOnly {
 	 *
 	 * @return mixed
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): mixed {
 		$id = absint( $value );
 
@@ -311,6 +313,7 @@ abstract class AbstractMediaType extends AbstractType implements AdminOnly {
 	 *
 	 * @return array{scripts: string[], styles: string[]}
 	 */
+	#[\Override]
 	public function dependencies(): array {
 		return [
 			'scripts' => [ 'media-upload', 'media-views' ],
@@ -325,6 +328,7 @@ abstract class AbstractMediaType extends AbstractType implements AdminOnly {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		return [ 'type' => [ 'integer', 'string' ] ];
 	}
@@ -334,6 +338,7 @@ abstract class AbstractMediaType extends AbstractType implements AdminOnly {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

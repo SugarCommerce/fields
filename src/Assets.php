@@ -76,7 +76,7 @@ final class Assets {
 		PackageAssets::register_style( Runtime::handle( 'front' ), __FILE__, 'css/fields-front.css', [ Runtime::handle( 'controls' ) ] );
 
 		// The script, from its build (assets/build/field-kit.js, from
-		// src/js): its manifest names what it imports -- wp-api-fetch, which
+		// assets/js): its manifest names what it imports -- wp-api-fetch, which
 		// carries the REST requests, so a nonce that ran out while the screen
 		// was open is renewed rather than answered with a 403, and
 		// wp-dom-ready. No jquery: the one jQuery plugin it drives, core's

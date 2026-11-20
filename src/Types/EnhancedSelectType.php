@@ -37,6 +37,7 @@ final class EnhancedSelectType extends SelectType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function id(): string {
 		return 'enhanced_select';
 	}
@@ -48,6 +49,7 @@ final class EnhancedSelectType extends SelectType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	protected function uses_enhanced_ui( Field $field ): bool {
 		return true;
 	}

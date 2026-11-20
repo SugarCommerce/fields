@@ -35,6 +35,7 @@ final class CountryType extends AbstractCodeType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return array_merge(
 			parent::defaults(),
@@ -58,6 +59,7 @@ final class CountryType extends AbstractCodeType {
 	 *
 	 * @return mixed
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): mixed {
 		$value = parent::sanitize( $value, $field );
 
@@ -85,6 +87,7 @@ final class CountryType extends AbstractCodeType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge( parent::config_keys(), [ 'continents' ] );
 	}

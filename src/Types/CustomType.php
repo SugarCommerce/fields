@@ -31,6 +31,7 @@ final class CustomType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$callback = $field->get( 'render_callback' );
 
@@ -122,6 +123,7 @@ final class CustomType extends AbstractType {
 	 *
 	 * @return mixed
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): mixed {
 		$callback = $field->get( 'sanitize_callback' );
 
@@ -141,6 +143,7 @@ final class CustomType extends AbstractType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

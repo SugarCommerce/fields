@@ -21,6 +21,7 @@ final class DatetimeType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	protected function input_type(): string {
 		return 'datetime-local';
 	}
@@ -33,6 +34,7 @@ final class DatetimeType extends AbstractInputType {
 	 *
 	 * @return mixed
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): mixed {
 		return sanitize_text_field( $this->scalar( $value ) );
 	}
@@ -42,6 +44,7 @@ final class DatetimeType extends AbstractInputType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function id(): string {
 		return 'datetime';
 	}

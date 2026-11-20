@@ -30,6 +30,7 @@ class RadioType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$name     = (string) $attributes->get( 'name' );
 		$current  = (string) $field->value();
@@ -111,6 +112,7 @@ class RadioType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): string {
 		$value   = sanitize_text_field( (string) $value );
 		$allowed = array_map( 'strval', array_keys( $field->options() ) );
@@ -123,6 +125,7 @@ class RadioType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function is_grouped(): bool {
 		return true;
 	}
@@ -134,6 +137,7 @@ class RadioType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_inline(): bool {
 		return true;
 	}
@@ -143,6 +147,7 @@ class RadioType extends AbstractType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

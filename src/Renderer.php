@@ -47,7 +47,7 @@ final class Renderer {
 	 *
 	 * @var array<string, string>
 	 */
-	private const WIDTHS = [
+	private const array WIDTHS = [
 		'half'       => 'field-kit__field--half',
 		'third'      => 'field-kit__field--third',
 		'two-thirds' => 'field-kit__field--two-thirds',

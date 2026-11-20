@@ -10,7 +10,7 @@ declare( strict_types=1 );
 namespace SugarCommerce\Fields\Tests;
 
 /**
- * What the kit's script is made of: the modules under src/js, which the
+ * What the kit's script is made of: the modules under assets/js, which the
  * build (assets/build) is made from.
  *
  * A test that reads the script to check it against the markup -- an
@@ -25,13 +25,13 @@ final class Scripts {
 	 * @return string
 	 */
 	public static function root(): string {
-		return dirname( __DIR__ ) . '/src/js';
+		return dirname( __DIR__ ) . '/assets/js';
 	}
 
 	/**
 	 * One module's source, or every one the field kit's entry is built from.
 	 *
-	 * @param string $module A module's path under src/js, without `.js`, such as `fields/icon-picker`; '' for all.
+	 * @param string $module A module's path under assets/js, without `.js`, such as `fields/icon-picker`; '' for all.
 	 *
 	 * @return string
 	 */

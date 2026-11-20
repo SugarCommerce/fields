@@ -104,8 +104,9 @@ final class ConfigKeysTest extends TestCase {
 	/**
 	 * Every configuration key a type's source reads off a field.
 	 *
-	 * The whole inheritance chain: an abstract's reads are the concrete
-	 * type's reads too, and its keys come through parent::config_keys().
+	 * The whole inheritance chain, and the traits each class is split into:
+	 * an abstract's reads are the concrete type's reads too, and its keys
+	 * come through parent::config_keys().
 	 *
 	 * And the preset its options default to. A country field says
 	 * `'options' => 'countries'`, and it is the countries preset -- handed
@@ -125,6 +126,11 @@ final class ConfigKeysTest extends TestCase {
 
 		for ( $class = new ReflectionClass( $type ); $class && $class->getFileName(); $class = $class->getParentClass() ) {
 			$read = array_merge( $read, self::keys_read_in( (string) file_get_contents( (string) $class->getFileName() ) ) );
+
+			// A class split into traits reads in them as well.
+			foreach ( $class->getTraits() as $trait ) {
+				$read = array_merge( $read, self::keys_read_in( (string) file_get_contents( (string) $trait->getFileName() ) ) );
+			}
 		}
 
 		$preset = $type->defaults()['options'] ?? null;

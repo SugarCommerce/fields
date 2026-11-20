@@ -23,6 +23,7 @@ final class PageType extends PostType {
 	 *
 	 * @return array<string, scalar>
 	 */
+	#[\Override]
 	protected function search_args( Field $field ): array {
 		return [ 'post_type' => 'page' ];
 	}

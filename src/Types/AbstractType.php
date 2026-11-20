@@ -56,6 +56,7 @@ abstract class AbstractType implements FieldType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	abstract public function render( Field $field, Attributes $attributes ): string;
 
 	/**
@@ -66,6 +67,7 @@ abstract class AbstractType implements FieldType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function id(): string {
 		$short = substr( static::class, strrpos( static::class, '\\' ) + 1 );
 		$short = preg_replace( '/Type$/', '', $short ) ?? $short;
@@ -78,6 +80,7 @@ abstract class AbstractType implements FieldType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [];
 	}
@@ -93,6 +96,7 @@ abstract class AbstractType implements FieldType {
 	 *
 	 * @return mixed
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): mixed {
 		return sanitize_text_field( $this->scalar( $value ) );
 	}
@@ -129,6 +133,7 @@ abstract class AbstractType implements FieldType {
 	 * @return string An empty string when the value is acceptable, otherwise the message.
 	 * @since 1.2.0
 	 */
+	#[\Override]
 	public function validate( mixed $value, Field $field ): string {
 		$rule = $this->rule( $field );
 
@@ -170,6 +175,7 @@ abstract class AbstractType implements FieldType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_placeholder(): bool {
 		return false;
 	}
@@ -179,6 +185,7 @@ abstract class AbstractType implements FieldType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function stores_value(): bool {
 		return true;
 	}
@@ -188,6 +195,7 @@ abstract class AbstractType implements FieldType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function is_self_labelling(): bool {
 		return false;
 	}
@@ -197,6 +205,7 @@ abstract class AbstractType implements FieldType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function is_grouped(): bool {
 		return false;
 	}
@@ -212,6 +221,7 @@ abstract class AbstractType implements FieldType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function spans_row(): bool {
 		return false;
 	}
@@ -230,6 +240,7 @@ abstract class AbstractType implements FieldType {
 	 * @return string '', 'tab' or 'accordion'.
 	 * @since 1.1.0
 	 */
+	#[\Override]
 	public function opens_section(): string {
 		return '';
 	}
@@ -244,6 +255,7 @@ abstract class AbstractType implements FieldType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		return [ 'type' => 'string' ];
 	}
@@ -253,6 +265,7 @@ abstract class AbstractType implements FieldType {
 	 *
 	 * @return array{scripts: string[], styles: string[]}
 	 */
+	#[\Override]
 	public function dependencies(): array {
 		return [
 			'scripts' => [],
@@ -324,6 +337,7 @@ abstract class AbstractType implements FieldType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function supports_inline(): bool {
 		return false;
 	}
@@ -336,6 +350,7 @@ abstract class AbstractType implements FieldType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return [];
 	}

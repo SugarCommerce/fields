@@ -82,7 +82,7 @@ beforeAll( async () => {
 		configurable: true,
 	} );
 
-	await import( '../../src/js/field-kit.js' );
+	await import( '../../assets/js/field-kit.js' );
 
 	startedEarly = Object.keys( document.fieldKitBound || {} );
 	delete document.readyState;
@@ -112,7 +112,7 @@ describe( 'window.SugarCommerceFieldsModules', () => {
 	} );
 
 	test( 'init() starts every module, in its own order, on a root', async () => {
-		const { ORDER } = await import( '../../src/js/lib/lifecycle' );
+		const { ORDER } = await import( '../../assets/js/lib/lifecycle' );
 
 		// A search box before the list that reorders its chips, a row's
 		// modules before the editors in it, the guard after everything that
@@ -351,7 +351,7 @@ describe( 'native events the kit fires', () => {
 describe( 'the jQuery adapter', () => {
 	test( 'without jQuery or the plugin, nothing happens and the input stays', async () => {
 		const { colorPicker, hasColorPicker } =
-			await import( '../../src/js/lib/jquery' );
+			await import( '../../assets/js/lib/jquery' );
 		const input = document.createElement( 'input' );
 
 		expect( hasColorPicker() ).toBe( false );
@@ -371,7 +371,7 @@ describe( 'the jQuery adapter', () => {
 	} );
 
 	test( 'with it, the picker is started on the input with the options', async () => {
-		const { colorPicker } = await import( '../../src/js/lib/jquery' );
+		const { colorPicker } = await import( '../../assets/js/lib/jquery' );
 		const input = document.createElement( 'input' );
 		const started = [];
 

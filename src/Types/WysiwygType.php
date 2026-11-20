@@ -24,6 +24,7 @@ final class WysiwygType extends AbstractType implements AdminOnly {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function defaults(): array {
 		return [
 			'rows'       => 10,
@@ -45,6 +46,7 @@ final class WysiwygType extends AbstractType implements AdminOnly {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$editor_id = preg_replace( '/[^a-z0-9_]/', '', strtolower( $field->input_id() ) ) ?: 'fieldkiteditor';
 		$tags      = MergeTags::resolve( $field->get( 'tags', [] ) );
@@ -162,6 +164,7 @@ final class WysiwygType extends AbstractType implements AdminOnly {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): string {
 		return wp_kses_post( $this->scalar( $value ) );
 	}
@@ -171,6 +174,7 @@ final class WysiwygType extends AbstractType implements AdminOnly {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

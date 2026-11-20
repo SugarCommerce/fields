@@ -32,6 +32,7 @@ final class ToggleType extends CheckboxType {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	protected function apply_role( Attributes $attributes, Field $field ): void {
 		$attributes->set( 'role', 'switch' );
 		$attributes->set( 'aria-checked', $this->is_checked( $field ) ? 'true' : 'false' );

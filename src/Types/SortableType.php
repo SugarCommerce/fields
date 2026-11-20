@@ -37,6 +37,7 @@ final class SortableType extends AbstractType {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$options    = $field->options();
 		$order      = $this->ordered_keys( $field, $options );
@@ -160,6 +161,7 @@ final class SortableType extends AbstractType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): array {
 		$allowed = array_map( 'strval', array_keys( $field->options() ) );
 		$values  = array_map( 'strval', (array) $value );
@@ -172,6 +174,7 @@ final class SortableType extends AbstractType {
 	 *
 	 * @return bool
 	 */
+	#[\Override]
 	public function is_grouped(): bool {
 		return true;
 	}
@@ -183,6 +186,7 @@ final class SortableType extends AbstractType {
 	 *
 	 * @return array<string, mixed>
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		return [
 			'type'  => 'array',
@@ -195,6 +199,7 @@ final class SortableType extends AbstractType {
 	 *
 	 * @return string[]
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

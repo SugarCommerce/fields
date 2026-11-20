@@ -49,6 +49,7 @@ final class GalleryType extends AbstractMediaType {
 	 * @return string
 	 * @since 1.0.0
 	 */
+	#[\Override]
 	public function id(): string {
 		return 'gallery';
 	}
@@ -61,6 +62,7 @@ final class GalleryType extends AbstractMediaType {
 	 * @return string
 	 * @since 1.0.0
 	 */
+	#[\Override]
 	protected function frame_title( ?Field $field = null ): string {
 		$title = null === $field ? '' : (string) $field->get( 'frame_title', '' );
 
@@ -75,6 +77,7 @@ final class GalleryType extends AbstractMediaType {
 	 * @return string
 	 * @since 1.0.0
 	 */
+	#[\Override]
 	protected function choose_label( ?Field $field = null ): string {
 		$label = null === $field ? '' : (string) $field->get( 'add_label', '' );
 
@@ -87,6 +90,7 @@ final class GalleryType extends AbstractMediaType {
 	 * @return string
 	 * @since 1.0.0
 	 */
+	#[\Override]
 	protected function mime_type(): string {
 		return 'image';
 	}
@@ -100,6 +104,7 @@ final class GalleryType extends AbstractMediaType {
 	 * @return string
 	 * @since 1.0.0
 	 */
+	#[\Override]
 	public function render( Field $field, Attributes $attributes ): string {
 		$ids = self::ids( $field->value() );
 
@@ -134,6 +139,7 @@ final class GalleryType extends AbstractMediaType {
 	 * @return bool
 	 * @since 1.0.0
 	 */
+	#[\Override]
 	protected function has_selection( Field $field ): bool {
 		return [] !== self::ids( $field->value() );
 	}
@@ -146,6 +152,7 @@ final class GalleryType extends AbstractMediaType {
 	 * @return string
 	 * @since 1.0.0
 	 */
+	#[\Override]
 	protected function render_preview( Field $field ): string {
 		$ids   = self::ids( $field->value() );
 		$total = count( $ids );
@@ -309,6 +316,7 @@ final class GalleryType extends AbstractMediaType {
 	 * @return string
 	 * @since 1.0.0
 	 */
+	#[\Override]
 	protected function render_controls( Field $field ): string {
 		$add = new Attributes();
 		$add->set( 'type', 'button' );
@@ -411,6 +419,7 @@ final class GalleryType extends AbstractMediaType {
 	 * @return int[]
 	 * @since 1.0.0
 	 */
+	#[\Override]
 	public function sanitize( mixed $value, Field $field ): array {
 		$ids = self::ids( $value );
 		$max = $this->limit( $field, 'max' );
@@ -427,6 +436,7 @@ final class GalleryType extends AbstractMediaType {
 	 * @return string
 	 * @since 1.0.0
 	 */
+	#[\Override]
 	public function validate( mixed $value, Field $field ): string {
 		$count = count( self::ids( $value ) );
 		$min   = $this->limit( $field, 'min' );
@@ -451,6 +461,7 @@ final class GalleryType extends AbstractMediaType {
 	 * @return array<string, mixed>
 	 * @since 1.0.0
 	 */
+	#[\Override]
 	public function schema( Field $field ): array {
 		$schema = [
 			'type'  => 'array',
@@ -471,6 +482,7 @@ final class GalleryType extends AbstractMediaType {
 	 * @return bool
 	 * @since 1.0.0
 	 */
+	#[\Override]
 	public function is_grouped(): bool {
 		return true;
 	}
@@ -481,6 +493,7 @@ final class GalleryType extends AbstractMediaType {
 	 * @return string[]
 	 * @since 1.0.0
 	 */
+	#[\Override]
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),

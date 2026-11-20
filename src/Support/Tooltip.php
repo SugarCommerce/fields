@@ -49,7 +49,7 @@ final class Tooltip {
 	 *
 	 * @var array<string, array<string, array<string, bool>>>
 	 */
-	private const ALLOWED = [
+	private const array ALLOWED = [
 		'strong' => [],
 		'b'      => [],
 		'em'     => [],
