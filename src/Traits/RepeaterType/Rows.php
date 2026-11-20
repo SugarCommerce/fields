@@ -9,6 +9,7 @@ declare( strict_types=1 );
 
 namespace SugarCommerce\Fields\Traits\RepeaterType;
 
+use SugarCommerce\Fields\Conditions;
 use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\Icons\Glyphs;
 
@@ -103,16 +104,37 @@ trait Rows {
 	): string {
 		$closed   = $this->starts_closed( $field, $row );
 		$title_id = $field->input_id() . '_row' . $index . '_title';
+		$title    = sprintf(
+			'<span class="field-kit__repeater-title" id="%1$s" data-fallback="%2$s">%3$s</span>',
+			esc_attr( $title_id ),
+			esc_attr( $this->position_title( $field, $index ) ),
+			esc_html( $this->row_title( $field, $row, $index ) )
+		);
+		$described = $title_id;
+
+		// What the row holds, after its name, for a list that is read
+		// closed. Written by the script from the row's own controls -- on
+		// load and as they change -- so it is never a second copy of what
+		// the fields say that can disagree with them.
+		if ( [] !== $this->summary( $field ) ) {
+			$summary_id = $field->input_id() . '_row' . $index . '_summary';
+			$described .= ' ' . $summary_id;
+			$title      = sprintf(
+				'<span class="field-kit__repeater-heading">%1$s<span class="field-kit__repeater-summary" id="%2$s"></span></span>',
+				$title,
+				esc_attr( $summary_id )
+			);
+		}
 
 		return sprintf(
 			'<li class="field-kit__repeater-row field-kit__repeater-row--collapsible%1$s" data-index="%2$d">' .
 			'<span class="field-kit__repeater-position screen-reader-text">%3$s</span>' .
 			'<div class="field-kit__repeater-header">' .
-			'<span class="field-kit__repeater-title" id="%5$s" data-fallback="%10$s">%7$s</span>' .
+			'%7$s' .
 			'<span class="field-kit__repeater-actions">%8$s</span>' .
 			'<button type="button" class="field-kit__repeater-toggle" aria-expanded="%4$s" aria-describedby="%5$s">' .
 			'<span class="screen-reader-text">%6$s</span>' .
-			'<span class="field-kit__repeater-indicator" aria-hidden="true">%11$s</span>' .
+			'<span class="field-kit__repeater-indicator" aria-hidden="true">%10$s</span>' .
 			'</button>' .
 			'</div>' .
 			'<div class="field-kit__repeater-fields">%9$s</div></li>',
@@ -120,12 +142,11 @@ trait Rows {
 			$index,
 			esc_html( $position ),
 			$closed ? 'false' : 'true',
-			esc_attr( $title_id ),
+			esc_attr( $described ),
 			esc_html__( 'Show or hide this row', 'sugarcommerce' ),
-			esc_html( $this->row_title( $field, $row, $index ) ),
+			$title,
 			$actions,
 			$fields,
-			esc_attr( $this->position_title( $field, $index ) ),
 			Glyphs::get( 'up' )
 		);
 	}
@@ -139,6 +160,64 @@ trait Rows {
 	 */
 	protected function is_collapsible( Field $field ): bool {
 		return (bool) $field->get( 'collapsible', false ) && ! $this->is_table( $field );
+	}
+
+	/**
+	 * What a closed row says after its name, as the script is to write it.
+	 *
+	 * `summary` is a list of parts, joined with a middle dot. A part is a
+	 * template -- "{amount} / {interval|lower}" -- or `text` and `when`:
+	 * `text` one template or several, the first whose every `{key}` the row
+	 * has a value for, and `when` a condition in show_when's shape. A key is
+	 * a sub-field, read as it is shown: a choice by its label, an amount
+	 * with its symbol; `|lower` lower-cases it. Empty and zero are nothing,
+	 * so a part about a trial of zero days is left out rather than said.
+	 *
+	 * Templates, not a callback: the header follows the row's controls as
+	 * they are changed, which a PHP callback could only do by asking the
+	 * server on every keystroke. Read only for a collapsible row, the one
+	 * kind with a closed state to summarise.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return list<array{text: list<string>, when: array<int, array<string, mixed>>}>
+	 */
+	protected function summary( Field $field ): array {
+		$parts = $field->get( 'summary', [] );
+
+		if ( ! is_array( $parts ) ) {
+			return [];
+		}
+
+		$summary = [];
+
+		foreach ( $parts as $part ) {
+			if ( is_string( $part ) ) {
+				$part = [ 'text' => $part ];
+			}
+
+			if ( ! is_array( $part ) ) {
+				continue;
+			}
+
+			$text = array_values(
+				array_filter(
+					array_map( 'strval', (array) ( $part['text'] ?? [] ) ),
+					static fn( string $template ): bool => '' !== trim( $template )
+				)
+			);
+
+			if ( [] === $text ) {
+				continue;
+			}
+
+			$summary[] = [
+				'text' => $text,
+				'when' => Conditions::from( $part['when'] ?? [] )->to_array(),
+			];
+		}
+
+		return $summary;
 	}
 
 	/**

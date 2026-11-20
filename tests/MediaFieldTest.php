@@ -245,4 +245,56 @@ final class MediaFieldTest extends TestCase {
 		$this->assertStringContainsString( 'input.field-kit__media-filename', $js );
 		$this->assertMatchesRegularExpression( '/filenameInput\.value = attachment\.filename/', $js );
 	}
+
+	/**
+	 * An image field with nothing in it is a box with a picture in it.
+	 *
+	 * "Set product image" alone was a line of words on a white panel, with
+	 * no edge until it was pointed at. The picture and the words are each
+	 * their own span, so the words can change to Replace and back without
+	 * taking the picture with them (media.js writes the label's span).
+	 */
+	public function test_an_empty_image_field_draws_a_picture_beside_its_words(): void {
+		$html = $this->render( 'image', [ 'choose_label' => 'Set Product Image' ] );
+
+		$this->assertMatchesRegularExpression(
+			'#<button[^>]*field-kit__media-choose[^>]*><span class="field-kit__media-choose-icon" aria-hidden="true"><svg[^>]*>.*?</svg></span>' .
+			'<span class="field-kit__media-choose-label">Set Product Image</span></button>#s',
+			$html
+		);
+	}
+
+	/**
+	 * A button's words are Title Case, as they are everywhere in WordPress.
+	 */
+	public function test_an_image_field_says_choose_image_in_title_case(): void {
+		$this->assertStringContainsString(
+			'<span class="field-kit__media-choose-label">Choose Image</span>',
+			$this->render( 'image' )
+		);
+	}
+
+	/**
+	 * Only an image field draws the box: a file's button stays words.
+	 */
+	public function test_a_file_url_button_has_no_picture(): void {
+		$this->assertStringNotContainsString( 'field-kit__media-choose-icon', $this->render( 'file_url' ) );
+	}
+
+	/**
+	 * The box is drawn only while there is nothing chosen, and in a panel
+	 * a panel's own button rules cannot take its edge away.
+	 */
+	public function test_the_empty_box_is_styled_where_it_is_empty(): void {
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		$this->assertMatchesRegularExpression(
+			'/\.wp-core-ui \.field-kit__media--image:has\(\.field-kit__media-preview\[data-empty="true"\]\) \.field-kit__media-actions \.button\.field-kit__media-choose \{[^}]*border: 1px dashed[^}]*background: #f6f7f7/',
+			$css
+		);
+		$this->assertMatchesRegularExpression(
+			'/field-kit__media-choose:focus-visible \{[^}]*outline: var\(--wp-admin-border-width-focus, 2px\) solid/',
+			$css
+		);
+	}
 }

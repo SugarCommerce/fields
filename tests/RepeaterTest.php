@@ -612,6 +612,106 @@ final class RepeaterTest extends TestCase {
 	}
 
 	/**
+	 * A closed row says what it holds after its name.
+	 *
+	 * The parts are handed to the script, normalised -- a bare template is
+	 * a part with one template and no condition, and `when` takes
+	 * show_when's shapes -- and each row has an empty place for the script
+	 * to write them in, which the toggle names as well as the title.
+	 */
+	public function test_a_summary_is_handed_to_the_script_with_a_place_in_each_row(): void {
+		$html = $this->summarised(
+			[
+				'{rate}',
+				[
+					'text' => [ '{kind|lower}', 'Flat' ],
+					'when' => [ 'country' => 'IE' ],
+				],
+				[ 'text' => '' ],
+				42,
+			]
+		);
+
+		preg_match( '/data-row-summary="([^"]*)"/', $html, $match );
+
+		$this->assertNotEmpty( $match, 'The parts are not on the repeater.' );
+		$this->assertSame(
+			[
+				[
+					'text' => [ '{rate}' ],
+					'when' => [],
+				],
+				[
+					'text' => [ '{kind|lower}', 'Flat' ],
+					'when' => [
+						[
+							'field'    => 'country',
+							'operator' => '=',
+							'value'    => 'IE',
+						],
+					],
+				],
+			],
+			json_decode( html_entity_decode( $match[1] ), true )
+		);
+
+		$this->assertMatchesRegularExpression(
+			'#<span class="field-kit__repeater-heading"><span class="field-kit__repeater-title" id="rates_row0_title"[^>]*>IE</span>' .
+			'<span class="field-kit__repeater-summary" id="rates_row0_summary"></span></span>#',
+			$html
+		);
+		$this->assertStringContainsString( 'aria-describedby="rates_row0_title rates_row0_summary"', $html );
+	}
+
+	/**
+	 * Without a summary a row's header is what it was.
+	 */
+	public function test_a_row_without_a_summary_is_drawn_as_before(): void {
+		$html = $this->collapsible( [ [ 'country' => 'IE' ] ] );
+
+		$this->assertStringNotContainsString( 'field-kit__repeater-heading', $html );
+		$this->assertStringNotContainsString( 'field-kit__repeater-summary', $html );
+		$this->assertStringNotContainsString( 'data-row-summary', $html );
+		$this->assertStringContainsString( 'aria-describedby="rates_row0_title"', $html );
+	}
+
+	/**
+	 * A row that does not fold has no closed state to summarise.
+	 */
+	public function test_a_summary_needs_a_collapsible_row(): void {
+		$html = $this->summarised( [ '{rate}' ], false );
+
+		$this->assertStringNotContainsString( 'data-row-summary', $html );
+		$this->assertStringNotContainsString( 'field-kit__repeater-summary', $html );
+	}
+
+	/**
+	 * Render a repeater with a summary.
+	 *
+	 * @param array<int, mixed> $summary     The `summary` config.
+	 * @param bool              $collapsible Whether its rows fold.
+	 *
+	 * @return string
+	 */
+	private function summarised( array $summary, bool $collapsible = true ): string {
+		$field = new Field(
+			'rates',
+			( new Registry() )->get( 'repeater' ),
+			[
+				'label'       => 'Rates',
+				'input_name'  => 'rates',
+				'collapsible' => $collapsible,
+				'row_title'   => 'country',
+				'summary'     => $summary,
+				'fields'      => self::SUB_FIELDS,
+			],
+			null
+		);
+
+		return ( new Renderer() )->render( $field->with_value( [ [ 'country' => 'IE' ] ] ) );
+	}
+
+	/**
 	 * Without one, a row is still called by its position.
 	 */
 	public function test_an_untitled_row_is_otherwise_its_position(): void {

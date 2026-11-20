@@ -163,13 +163,41 @@ abstract class AbstractMediaType extends AbstractType implements AdminOnly {
 			)
 		);
 
+		// A picture beside the words where the type draws one, and the words
+		// in a span of their own so the script can change them -- to Replace
+		// and back -- without taking the picture with them.
+		$icon  = $this->choose_icon();
+		$label = esc_html( $this->button_label( $field ) );
+
+		if ( '' !== $icon ) {
+			$label = sprintf(
+				'<span class="field-kit__media-choose-icon" aria-hidden="true">%s</span>' .
+				'<span class="field-kit__media-choose-label">%s</span>',
+				$icon,
+				$label
+			);
+		}
+
 		return sprintf(
 			'<p class="field-kit__media-actions"><button%s>%s</button> <button%s>%s</button></p>',
 			$choose->render(),
-			esc_html( $this->button_label( $field ) ),
+			$label,
 			$clear->render(),
 			esc_html__( 'Remove', 'sugarcommerce' )
 		);
+	}
+
+	/**
+	 * The picture drawn in the choose button, beside its words.
+	 *
+	 * None by default. An image field draws one: with nothing chosen its
+	 * button is the box the picture will fill, and a box with only words in
+	 * it read as a line of text on a white panel.
+	 *
+	 * @return string SVG markup, or '' for none.
+	 */
+	protected function choose_icon(): string {
+		return '';
 	}
 
 	/**

@@ -136,6 +136,23 @@ const Media = {
 	},
 
 	/**
+	 * Write the choose button's words.
+	 *
+	 * Into its label where it has one: an image field's empty state draws
+	 * a picture beside the words, and writing the whole button's text
+	 * took the picture away the first time an image was chosen and
+	 * removed again.
+	 *
+	 * @param {Element} button The button.
+	 * @param {string}  text   What it says.
+	 */
+	label( button, text ) {
+		const own = button.querySelector( '.field-kit__media-choose-label' );
+
+		( own || button ).textContent = text;
+	},
+
+	/**
 	 * Store and preview a selection.
 	 *
 	 * @param {Element} wrap       The field.
@@ -164,7 +181,7 @@ const Media = {
 		const chooser = wrap.querySelector( '.field-kit__media-choose' );
 
 		if ( chooser && wrap.dataset.replaceLabel ) {
-			chooser.textContent = wrap.dataset.replaceLabel;
+			Media.label( chooser, wrap.dataset.replaceLabel );
 		}
 
 		if ( preview ) {
@@ -226,7 +243,7 @@ const Media = {
 
 		// And with nothing chosen it goes back to offering to choose.
 		if ( choose && wrap.dataset.replaceLabel && wrap.dataset.chooseLabel ) {
-			choose.textContent = wrap.dataset.chooseLabel;
+			Media.label( choose, wrap.dataset.chooseLabel );
 		}
 
 		if ( preview ) {

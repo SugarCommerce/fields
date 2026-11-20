@@ -54,6 +54,10 @@ final class StylesheetTest extends TestCase {
 		'field-kit__field--locked',
 		'field-kit__field--toggle',
 
+		// AbstractMediaType: 'field-kit__media--' . $this->id(), for an
+		// image field's empty box.
+		'field-kit__media--image',
+
 		// LicenseType: 'field-kit__license-state--' . ( active ? 'active' : 'inactive' )
 		'field-kit__license-state--active',
 		'field-kit__license-state--inactive',

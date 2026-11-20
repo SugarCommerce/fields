@@ -415,6 +415,83 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	display: block;
 }
 
+/* An image field with nothing chosen: the box the picture will go in, with a
+   picture and the button's words inside it. It was a button like any other,
+   and in a panel the panel's flat white one -- the words "Set product image"
+   on a white card with no edge until it was pointed at. Dashed, as the icon
+   picker's empty square is, on a tint so it is there on white.
+
+   Specific enough to win over the secondary button below and a panel's own
+   button rules, which would otherwise put their edge and shadow back. */
+.wp-core-ui .field-kit__media--image:has(.field-kit__media-preview[data-empty="true"]) .field-kit__media-actions .button.field-kit__media-choose {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 20rem;
+	min-height: 104px;
+	margin: 0;
+	padding: 16px 12px;
+	border: 1px dashed #a7aaad;
+	border-radius: 8px;
+	background: #f6f7f7;
+	box-shadow: none;
+	color: #1f2124;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1.4;
+	text-align: center;
+	white-space: normal;
+}
+
+/* A panel is one column, and every other control in it runs its full width. */
+.wp-core-ui .wp-flyout .field-kit__media--image:has(.field-kit__media-preview[data-empty="true"]) .field-kit__media-actions .button.field-kit__media-choose {
+	max-width: none;
+}
+
+.wp-core-ui .field-kit__media--image:has(.field-kit__media-preview[data-empty="true"]) .field-kit__media-actions .button.field-kit__media-choose:hover {
+	border-color: var(--wp-admin-theme-color, #2271b1);
+	background: #f0f6fc;
+	box-shadow: none;
+	color: var(--wp-admin-theme-color, #2271b1);
+}
+
+.wp-core-ui .field-kit__media--image:has(.field-kit__media-preview[data-empty="true"]) .field-kit__media-actions .button.field-kit__media-choose:focus {
+	box-shadow: none;
+	outline: 0;
+}
+
+.wp-core-ui .field-kit__media--image:has(.field-kit__media-preview[data-empty="true"]) .field-kit__media-actions .button.field-kit__media-choose:focus-visible {
+	border-color: var(--wp-admin-theme-color, #2271b1);
+	box-shadow: none;
+	outline: var(--wp-admin-border-width-focus, 2px) solid var(--wp-admin-theme-color, #2271b1);
+	outline-offset: 1px;
+}
+
+.field-kit__media-choose-icon {
+	display: flex;
+	color: #646970;
+}
+
+.field-kit__media-choose:hover .field-kit__media-choose-icon,
+.field-kit__media-choose:focus-visible .field-kit__media-choose-icon {
+	color: inherit;
+}
+
+/* Once there is a picture the button replaces it, and is words again. */
+.field-kit__media--image:not(:has(.field-kit__media-preview[data-empty="true"])) .field-kit__media-choose-icon {
+	display: none;
+}
+
+@media (forced-colors: active) {
+	.wp-core-ui .field-kit__media--image:has(.field-kit__media-preview[data-empty="true"]) .field-kit__media-actions .button.field-kit__media-choose {
+		border-color: ButtonText;
+	}
+}
+
 /* An input with its controls inside it, the way EDD draws a download's file
    row and core draws the search box on a list table.
  *
@@ -1157,7 +1234,7 @@ li.field-kit__repeater-row {
 }
 
 .field-kit__combobox-chip-remove,
-.field-kit__combobox-chip-move {
+.wp-core-ui .field-kit__combobox-chip-handle {
 	display: flex;
 	flex: none;
 	align-items: center;
@@ -1180,14 +1257,13 @@ li.field-kit__repeater-row {
 	color: #b32d2e;
 }
 
-.field-kit__combobox-chip-move:hover,
-.field-kit__combobox-chip-move:focus {
+.wp-core-ui .field-kit__combobox-chip-handle:hover {
 	background: rgba(0, 0, 0, .08);
 	color: #1f2124;
 }
 
 .field-kit__combobox-chip-remove .sugarcommerce-icon,
-.field-kit__combobox-chip-move .sugarcommerce-icon {
+.field-kit__combobox-chip-handle .sugarcommerce-icon {
 	font-size: 14px;
 	width: 14px;
 	height: 14px;
@@ -1217,29 +1293,30 @@ li.field-kit__repeater-row {
 	border-top: 1px solid #f1f1f3;
 }
 
-/* The name first and taking the room; the three controls after it. */
+/* The name first and taking the room; the handle and Remove after it, in the
+   same place on every row, as a price's are in its header. */
 .field-kit__combobox-chips[data-sortable="true"] .field-kit__combobox-chip > span {
 	order: -1;
 	flex: 1;
 	min-width: 0;
 }
 
-.field-kit__combobox-chips[data-sortable="true"] .field-kit__combobox-chip-move,
+.wp-core-ui .field-kit__combobox-chips[data-sortable="true"] .field-kit__combobox-chip-handle,
 .field-kit__combobox-chips[data-sortable="true"] .field-kit__combobox-chip-remove {
 	width: 26px;
 	height: 26px;
 	border-radius: 6px;
 }
 
-/* Nowhere further to go: the first cannot move up, nor the last down. */
-.field-kit__combobox-chips[data-sortable="true"] .field-kit__combobox-chip:first-child .field-kit__combobox-chip-move:first-of-type,
-.field-kit__combobox-chips[data-sortable="true"] .field-kit__combobox-chip:last-child .field-kit__combobox-chip-move:nth-of-type(2) {
-	visibility: hidden;
+.wp-core-ui .field-kit__combobox-chips[data-sortable="true"] .field-kit__combobox-chip-handle .sugarcommerce-icon {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
 }
 
-/* One row has no order to change. */
-.field-kit__combobox-chips[data-sortable="true"] .field-kit__combobox-chip:only-child .field-kit__combobox-chip-move {
-	display: none;
+/* A row being dragged stands out from the ones it passes. */
+.field-kit__combobox-chips[data-sortable="true"] .field-kit__combobox-chip.is-dragging {
+	opacity: .5;
 }
 
 /* Width and offset are set from the input's measured box on every open, so
@@ -1652,6 +1729,7 @@ li.field-kit__repeater-row {
 	   cross beside a chip is not something a thumb can find. The glyph
 	   stays its size, in the middle of a bigger target. */
 	.field-kit__combobox-chip-remove,
+	.wp-core-ui .field-kit__combobox-chip-handle,
 .wp-core-ui .field-kit__combobox-clear,
 .wp-core-ui .field-kit__tooltip-toggle,
 .field-kit__tooltip-toggle {
@@ -3762,6 +3840,40 @@ li.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-fields {
 	font-weight: 600;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+/* A row with a `summary`: its name, then what it holds, quieter -- on one line
+   where there is room for both, the summary under the name where there is
+   not, cut short rather than wrapped. Only while the row is closed: open, its
+   fields say it. */
+.field-kit__repeater-heading {
+	display: flex;
+	flex: 1 1 auto;
+	flex-wrap: wrap;
+	align-items: baseline;
+	column-gap: .5rem;
+	min-width: 0;
+}
+
+.field-kit__repeater-heading .field-kit__repeater-title {
+	flex: 0 1 auto;
+	max-width: 100%;
+}
+
+.field-kit__repeater-summary {
+	flex: 0 1 auto;
+	min-width: 0;
+	max-width: 100%;
+	overflow: hidden;
+	color: #646970;
+	font-weight: 400;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.field-kit__repeater-summary:empty,
+li.field-kit__repeater-row--collapsible:not(.is-closed) > .field-kit__repeater-header .field-kit__repeater-summary {
+	display: none;
 }
 
 .wp-core-ui .field-kit__repeater-toggle {

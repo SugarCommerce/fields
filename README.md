@@ -622,6 +622,37 @@ A required `checkbox` or `toggle` now has to be ticked on the server as in
 the browser: an unticked box is stored as 0, which is a value, and was let
 through.
 
+**A closed row's summary** -- a `collapsible` repeater's `summary` says what
+a closed row holds after its name, muted, on the name's line where there is
+room and under it where there is not: "Studio £19.99 · one-off · Licence".
+It is a list of parts joined with a middle dot. A part is a template, or
+`text` (one template, or several: the first the row can fill) and `when` (a
+condition in `show_when`'s shape). `{key}` is a sub-field as the row shows
+it -- a choice by its label, an amount with its symbol -- and `{key|lower}`
+lower-cases it. A key that is empty or zero leaves its part out, so a trial
+of 0 days is not mentioned. The script writes it when the panel opens and
+again as the fields change; it is hidden while the row is open.
+
+```php
+'prices' => [
+	'type'        => 'repeater',
+	'collapsible' => true,
+	'row_title'   => 'name',
+	'summary'     => [
+		[ 'text' => '{amount} / {interval|lower}', 'when' => [ 'recurring' => '1' ] ],
+		[ 'text' => [ '{amount} · one-off', 'Free · one-off' ], 'when' => [ 'field' => 'recurring', 'operator' => '!=', 'value' => '1' ] ],
+		'was {compare_at}',
+	],
+	'fields'      => [ /* name, amount, recurring, interval, compare_at */ ],
+],
+```
+
+An ordered picker (`'sortable' => true` on a multiple `post`, `ajax` and the
+like) gives each chosen item a grab handle and Remove, the same two in the
+same place on every row, as a repeater's rows have: drag it, or focus it and
+use the arrow keys. An empty `image` field is a dashed box with a picture
+and its `choose_label` in it.
+
 ## Flexible content
 
 Rows that are each one of several layouts: a hero, then two columns of

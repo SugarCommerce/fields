@@ -10,6 +10,7 @@ declare( strict_types=1 );
 namespace SugarCommerce\Fields\Types;
 
 use SugarCommerce\Fields\Field;
+use SugarCommerce\Fields\Icons\Glyphs;
 
 /**
  * A single image from the media library.
@@ -29,8 +30,9 @@ final class ImageType extends AbstractMediaType {
 	/**
 	 * The button that opens the picker.
 	 *
-	 * A field can name its own with `choose_label` -- "Set product image"
-	 * says what the picture is for, which "Choose image" cannot.
+	 * A field can name its own with `choose_label` -- "Set Product Image"
+	 * says what the picture is for, which "Choose Image" cannot. Title Case,
+	 * as a button's words are everywhere else in WordPress.
 	 *
 	 * @return string
 	 */
@@ -38,7 +40,17 @@ final class ImageType extends AbstractMediaType {
 	protected function choose_label( ?Field $field = null ): string {
 		$own = $field ? (string) $field->get( 'choose_label' ) : '';
 
-		return '' !== $own ? $own : __( 'Choose image', 'sugarcommerce' );
+		return '' !== $own ? $own : __( 'Choose Image', 'sugarcommerce' );
+	}
+
+	/**
+	 * A picture in the empty box, so it reads as the place one goes.
+	 *
+	 * @return string
+	 */
+	#[\Override]
+	protected function choose_icon(): string {
+		return Glyphs::get( 'image', [ 'size' => 24 ] );
 	}
 
 	/**

@@ -129,10 +129,16 @@ const Conditions = {
 			'[data-field-key="' + window.CSS.escape( key ) + '"]'
 		);
 
-		if ( ! target ) {
-			return null;
-		}
+		return target ? Conditions.read( target ) : null;
+	},
 
+	/**
+	 * The value a field holds, as a condition compares it.
+	 *
+	 * @param {Element} target The watched field's wrapper.
+	 * @return {*} Its value: a choice's value, a list of them, or the text.
+	 */
+	read( target ) {
 		const checked = target.querySelectorAll(
 			'input[type="checkbox"]:checked, input[type="radio"]:checked'
 		);

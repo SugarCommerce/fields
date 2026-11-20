@@ -93,6 +93,7 @@ class RepeaterType extends AbstractNestedType {
 				'data-row-title',
 				(string) $field->get( 'row_title', '' )
 			);
+			$wrapper->set_if( [] !== $this->summary( $field ), 'data-row-summary', $this->summary( $field ) );
 		}
 
 		$markup = '';
@@ -324,7 +325,7 @@ class RepeaterType extends AbstractNestedType {
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),
-			[ 'add_label', 'collapsed', 'collapsible', 'direction', 'empty_label', 'layout', 'max_rows', 'min_rows', 'row_title', 'row_title_fallback' ]
+			[ 'add_label', 'collapsed', 'collapsible', 'direction', 'empty_label', 'layout', 'max_rows', 'min_rows', 'row_title', 'row_title_fallback', 'summary' ]
 		);
 	}
 }

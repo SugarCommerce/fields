@@ -13,44 +13,48 @@ import { request } from '../lib/request';
 
 const Combobox = {
 	/**
-	 * Put the select's options in the order its chips are now in.
+	 * The grab handle for a chip in an ordered list.
 	 *
-	 * The chips are only a picture of what is chosen; the select is what
-	 * gets posted, and a multiple select posts in option order rather than
-	 * in the order things were picked. Dragging a chip therefore has to
-	 * move the option too, or the new order is lost on save.
+	 * One control, the one the Prices repeater, flexible rows and the
+	 * gallery use, rather than the up and down chevrons it replaced. The
+	 * first chip has no up and the last no down, so the pair was drawn
+	 * with one of them missing -- a down on the first row and an up on
+	 * the second, in different places, which read as broken. A handle is
+	 * the same control in the same place on every row.
 	 *
-	 * Unselected options are left where they are: they are not part of the
-	 * value and moving them would churn the DOM for nothing.
+	 * A button, so it is focused and moved with the arrow keys
+	 * (Reorder.bindButtons) as well as dragged. Its name says where the
+	 * chip is, from a template Reorder.sync() rewrites after a move, so a
+	 * keyboard user hears that the move landed.
 	 *
-	 * @param {Element} chips The chip list.
-	 */
-	/**
-	 * A move control for a chip.
-	 *
-	 * Reorder.bindButtons() finds these by data-direction, so a chip gets
-	 * keyboard reordering for free and the drag path is the same code.
-	 *
-	 * @param {string} direction 'up' or 'down'.
-	 * @param {string} label     The chip's text, for the accessible name.
+	 * @param {string} label    The chip's text, for the accessible name.
+	 * @param {number} position Zero-based position.
+	 * @param {number} total    How many chips there are.
 	 * @return {HTMLElement} The button.
 	 */
-	moveButton( direction, label ) {
+	handle( label, position, total ) {
 		const button = document.createElement( 'button' );
+		const template = t( 'reorderItem', 'Reorder %1$s, %2$s of %3$s' )
+			.replace( '%1$s', label )
+			.replace( '%2$s', '{position}' )
+			.replace( '%3$s', '{total}' );
 
 		button.type = 'button';
-		button.className = 'field-kit__combobox-chip-move';
-		button.dataset.direction = direction;
+		button.className =
+			'field-kit__drag-handle field-kit__combobox-chip-handle';
+		button.setAttribute(
+			'aria-roledescription',
+			t( 'sortable', 'Sortable' )
+		);
+		button.setAttribute( 'aria-keyshortcuts', 'ArrowUp ArrowDown' );
+		button.dataset.labelTemplate = template;
 		button.setAttribute(
 			'aria-label',
-			t(
-				'up' === direction ? 'moveUp' : 'moveDown',
-				'up' === direction ? 'Move up' : 'Move down'
-			) +
-				': ' +
-				label
+			template
+				.replace( '{position}', String( position + 1 ) )
+				.replace( '{total}', String( total ) )
 		);
-		button.innerHTML = icon( 'up' === direction ? 'up' : 'down' );
+		button.innerHTML = icon( 'drag' );
 
 		return button;
 	},
@@ -115,6 +119,19 @@ const Combobox = {
 			.replace( '%2$s', noun || t( 'newItemNoun', 'item' ) );
 	},
 
+	/**
+	 * Put the select's options in the order its chips are now in.
+	 *
+	 * The chips are only a picture of what is chosen; the select is what
+	 * gets posted, and a multiple select posts in option order rather than
+	 * in the order things were picked. Dragging a chip therefore has to
+	 * move the option too, or the new order is lost on save.
+	 *
+	 * Unselected options are left where they are: they are not part of the
+	 * value and moving them would churn the DOM for nothing.
+	 *
+	 * @param {Element} chips The chip list.
+	 */
 	syncOrder( chips ) {
 		const wrap =
 			chips.closest( '.field-kit__combobox' ) || chips.parentElement;
@@ -493,59 +510,55 @@ const Combobox = {
 			chips.innerHTML = '';
 
 			const sortable = 'true' === select.getAttribute( 'data-sortable' );
+			const chosen = Array.prototype.slice.call( select.selectedOptions );
 
-			Array.prototype.slice
-				.call( select.selectedOptions )
-				.forEach( function ( option ) {
-					const chip = document.createElement( 'li' );
-					chip.className = 'field-kit__combobox-chip';
+			chosen.forEach( function ( option, position ) {
+				const chip = document.createElement( 'li' );
+				chip.className = 'field-kit__combobox-chip';
 
-					// syncOrder() matches chips back to options by value.
-					chip.dataset.value = option.value;
+				// syncOrder() matches chips back to options by value.
+				chip.dataset.value = option.value;
 
-					if ( sortable ) {
-						chip.appendChild(
-							Combobox.moveButton( 'up', option.text )
-						);
-						chip.appendChild(
-							Combobox.moveButton( 'down', option.text )
-						);
+				if ( sortable ) {
+					chip.appendChild(
+						Combobox.handle( option.text, position, chosen.length )
+					);
+				}
+
+				const label = document.createElement( 'span' );
+				label.textContent = option.text;
+
+				const remove = document.createElement( 'button' );
+				remove.type = 'button';
+				remove.className = 'field-kit__combobox-chip-remove';
+
+				// Named, not just an ×: a row of identical "Remove"
+				// buttons is a row nobody can tell apart by ear.
+				remove.setAttribute(
+					'aria-label',
+					t( 'removeItem', 'Remove' ) + ': ' + option.text
+				);
+				remove.innerHTML = icon( 'close' );
+				remove.addEventListener( 'click', function () {
+					option.selected = false;
+
+					// An invented option has nothing to go back to, so it
+					// is removed rather than left in the list unselected.
+					if ( 'true' === option.dataset.fkCreated ) {
+						option.remove();
 					}
 
-					const label = document.createElement( 'span' );
-					label.textContent = option.text;
-
-					const remove = document.createElement( 'button' );
-					remove.type = 'button';
-					remove.className = 'field-kit__combobox-chip-remove';
-
-					// Named, not just an ×: a row of identical "Remove"
-					// buttons is a row nobody can tell apart by ear.
-					remove.setAttribute(
-						'aria-label',
-						t( 'removeItem', 'Remove' ) + ': ' + option.text
+					renderChips();
+					select.dispatchEvent(
+						new Event( 'change', { bubbles: true } )
 					);
-					remove.innerHTML = icon( 'close' );
-					remove.addEventListener( 'click', function () {
-						option.selected = false;
-
-						// An invented option has nothing to go back to, so it
-						// is removed rather than left in the list unselected.
-						if ( 'true' === option.dataset.fkCreated ) {
-							option.remove();
-						}
-
-						renderChips();
-						select.dispatchEvent(
-							new Event( 'change', { bubbles: true } )
-						);
-						input.focus();
-					} );
-
-					chip.appendChild( label );
-					chip.appendChild( remove );
-					chips.appendChild( chip );
+					input.focus();
 				} );
+
+				chip.appendChild( label );
+				chip.appendChild( remove );
+				chips.appendChild( chip );
+			} );
 		}
 
 		/**

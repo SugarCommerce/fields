@@ -243,6 +243,9 @@ final class Assets {
 				'noResults'        => __( 'No results found.', 'sugarcommerce' ),
 				'resultsAvailable' => __( 'results available.', 'sugarcommerce' ),
 				'position'         => __( 'Item', 'sugarcommerce' ),
+				'sortable'         => __( 'Sortable', 'sugarcommerce' ),
+				/* translators: 1: the item's name, 2: its position, 3: how many there are */
+				'reorderItem'      => __( 'Reorder %1$s, %2$s of %3$s', 'sugarcommerce' ),
 				'rowAdded'         => __( 'Row added.', 'sugarcommerce' ),
 				'rowRemoved'       => __( 'Row removed.', 'sugarcommerce' ),
 				'rowDuplicated'    => __( 'Row duplicated.', 'sugarcommerce' ),

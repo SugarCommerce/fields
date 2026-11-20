@@ -6,6 +6,7 @@
 import { t } from '../lib/config';
 import { announce, ours } from '../lib/dom';
 import { destroy, init } from '../lib/lifecycle';
+import Conditions from './conditions';
 import Reorder from './reorder';
 
 const Repeater = {
@@ -118,6 +119,35 @@ const Repeater = {
 
 					Repeater.retitle( row, event.target.value );
 				} );
+			}
+
+			// A closed row says what it holds after its name -- a price's
+			// amount and how it bills -- and has to go on saying it as the
+			// fields under it are changed, or a folded row tells you what
+			// it was when the panel opened.
+			if ( wrap.dataset.rowSummary ) {
+				[ 'input', 'change', 'field-kit:change' ].forEach(
+					function ( type ) {
+						wrap.addEventListener( type, function ( event ) {
+							const row = Repeater.ownRow( wrap, event.target );
+
+							if ( row ) {
+								Repeater.summarise( wrap, row );
+							}
+						} );
+					}
+				);
+
+				const list = Repeater.own( wrap, '.field-kit__repeater-rows' );
+
+				if ( list ) {
+					Array.prototype.forEach.call(
+						list.children,
+						function ( row ) {
+							Repeater.summarise( wrap, row );
+						}
+					);
+				}
 			}
 
 			// A layout's picker offers only what there is room for.
@@ -325,6 +355,233 @@ const Repeater = {
 	},
 
 	/**
+	 * The row of this repeater an element is in.
+	 *
+	 * Not simply the nearest row: a change to a file inside a price is
+	 * inside the file's row first, and it is the price's header that says
+	 * what the price holds.
+	 *
+	 * @param {Element}     wrap    The repeater.
+	 * @param {EventTarget} element Where something happened.
+	 * @return {Element|null} The row, or null outside every row.
+	 */
+	ownRow( wrap, element ) {
+		let row =
+			element && element.closest
+				? element.closest( '.field-kit__repeater-row' )
+				: null;
+
+		while ( row && ! Repeater.owns( wrap, row ) ) {
+			row = row.parentElement
+				? row.parentElement.closest( '.field-kit__repeater-row' )
+				: null;
+		}
+
+		return row;
+	},
+
+	/**
+	 * Write a closed row's summary from what its fields hold now.
+	 *
+	 * @param {Element} wrap The repeater.
+	 * @param {Element} row  One of its rows.
+	 */
+	summarise( wrap, row ) {
+		const target = row.querySelector(
+			':scope > .field-kit__repeater-header .field-kit__repeater-summary'
+		);
+
+		if ( ! target ) {
+			return;
+		}
+
+		let parts;
+
+		try {
+			parts = JSON.parse( wrap.dataset.rowSummary || '[]' );
+		} catch {
+			parts = [];
+		}
+
+		target.textContent = Repeater.summary( parts, function ( key ) {
+			const found = row.querySelectorAll(
+				'[data-field-key="' + window.CSS.escape( key ) + '"]'
+			);
+
+			// The row's own field, not one of the same name in a list
+			// nested inside it.
+			return (
+				Array.prototype.find.call( found, function ( field ) {
+					return field.closest( '.field-kit__repeater-row' ) === row;
+				} ) || null
+			);
+		} );
+	},
+
+	/**
+	 * A summary's text: each part whose condition holds and whose template
+	 * the row has every value for, joined with a middle dot.
+	 *
+	 * @param {Array}    parts The `summary` config, as PHP normalised it:
+	 *                         `{ text: string[], when: Object[] }`.
+	 * @param {Function} find  Key to the row's field wrapper, or null.
+	 * @return {string} The text; '' when nothing applies.
+	 */
+	summary( parts, find ) {
+		if ( ! Array.isArray( parts ) ) {
+			return '';
+		}
+
+		function shown( key ) {
+			const field = find( key );
+
+			return field ? Repeater.shown( field ) : '';
+		}
+
+		return parts
+			.map( function ( part ) {
+				const met = ( part.when || [] ).every( function ( condition ) {
+					const field = find( condition.field );
+
+					return Conditions.matches(
+						condition,
+						field ? Conditions.read( field ) : null
+					);
+				} );
+
+				if ( ! met ) {
+					return '';
+				}
+
+				// The first template the row can fill.
+				const templates = [].concat( part.text || [] );
+
+				for ( let i = 0; i < templates.length; i++ ) {
+					const text = Repeater.fill( templates[ i ], shown );
+
+					if ( text ) {
+						return text;
+					}
+				}
+
+				return '';
+			} )
+			.filter( Boolean )
+			.join( ' · ' );
+	},
+
+	/**
+	 * Fill a template's `{key}` and `{key|lower}` from the row.
+	 *
+	 * @param {string}   template The template.
+	 * @param {Function} shown    Key to the text the row shows for it.
+	 * @return {string} The text, or '' when any key has nothing to give --
+	 *                  "-day trial" is worse than saying nothing.
+	 */
+	fill( template, shown ) {
+		let missing = false;
+
+		const text = String( template ).replace(
+			/\{([\w-]+)(?:\|(\w+))?\}/g,
+			function ( all, key, filter ) {
+				let value = shown( key );
+
+				if ( ! value ) {
+					missing = true;
+
+					return '';
+				}
+
+				if ( 'lower' === filter ) {
+					value = value.toLocaleLowerCase();
+				}
+
+				return value;
+			}
+		);
+
+		return missing ? '' : text.trim();
+	},
+
+	/**
+	 * A field's value as the row shows it.
+	 *
+	 * A choice by its label rather than its value -- "Month", not "month"
+	 * -- and an amount with the symbol drawn beside it. Empty and zero are
+	 * nothing: a trial of 0 days and a compare-at price of 0.00 are not
+	 * set at all.
+	 *
+	 * @param {Element} field The field's wrapper.
+	 * @return {string} The text; '' for nothing.
+	 */
+	shown( field ) {
+		function nothing( value ) {
+			return /^[-+]?0*(?:[.,]0*)?$/.test( value );
+		}
+
+		const money = field.querySelector( '.field-kit__money' );
+
+		if ( money ) {
+			const input = money.querySelector( 'input' );
+			const value = input ? input.value.trim() : '';
+			const sign = money.querySelector( '.field-kit__money-symbol' );
+			const symbol = sign ? sign.textContent.trim() : '';
+
+			if ( nothing( value ) ) {
+				return '';
+			}
+
+			// "£19.99", but "CHF 19.99": a symbol that is letters needs
+			// the space a sign does not.
+			return symbol + ( /\p{L}$/u.test( symbol ) ? ' ' : '' ) + value;
+		}
+
+		const choices = field.querySelectorAll(
+			'input[type="checkbox"], input[type="radio"]'
+		);
+
+		if ( choices.length ) {
+			return Array.prototype.filter
+				.call( choices, function ( choice ) {
+					return choice.checked;
+				} )
+				.map( function ( choice ) {
+					const label = choice.closest( 'label' );
+					const title = label
+						? label.querySelector( '.field-kit__card-title' )
+						: null;
+
+					return title || label
+						? ( title || label ).textContent.trim()
+						: choice.value;
+				} )
+				.filter( Boolean )
+				.join( ', ' );
+		}
+
+		const select = field.querySelector( 'select' );
+
+		if ( select ) {
+			return Array.prototype.filter
+				.call( select.selectedOptions, function ( option ) {
+					return '' !== option.value;
+				} )
+				.map( function ( option ) {
+					return option.text.trim();
+				} )
+				.join( ', ' );
+		}
+
+		const input =
+			field.querySelector(
+				'input:not([type="hidden"]):not(.field-kit__combobox-input), textarea'
+			) || field.querySelector( 'input[type="hidden"]' );
+		const value = input ? input.value.trim() : '';
+
+		return nothing( value ) ? '' : value;
+	},
+
+	/**
 	 * Fold a row away, or open it.
 	 *
 	 * @param {Element} row The row.
@@ -402,6 +659,9 @@ const Repeater = {
 		if ( source ) {
 			Repeater.copy( wrap, source, row );
 		}
+
+		// A new row says what it starts with, and a copy what it copied.
+		Repeater.summarise( wrap, row );
 
 		// The new row's markup has never been past the modules, so a
 		// combobox, colour picker or media button inside it is inert
