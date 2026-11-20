@@ -11,6 +11,7 @@ namespace SugarCommerce\Fields\Tests;
 
 use SugarCommerce\Fields\Context\ArrayContext;
 use SugarCommerce\Fields\FieldSet;
+use SugarCommerce\Dates\Clock;
 use SugarCommerce\Fields\Form;
 use SugarCommerce\Fields\Registry;
 use SugarCommerce\Fields\Rest\FormController;
@@ -181,6 +182,61 @@ final class FormTest extends TestCase {
 		$this->assertTrue( $result['ok'] );
 		$this->assertFalse( $called );
 		$this->assertSame( [], $result['values'] );
+	}
+
+	/**
+	 * With a salt to sign with, the form carries security's FormGuard stamp:
+	 * a send seconds after the page was drawn, a day later, with no stamp or
+	 * another form's is refused, and a person's is not.
+	 */
+	public function test_a_signed_stamp_holds_off_a_script(): void {
+		$GLOBALS['fk_salt'] = str_repeat( 'a-real-salt-', 4 );
+
+		try {
+			Clock::freeze( 1_800_000_000 );
+
+			$form  = new Form( 'order', $this->fields() );
+			$stamp = $this->stamp( $form->render() );
+			$other = $this->stamp( ( new Form( 'other', $this->fields() ) )->render() );
+			$good  = [ 'name' => 'Ada', 'email' => 'a@example.com', 'terms' => '1' ];
+
+			$this->assertNotSame( '', $stamp );
+
+			Clock::advance( 1 );
+			$quick = $form->handle( $this->post( $good, [ '_order_started' => $stamp ] ) );
+			$this->assertFalse( $quick['ok'] );
+			$this->assertStringContainsString( 'too soon', $quick['message'] );
+
+			Clock::advance( 5 );
+			$this->assertTrue( $form->handle( $this->post( $good, [ '_order_started' => $stamp ] ) )['ok'] );
+			$this->assertFalse( $form->handle( $this->post( $good ) )['ok'], 'No stamp is not a page this site drew.' );
+			$this->assertFalse( $form->handle( $this->post( $good, [ '_order_started' => $other ] ) )['ok'], 'Another form\'s stamp.' );
+			$this->assertFalse( $form->handle( $this->post( $good, [ '_order_started' => [ $stamp ] ] ) )['ok'] );
+
+			// The trap still answers first, and still says it worked.
+			$this->assertTrue( $form->handle( $this->post( $good, [ '_order_website' => 'x' ] ) )['ok'] );
+
+			Clock::advance( 86400 );
+			$this->assertFalse( $form->handle( $this->post( $good, [ '_order_started' => $stamp ] ) )['ok'], 'A day-old page.' );
+
+			// Off with the honeypot.
+			$this->assertStringNotContainsString( '_order_started', ( new Form( 'order', $this->fields(), [ 'honeypot' => false ] ) )->render() );
+			$this->assertTrue( ( new Form( 'order', $this->fields(), [ 'honeypot' => false ] ) )->handle( $this->post( $good ) )['ok'] );
+		} finally {
+			unset( $GLOBALS['fk_salt'] );
+			Clock::reset();
+		}
+	}
+
+	/**
+	 * The stamp a drawn form carries.
+	 *
+	 * @param string $html The form.
+	 *
+	 * @return string
+	 */
+	private function stamp( string $html ): string {
+		return 1 === preg_match( '/name="_[a-z]+_started" value="([^"]+)"/', $html, $m ) ? html_entity_decode( $m[1] ) : '';
 	}
 
 	public function test_a_refused_form_is_drawn_with_the_list_and_what_was_typed(): void {

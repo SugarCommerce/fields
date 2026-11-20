@@ -18,7 +18,9 @@ use SugarCommerce\Fields\Contracts\Context;
 use SugarCommerce\Fields\Rest\FormController;
 use SugarCommerce\Fields\Traits\Form\Rendering;
 use SugarCommerce\Fields\Traits\Form\Submission;
+use SugarCommerce\Security\FormGuard;
 use SugarCommerce\Security\RateLimit\Limiter;
+use SugarCommerce\Security\Tokens\Signer;
 
 /**
  * The same fields, on the front of the site.
@@ -123,7 +125,10 @@ final class Form {
 	 *     @type bool     $guard      Warn before leaving it with changes.
 	 *     @type bool     $nonce      Check a nonce. Off only for a page a
 	 *                                cache serves to everybody.
-	 *     @type bool     $honeypot   A box only a robot fills. On.
+	 *     @type bool     $honeypot   A box only a robot fills, and a signed
+	 *                                stamp of when the form was drawn:
+	 *                                sugarcommerce/security's FormGuard.
+	 *                                On.
 	 *     @type string   $capability What sending it needs; empty for anyone.
 	 *     @type Limiter  $limiter    Counts sends per visitor: past `limit`,
 	 *                                a send is refused before any field is
@@ -323,7 +328,30 @@ final class Form {
 	 * @return string
 	 */
 	private function honeypot_name(): string {
-		return '_' . $this->id . '_website';
+		return '_' . $this->id . '_' . FormGuard::TRAP;
+	}
+
+	/**
+	 * The stamp's input name.
+	 *
+	 * @return string
+	 */
+	private function stamp_name(): string {
+		return '_' . $this->id . FormGuard::STAMP;
+	}
+
+	/**
+	 * The guard for this form's stamp, or null on a site with no usable
+	 * salt to sign with -- where the trap still stands.
+	 *
+	 * @return FormGuard|null
+	 */
+	private function form_guard(): ?FormGuard {
+		try {
+			return new FormGuard( Signer::site( 'forms' ), $this->id );
+		} catch ( \RuntimeException ) {
+			return null;
+		}
 	}
 
 	/**

@@ -444,8 +444,11 @@ flow.
 
 Other arguments: `success`, `action`, `class`, `capability` (empty for
 anyone), `nonce` (`false` only for a page a cache serves to everybody, which a
-nonce would break), `honeypot` (on; a robot that fills it is told it worked
-and nothing happens), `limiter` and `limit` (a
+nonce would break), `honeypot` (on; sugarcommerce/security's `FormGuard`: a
+robot that fills the hidden box is told it worked and nothing happens, and a
+send within three seconds of the page being drawn, a day after it, or without
+the form's signed stamp is refused with "please send it again" -- the stamp
+needs the site's salts, and without them only the box stands), `limiter` and `limit` (a
 `SugarCommerce\Security\RateLimit\Limiter` to count sends per visitor, and
 `[ sends, seconds ]`, five in ten minutes by default: past it a send is
 refused before any field is checked or `on_submit` runs).
@@ -1083,7 +1086,7 @@ differs from what was committed.
   through `wp_kses_post()` (raw code only with `unfiltered_html`), URLs refuse
   `javascript:`, `vbscript:` and `data:`, and an SVG icon is rebuilt from an
   allow-list with no DOCTYPE, entities, scripts or outside references.
-* Public forms: a user-bound nonce, a honeypot, `wp_safe_redirect()`, the
+* Public forms: a user-bound nonce, a honeypot and a signed time stamp (security's `FormGuard`), `wp_safe_redirect()`, the
   admin-only types left out, and a per-visitor limit when given a limiter.
 
 ## Layout

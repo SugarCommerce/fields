@@ -13,6 +13,7 @@ declare( strict_types=1 );
 namespace SugarCommerce\Fields\Traits\Form;
 
 use SugarCommerce\Fields\Context\ArrayContext;
+use SugarCommerce\Security\FormGuard;
 use SugarCommerce\Security\RateLimit\Limiter;
 
 /**
@@ -73,10 +74,21 @@ trait Submission {
 
 		// Somebody who filled in the box nobody can see is told it worked,
 		// and nothing is done: a robot that is refused learns to try again.
-		if ( $this->args['honeypot'] && '' !== trim( (string) ( is_scalar( $input[ $this->honeypot_name() ] ?? null ) ? $input[ $this->honeypot_name() ] : '' ) ) ) {
+		if ( $this->args['honeypot'] && FormGuard::trapped( self::posted( $input, $this->honeypot_name() ) ) ) {
 			$this->result['ok']      = true;
 			$this->result['values']  = [];
 			$this->result['message'] = (string) $this->args['success'];
+
+			return $this->result;
+		}
+
+		// Sent seconds after the page was drawn is a script; a day after, a
+		// replayed page; with no stamp, not a page this site drew. A person
+		// who was simply quick sends it again.
+		$guard = $this->args['honeypot'] ? $this->form_guard() : null;
+
+		if ( null !== $guard && ! $guard->human( self::posted( $input, $this->stamp_name() ) ) ) {
+			$this->result['message'] = __( 'That was sent too soon after the page opened, or from a page left open too long. Please send it again.', 'sugarcommerce' );
 
 			return $this->result;
 		}
@@ -187,5 +199,17 @@ trait Submission {
 			'errors'  => (object) $result['errors'],
 			'ids'     => (object) $ids,
 		];
+	}
+
+	/**
+	 * One posted value as a string: '' when it is missing or not a string.
+	 *
+	 * @param array<string, mixed> $input The submission, still slashed.
+	 * @param string               $name  The input's name.
+	 *
+	 * @return string
+	 */
+	private static function posted( array $input, string $name ): string {
+		return is_scalar( $input[ $name ] ?? null ) ? wp_unslash( (string) $input[ $name ] ) : '';
 	}
 }

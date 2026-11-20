@@ -505,7 +505,15 @@ if ( ! function_exists( 'wp_salt' ) ) {
 	 * how the WordPress test suite itself runs.
 	 */
 	function wp_salt( $scheme = 'auth' ) {
-		return 'fk-test-salt-' . $scheme;
+		// Too short for security's Keys on purpose, so a form signs no
+		// stamp unless a test gives it a salt of its own (fk_salt).
+		return $GLOBALS['fk_salt'] ?? 'fk-test-salt-' . $scheme;
+	}
+}
+
+if ( ! function_exists( 'wp_hash' ) ) {
+	function wp_hash( $data, $scheme = 'auth', $algo = 'md5' ) {
+		return hash_hmac( $algo, (string) $data, wp_salt( $scheme ) );
 	}
 }
 

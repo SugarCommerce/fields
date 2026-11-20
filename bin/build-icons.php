@@ -6,7 +6,7 @@
  * `wordpress` set is not shipped: it is core's own icon library, read from
  * WP 7.1's Icons API by Icons\CoreIcons.) This copies them out of an upstream release,
  * each file put through the same cleaning every icon gets before it is
- * drawn (Icons\Svg::sanitize()) -- so what is committed is exactly what is
+ * drawn (security's Svg::sanitize()) -- so what is committed is exactly what is
  * printed: no comments, no `aria-hidden`, no `data-slot`, no `style`, no
  * whitespace between tags.
  *

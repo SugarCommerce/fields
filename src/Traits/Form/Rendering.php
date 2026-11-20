@@ -67,6 +67,12 @@ trait Rendering {
 		}
 
 		if ( $this->args['honeypot'] ) {
+			$stamp = $this->form_guard()?->stamp();
+
+			if ( null !== $stamp ) {
+				$hidden .= sprintf( '<input type="hidden" name="%s" value="%s" />', esc_attr( $this->stamp_name() ), esc_attr( $stamp ) );
+			}
+
 			$hidden .= sprintf(
 				'<div class="sugarcommerce-form__trap" aria-hidden="true"><label for="%1$s">%2$s</label><input type="text" id="%1$s" name="%3$s" value="" tabindex="-1" autocomplete="off" /></div>',
 				esc_attr( $this->id . '__trap' ),
