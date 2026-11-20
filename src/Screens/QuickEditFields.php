@@ -18,6 +18,7 @@ use SugarCommerce\Fields\Contracts\Context;
 use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\FieldSet;
 use SugarCommerce\Fields\Registry;
+use SugarCommerce\Fields\Utils\Runtime;
 use Exception;
 
 /**
@@ -200,7 +201,7 @@ class QuickEditFields {
 
 		echo '<fieldset class="inline-edit-col-right"><div class="inline-edit-col">';
 
-		wp_nonce_field( 'quick_edit_' . $this->post_type, $this->nonce_name() );
+		wp_nonce_field( $this->nonce_action(), $this->nonce_name() );
 
 		foreach ( $this->set->fields() as $field ) {
 			if ( ! $this->permitted( $field ) ) {
@@ -279,7 +280,7 @@ class QuickEditFields {
 			? sanitize_text_field( wp_unslash( $_POST[ $this->nonce_name() ] ) )
 			: '';
 
-		if ( '' === $nonce || ! wp_verify_nonce( $nonce, 'quick_edit_' . $this->post_type ) ) {
+		if ( '' === $nonce || ! wp_verify_nonce( $nonce, $this->nonce_action() ) ) {
 			return;
 		}
 
@@ -330,12 +331,22 @@ class QuickEditFields {
 	}
 
 	/**
-	 * The nonce field's name.
+	 * The nonce's action: this build's own, so another plugin's copy of the
+	 * kit on the same list neither prints nor accepts it.
+	 *
+	 * @return string
+	 */
+	private function nonce_action(): string {
+		return Runtime::key( 'quick_edit_' . sanitize_key( $this->post_type ) );
+	}
+
+	/**
+	 * The nonce field's name: this build's own.
 	 *
 	 * @return string
 	 */
 	private function nonce_name(): string {
-		return 'field_kit_quick_edit_' . sanitize_key( $this->post_type );
+		return Runtime::key( 'quick_edit_' . sanitize_key( $this->post_type ) . '_nonce' );
 	}
 
 	/**

@@ -34,7 +34,7 @@ final class IconSetsTest extends TestCase {
 	 */
 	protected function tearDown(): void {
 		Icons::reset();
-		unset( $GLOBALS['fk_filters'][ Icons::FILTER ] );
+		unset( $GLOBALS['fk_filters'][ Icons::filter() ] );
 	}
 
 	/**
@@ -148,7 +148,7 @@ final class IconSetsTest extends TestCase {
 	 * filter, which every prefixed copy of the kit reads.
 	 */
 	public function test_the_filter_adds_removes_and_reorders(): void {
-		$GLOBALS['fk_filters'][ Icons::FILTER ][] = static function ( array $sets ): array {
+		$GLOBALS['fk_filters'][ Icons::filter() ][] = static function ( array $sets ): array {
 			unset( $sets['dashicons'] );
 
 			return [ 'theme' => [ 'label' => 'Theme', 'source' => __DIR__ . '/fixtures/icons/theme' ] ] + $sets;
@@ -166,7 +166,7 @@ final class IconSetsTest extends TestCase {
 	 * A filter that hands back nonsense leaves no sets, not a fatal.
 	 */
 	public function test_a_broken_filter_is_survived(): void {
-		$GLOBALS['fk_filters'][ Icons::FILTER ][] = static fn() => 'nonsense';
+		$GLOBALS['fk_filters'][ Icons::filter() ][] = static fn() => 'nonsense';
 
 		$this->assertSame( [], Icons::sets() );
 		$this->assertSame( '', Icons::svg( 'heroicons-outline:star' ) );

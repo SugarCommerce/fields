@@ -18,6 +18,7 @@ use SugarCommerce\Fields\Contracts\Context;
 use SugarCommerce\Fields\Rest\FormController;
 use SugarCommerce\Fields\Traits\Form\Rendering;
 use SugarCommerce\Fields\Traits\Form\Submission;
+use SugarCommerce\Fields\Utils\Runtime;
 use SugarCommerce\Security\FormGuard;
 use SugarCommerce\Security\RateLimit\Limiter;
 use SugarCommerce\Security\Tokens\Signer;
@@ -52,10 +53,6 @@ final class Form {
 	use Rendering;
 	use Submission;
 
-	/**
-	 * The hidden input naming which form was sent.
-	 */
-	public const string FIELD = '_sugarcommerce_form';
 
 	/**
 	 * The registered forms, by id.
@@ -305,12 +302,26 @@ final class Form {
 	}
 
 	/**
-	 * The nonce's action.
+	 * The hidden input naming which form was sent.
+	 *
+	 * This build's own (Runtime::key()): two plugins each bundling the kit,
+	 * each with a form of the same id, would otherwise both take the one
+	 * that was sent.
+	 *
+	 * @return string `_sugarcommerce_fields_form`, or the same behind a
+	 *                prefixed build's own name.
+	 */
+	public static function field(): string {
+		return '_' . Runtime::key( 'form' );
+	}
+
+	/**
+	 * The nonce's action: this build's own.
 	 *
 	 * @return string
 	 */
 	private function nonce_action(): string {
-		return 'sugarcommerce_form_' . $this->id;
+		return Runtime::key( 'form_' . $this->id );
 	}
 
 	/**

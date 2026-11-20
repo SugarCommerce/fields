@@ -228,7 +228,8 @@ beforeAll( async () => {
 
 	await import( '../../assets/js/field-kit.js' );
 
-	modules = context.window.SugarCommerceFieldsModules;
+	modules =
+		context.window.SugarCommerceFields[ 'sugarcommerce-fields' ].modules;
 } );
 
 test( 'the script publishes its modules', () => {

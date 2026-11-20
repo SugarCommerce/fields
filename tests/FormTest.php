@@ -55,7 +55,7 @@ final class FormTest extends TestCase {
 	private function post( array $values, array $extra = [] ): array {
 		return array_merge(
 			[
-				Form::FIELD         => 'order',
+				Form::field()         => 'order',
 				'order'             => $values,
 				'_order_nonce'      => 'nonce',
 				'_order_website'    => '',
@@ -68,8 +68,8 @@ final class FormTest extends TestCase {
 		$html = ( new Form( 'order', $this->fields(), [ 'submit' => 'Buy', 'guard' => true ] ) )->render( [ 'name' => 'Ada' ] );
 
 		$this->assertStringStartsWith( '<form class="sugarcommerce-form" id="order" method="post"', $html );
-		$this->assertStringContainsString( 'name="_sugarcommerce_form" value="order"', $html );
-		$this->assertStringContainsString( 'name="_order_nonce" value="nonce-sugarcommerce_form_order"', $html );
+		$this->assertStringContainsString( 'name="_sugarcommerce_fields_form" value="order"', $html );
+		$this->assertStringContainsString( 'name="_order_nonce" value="nonce-sugarcommerce_fields_form_order"', $html );
 		$this->assertStringContainsString( 'name="_order_website"', $html );
 		$this->assertStringContainsString( 'name="order[name]"', $html );
 		$this->assertStringContainsString( 'value="Ada"', $html );
@@ -264,7 +264,7 @@ final class FormTest extends TestCase {
 	}
 
 	public function test_another_forms_submission_is_not_this_ones(): void {
-		$_POST = array_merge( $this->post( [ 'name' => 'Grace' ] ), [ Form::FIELD => 'other' ] );
+		$_POST = array_merge( $this->post( [ 'name' => 'Grace' ] ), [ Form::field() => 'other' ] );
 
 		$form = new Form( 'order', $this->fields() );
 
@@ -319,7 +319,7 @@ final class FormTest extends TestCase {
 
 		$request = new WP_REST_Request( 'POST', '/forms/rest_order' );
 		$request->set_param( 'id', 'rest_order' );
-		$request->set_body_params( [ Form::FIELD => 'rest_order', 'rest_order' => [ 'name' => 'Ada', 'email' => 'bad' ], '_rest_order_nonce' => 'n' ] );
+		$request->set_body_params( [ Form::field() => 'rest_order', 'rest_order' => [ 'name' => 'Ada', 'email' => 'bad' ], '_rest_order_nonce' => 'n' ] );
 
 		$response = ( new FormController() )->submit( $request );
 		$data     = $response->get_data();
@@ -329,7 +329,7 @@ final class FormTest extends TestCase {
 		$this->assertSame( 'rest_order_email_', $data['ids']->email );
 		$this->assertObjectHasProperty( 'terms', $data['errors'] );
 
-		$request->set_body_params( [ Form::FIELD => 'rest_order', 'rest_order' => [ 'name' => 'Ada', 'email' => 'a@example.com', 'terms' => '1' ], '_rest_order_nonce' => 'n' ] );
+		$request->set_body_params( [ Form::field() => 'rest_order', 'rest_order' => [ 'name' => 'Ada', 'email' => 'a@example.com', 'terms' => '1' ], '_rest_order_nonce' => 'n' ] );
 
 		$response = ( new FormController() )->submit( $request );
 

@@ -32,7 +32,7 @@ use SugarCommerce\Fields\Utils\Runtime;
  * panel already asks before it throws changes away; the guard adds the
  * marks and the warning on leaving the page, and starts again when the
  * panel saves. Elsewhere in a page, code about to remove a guarded form
- * asks `SugarCommerceFieldsModules.Guard.confirm( element )` first.
+ * asks its build's `modules.Guard.confirm( element )` first.
  */
 final class Guard {
 

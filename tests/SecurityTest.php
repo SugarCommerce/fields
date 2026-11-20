@@ -151,7 +151,7 @@ final class SecurityTest extends TestCase {
 		);
 
 		$post = [
-			Form::FIELD        => 'contact',
+			Form::field()        => 'contact',
 			'contact'          => [ 'name' => 'Ada' ],
 			'_contact_website' => '',
 		];

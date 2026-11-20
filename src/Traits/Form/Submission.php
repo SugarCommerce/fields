@@ -30,7 +30,7 @@ trait Submission {
 	 */
 	public function submitted(): bool {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Only which form; handle() checks the nonce.
-		$sent = isset( $_POST[ self::FIELD ] ) && is_string( $_POST[ self::FIELD ] ) ? sanitize_key( wp_unslash( $_POST[ self::FIELD ] ) ) : '';
+		$sent = isset( $_POST[ self::field() ] ) && is_string( $_POST[ self::field() ] ) ? sanitize_key( wp_unslash( $_POST[ self::field() ] ) ) : '';
 
 		return $sent === $this->id;
 	}

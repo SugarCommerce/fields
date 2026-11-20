@@ -1,5 +1,6 @@
 /**
- * What other code reads from the kit: `window.SugarCommerceFieldsModules`,
+ * What other code reads from the kit: its modules, in its build's own entry
+ * (`window.SugarCommerceFields[ handle ].modules`),
  * its shape and when it is there; init() and destroy(); the native events
  * the kit listens for and fires; and the one module that touches jQuery.
  */
@@ -87,7 +88,7 @@ beforeAll( async () => {
 	startedEarly = Object.keys( document.fieldKitBound || {} );
 	delete document.readyState;
 
-	modules = window.SugarCommerceFieldsModules;
+	modules = window.SugarCommerceFields[ 'sugarcommerce-fields' ].modules;
 } );
 
 afterEach( () => {
@@ -95,7 +96,7 @@ afterEach( () => {
 	delete window.jQuery;
 } );
 
-describe( 'window.SugarCommerceFieldsModules', () => {
+describe( 'window.SugarCommerceFields[ handle ].modules', () => {
 	test( 'is there as soon as the script has run, before the page is ready', () => {
 		expect( modules ).toBeTruthy();
 		// Nothing was started yet: that waits for the page.

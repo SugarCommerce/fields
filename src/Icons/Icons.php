@@ -12,6 +12,7 @@ declare( strict_types=1 );
 
 namespace SugarCommerce\Fields\Icons;
 
+use SugarCommerce\Fields\Utils\Runtime;
 use SugarCommerce\Security\Svg;
 
 /**
@@ -30,23 +31,21 @@ use SugarCommerce\Security\Svg;
  * Dashicons (read from core). A theme or plugin adds its own in either of
  * two ways:
  *
- * - `Icons::register( 'my-set', [ ... ] )`, from code that has the class;
- * - the `sugarcommerce_icon_sets` filter, from code that does not.
+ * - `Icons::register( 'my-set', [ ... ] )`;
+ * - the filter named by `Icons::filter()` -- `sugarcommerce_fields_icon_sets`
+ *   in a plain install, `{build}_sugarcommerce_fields_icon_sets` in a
+ *   prefixed one.
  *
- * The filter's name is not derived from this build's namespace, which is
- * what every other hook in the kit does, and that is deliberate. Each plugin
- * bundles its own Strauss-prefixed copy of the kit, so a theme cannot know
- * which class to call -- and a set it registers should appear in every
- * plugin's picker, not one. Every copy reads the same filter.
+ * The filter's name is this build's own (Runtime::hook()), like every other
+ * hook in the kit. Each plugin bundles its own copy, and a shared name let
+ * one plugin's sets -- and its removals -- reach every other plugin's
+ * pickers, and a set written for one copy's IconSet be read by an older
+ * copy that does not understand it. A plugin adds a set to its own build.
  *
  * @since 1.5.0
  */
 final class Icons {
 
-	/**
-	 * The filter every copy of the kit reads its sets through.
-	 */
-	public const string FILTER = 'sugarcommerce_icon_sets';
 
 	/**
 	 * The class render() puts on every icon it draws, SVG or font.
@@ -81,6 +80,17 @@ final class Icons {
 	 * @var array<string, IconSet>|null
 	 */
 	private static ?array $sets = null;
+
+	/**
+	 * The filter this build reads its sets through.
+	 *
+	 * @return string `sugarcommerce_fields_icon_sets`, or the same behind a
+	 *                prefixed build's own name.
+	 * @since 1.5.0
+	 */
+	public static function filter(): string {
+		return Runtime::hook( 'icon_sets' );
+	}
 
 	/**
 	 * Add an icon set, or replace one of the same id.
@@ -165,14 +175,14 @@ final class Icons {
 			 * Add a set by adding its arguments under its id -- see
 			 * Icons::register() for what they are -- remove one by
 			 * unsetting it, reorder them by returning them in another
-			 * order. Every plugin built on the kit reads this filter, so a
-			 * theme's set appears in all of their pickers.
+			 * order. Named for this build (Icons::filter()), so it reaches
+			 * this plugin's pickers and no other plugin's.
 			 *
 			 * @param array<string, array<string, mixed>> $definitions Arguments by set id.
 			 *
 			 * @since 1.5.0
 			 */
-			$definitions = apply_filters( self::FILTER, $definitions );
+			$definitions = apply_filters( self::filter(), $definitions );
 		}
 
 		$sets = [];

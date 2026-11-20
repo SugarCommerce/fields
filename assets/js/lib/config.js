@@ -10,7 +10,9 @@
  * URL and nonce for both.
  *
  * A script finds its own entry from the id WordPress stamps on its <script>
- * element, "{handle}-js".
+ * element, "{handle}-js". The kit puts its modules in the same entry, as
+ * `modules` (field-kit.js): there is no page global a second copy would
+ * overwrite, and nothing is read from one.
  */
 
 // Read while the script runs. Once it has, document.currentScript is null.
@@ -40,13 +42,35 @@ export function own() {
 }
 
 /**
- * This build's configuration: restUrl, restNonce, i18n, icons, and what a
- * screen added -- codeEditors, guard.
+ * The entry this script publishes into, made if PHP printed none.
+ *
+ * A script with no handle -- not one WordPress printed -- has nowhere of its
+ * own in the registry, and gets an object nobody else can reach.
+ *
+ * @return {Object} The entry.
+ */
+function entry() {
+	const found = own();
+	const handle = script && script.id ? script.id.replace( /-js$/, '' ) : '';
+
+	if ( found || ! handle ) {
+		return found || {};
+	}
+
+	window.SugarCommerceFields = window.SugarCommerceFields || {};
+	window.SugarCommerceFields[ handle ] = {};
+
+	return window.SugarCommerceFields[ handle ];
+}
+
+/**
+ * This build's configuration: restUrl, restNonce, i18n, icons, what a
+ * screen added -- codeEditors, guard -- and the kit's own modules.
  *
  * Read once, as the script loads; what a screen adds later lands in the
  * same object, which is why it is kept rather than copied.
  */
-export const config = own() || window.FieldKit || {};
+export const config = entry();
 
 /**
  * Translate, falling back to the key's own English.

@@ -4,9 +4,11 @@
  * Registered as `{prefix}` (Assets::register()), loaded wherever a field
  * set is drawn -- a settings page, a metabox, a term or profile screen,
  * quick and bulk edit, a panel, a public form -- and on a public form with
- * nothing of wp-admin's. Publishes `window.SugarCommerceFieldsModules`
- * while it runs (lib/kit.js), then starts every module on the document
- * when it is ready and once more when the page has loaded.
+ * nothing of wp-admin's. Publishes its modules while it runs (lib/kit.js),
+ * as `window.SugarCommerceFields[ handle ].modules` -- its own build's
+ * entry, never a page global another copy would overwrite -- then starts
+ * every module on the document when it is ready and once more when the
+ * page has loaded.
  *
  * Two conventions run through it.
  *
@@ -110,7 +112,8 @@ Object.assign( kit, {
 	destroy,
 } );
 
-window.SugarCommerceFieldsModules = kit;
+// Into this build's own entry, beside its configuration (lib/config.js).
+config.modules = kit;
 
 domReady( () => init( document ) );
 

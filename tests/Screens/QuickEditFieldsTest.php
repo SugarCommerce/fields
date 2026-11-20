@@ -235,7 +235,7 @@ final class QuickEditFieldsTest extends TestCase {
 	 */
 	public function test_a_hidden_field_cannot_be_written(): void {
 		$_POST = [
-			'field_kit_quick_edit_post' => 'nonce',
+			'sugarcommerce_fields_quick_edit_post_nonce' => 'nonce',
 			'colour'                    => 'blue',
 			'secret'                    => 'sneaked in',
 		];
@@ -359,7 +359,7 @@ final class QuickEditFieldsTest extends TestCase {
 		$this->assertStringNotContainsString( 'cost price', (string) ob_get_clean() );
 
 		$_POST = [
-			'field_kit_quick_edit_post' => 'nonce',
+			'sugarcommerce_fields_quick_edit_post_nonce' => 'nonce',
 			'colour'                    => 'blue',
 			'margin'                    => 'zero',
 		];

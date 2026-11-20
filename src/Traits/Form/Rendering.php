@@ -60,7 +60,7 @@ trait Rendering {
 		$attributes->set_if( (bool) $this->args['guard'], Guard::ATTRIBUTE, true );
 		$attributes->set_if( null !== $this->args['context'], 'data-keep', true );
 
-		$hidden = sprintf( '<input type="hidden" name="%s" value="%s" />', esc_attr( self::FIELD ), esc_attr( $this->id ) );
+		$hidden = sprintf( '<input type="hidden" name="%s" value="%s" />', esc_attr( self::field() ), esc_attr( $this->id ) );
 
 		if ( $this->args['nonce'] ) {
 			$hidden .= wp_nonce_field( $this->nonce_action(), $this->nonce_name(), false, false );

@@ -21,17 +21,15 @@ vi.mock( '@wordpress/api-fetch', () => ( {
  *
  * @param {string|null} id       The script element's id, or null for none.
  * @param {Object}      registry window.SugarCommerceFields.
- * @param {Object}      [legacy] window.FieldKit.
  * @return {Promise<Object>} The config module.
  */
-async function load( id, registry, legacy ) {
+async function load( id, registry ) {
 	vi.resetModules();
 	Object.defineProperty( document, 'currentScript', {
 		value: id ? { id } : null,
 		configurable: true,
 	} );
 	window.SugarCommerceFields = registry;
-	window.FieldKit = legacy;
 
 	return import( '../../assets/js/lib/config' );
 }
@@ -39,6 +37,7 @@ async function load( id, registry, legacy ) {
 afterEach( () => {
 	delete window.SugarCommerceFields;
 	delete window.FieldKit;
+	delete window.SugarCommerceFieldsModules;
 	api.calls.length = 0;
 } );
 
@@ -58,12 +57,16 @@ describe( 'config', () => {
 		expect( t( 'missing', 'English.' ) ).toBe( 'English.' );
 	} );
 
-	test( 'falls back to a bare FieldKit, then to nothing', async () => {
-		const legacy = { restUrl: 'https://legacy.test/' };
+	test( 'never reads a bare page global: a build with no entry gets its own', async () => {
+		// What another plugin's older copy might have left on the page.
+		window.FieldKit = { restUrl: 'https://legacy.test/' };
+		window.SugarCommerceFieldsModules = { config: window.FieldKit };
 
-		expect( ( await load( 'unknown-js', {}, legacy ) ).config ).toBe(
-			legacy
-		);
+		const { config } = await load( 'unknown-js', {} );
+
+		expect( config ).toEqual( {} );
+		expect( config ).not.toBe( window.FieldKit );
+		expect( window.SugarCommerceFields.unknown ).toBe( config );
 		expect( ( await load( null, undefined ) ).config ).toEqual( {} );
 	} );
 

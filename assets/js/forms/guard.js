@@ -171,7 +171,7 @@ const Guard = {
 			if (
 				! el.name ||
 				/^(submit|button|reset|file)$/.test( el.type ) ||
-				/(^_wpnonce$|^_wp_http_referer$|_nonce$|^_sugarcommerce_form$)/.test(
+				/(^_wpnonce$|^_wp_http_referer$|_nonce$|_sugarcommerce_fields_form$)/.test(
 					el.name
 				)
 			) {

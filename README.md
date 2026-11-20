@@ -381,9 +381,9 @@ loads it. That matters to markup drawn after the page has loaded, a panel
 fetched over REST, where nothing a field would enqueue while rendering
 reaches the page.
 
-Such markup is started with `window.SugarCommerceFieldsModules.init( root )`
-and let go of with `window.SugarCommerceFieldsModules.destroy( root )` before
-it is removed. A visual editor core did not start is started from core's own
+Such markup is started with the kit's `init( root )` and let go of with its
+`destroy( root )` before it is removed -- the modules of your own build, at
+`window.SugarCommerceFields[ handle ].modules` ("Globals and events"). A visual editor core did not start is started from core's own
 defaults on the markup `wp_editor()` drew, and `destroy()` stops it, so the
 same editor drawn again is a new editor rather than the old one's ghost.
 
@@ -825,7 +825,7 @@ In a flyouts panel, closing it is the way out inside the page, and the panel
 already asks before it throws changes away; the guard adds the marks and the
 warning on leaving the page, and starts again when the panel saves (it
 listens for `wpflyout:dirty`). Code of your own about to remove a guarded
-form asks `SugarCommerceFieldsModules.Guard.confirm( element )` first, and a
+form asks its build's `modules.Guard.confirm( element )` first, and a
 form fires `field-kit:dirty` with `{ dirty, count }` as it changes.
 
 ## Colour
@@ -958,12 +958,15 @@ so it draws on a storefront with no icon font loaded.
 
 ### Registering a set
 
-From a theme, or any code that does not know which plugin's copy it is
-talking to, use the filter. Every copy reads it, so the set appears in every
-plugin's picker:
+Through the filter, named for the build (`Icons::filter()`, which is
+`Runtime::hook( 'icon_sets' )`): `sugarcommerce_fields_icon_sets` in a plain
+install, `{build}_sugarcommerce_fields_icon_sets` in a plugin's prefixed copy.
+Each plugin's copy reads its own, so a set reaches the pickers of the plugin
+it was added to and no other -- add it to each plugin that should offer it,
+through that plugin's `Icons` class:
 
 ```php
-add_filter( 'sugarcommerce_icon_sets', function ( array $sets ): array {
+add_filter( Icons::filter(), function ( array $sets ): array {
 	$sets['my-theme'] = [
 		'label'    => __( 'My theme', 'my-theme' ),
 		'source'   => get_theme_file_path( 'icons' ), // one .svg per icon, named for it
@@ -1032,12 +1035,37 @@ as PHP reads them), `block-editor/controls` and `block-editor/panel`.
 
 ### Globals and events
 
-* `window.SugarCommerceFieldsModules` -- there as soon as the script has run,
-  every module by name in the order it has always had, with `init( root )`,
+* `window.SugarCommerceFields` -- the kit's registry, keyed by the handle of
+  each build's script (`Runtime::handle()`): `sugarcommerce-fields` in a plain
+  install, `{build}-sugarcommerce-fields` in a plugin's prefixed copy. Two
+  plugins' copies on one page each have their own entry, and nothing else is
+  put on the window. An entry is the build's configuration (`restUrl`,
+  `restNonce`, `i18n`, `icons`, and `codeEditors`, `guard` from the screens
+  that need them) and, as soon as its script has run, `modules`: every module
+  by name in the order it has always had, with `init( root )`,
   `destroy( root )`, `t()`, `icon()`, `config` and `request()`. A panel calls
   `init()` on markup it has just put in the page and `destroy()` before it
   takes it out; a plugin adds a repeater row with `Repeater.add()`, moves one
   with `Reorder.move()` and starts its media buttons with `Media.init()`.
+
+  A plugin's own script reaches its build's modules by the handle, which its
+  PHP hands it -- read from the plugin's own copy of the class, so a prefixed
+  build names its prefixed handle:
+
+  ```php
+  wp_add_inline_script( 'my-admin', sprintf( 'window.myAdmin = %s;', wp_json_encode( [
+  	'fields' => \SugarCommerce\Fields\Utils\Runtime::handle(),
+  ] ) ), 'before' );
+  ```
+
+  ```js
+  const entry = ( window.SugarCommerceFields || {} )[ window.myAdmin.fields ];
+  const modules = entry && entry.modules; // asked when wanted, not at load
+  ```
+
+  A script that loads after the kit's (it depends on `Runtime::handle()`)
+  finds `modules` there at once; one that may load first asks at the moment
+  it needs them.
 * `window.sugarcommerceFileSources` -- read, never written: the places a file
   can come from ("More places a file can come from").
 * `field-kit:change` -- fired, bubbling, on a colour input core's picker
