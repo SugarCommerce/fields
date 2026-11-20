@@ -12,6 +12,8 @@ declare( strict_types=1 );
 
 namespace SugarCommerce\Fields\Icons;
 
+use SugarCommerce\Security\Svg;
+
 /**
  * Class Icons
  *

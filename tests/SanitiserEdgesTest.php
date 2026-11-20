@@ -13,7 +13,6 @@ use PHPUnit\Framework\TestCase;
 use SugarCommerce\Fields\Context\ArrayContext;
 use SugarCommerce\Fields\Field;
 use SugarCommerce\Fields\FieldSet;
-use SugarCommerce\Fields\Icons\Svg;
 use SugarCommerce\Fields\Types\CheckboxType;
 use SugarCommerce\Fields\Value;
 
@@ -180,55 +179,5 @@ final class SanitiserEdgesTest extends TestCase {
 		} finally {
 			unset( $GLOBALS['fk_is_singular'], $GLOBALS['fk_queried_object'] );
 		}
-	}
-
-	/**
-	 * A DOCTYPE is refused on its own, entity or not.
-	 */
-	public function test_an_icon_with_a_doctype_is_refused(): void {
-		$this->assertSame( '', Svg::sanitize( '<!DOCTYPE svg><svg viewBox="0 0 24 24"><path d="M0 0h24v24H0z"/></svg>' ) );
-	}
-
-	/**
-	 * Only an svg or a symbol is an icon.
-	 */
-	public function test_only_an_svg_or_a_symbol_is_an_icon(): void {
-		$this->assertSame( '', Svg::sanitize( '<g viewBox="0 0 24 24"><path d="M0 0h24v24H0z"/></g>' ) );
-		$this->assertNotSame( '', Svg::sanitize( '<symbol viewBox="0 0 24 24"><path d="M0 0h24v24H0z"/></symbol>' ) );
-		$this->assertNotSame( '', Svg::sanitize( '<SVG viewBox="0 0 24 24"><path d="M0 0h24v24H0z"/></SVG>' ) );
-	}
-
-	/**
-	 * Without a viewBox, a width and a height make one -- both of them, and
-	 * both above zero.
-	 */
-	public function test_a_viewbox_is_made_from_a_size(): void {
-		$this->assertStringContainsString( 'viewBox="0 0 1 1"', Svg::sanitize( '<svg width="1" height="1"><path d="M0 0h1v1H0z"/></svg>' ) );
-		$this->assertSame( '', Svg::sanitize( '<svg width="0" height="24"><path d="M0 0h24v24H0z"/></svg>' ) );
-		$this->assertSame( '', Svg::sanitize( '<svg width="24" height="0"><path d="M0 0h24v24H0z"/></svg>' ) );
-		$this->assertSame( '', Svg::sanitize( '<svg><path d="M0 0h24v24H0z"/></svg>' ) );
-	}
-
-	/**
-	 * An icon that strokes is not also filled.
-	 */
-	public function test_a_stroked_icon_is_not_given_a_fill(): void {
-		$svg = Svg::sanitize( '<svg viewBox="0 0 24 24" stroke="currentColor"><path d="M0 0h24"/></svg>' );
-
-		$this->assertStringNotContainsString( 'fill="currentColor"', $svg );
-		$this->assertStringContainsString( 'fill="currentColor"', Svg::sanitize( '<svg viewBox="0 0 24 24"><path d="M0 0h24"/></svg>' ) );
-	}
-
-	/**
-	 * The size limit is inclusive: exactly the limit is read, a byte more
-	 * is not.
-	 */
-	public function test_the_size_limit_is_inclusive(): void {
-		$head = '<svg viewBox="0 0 24 24"';
-		$tail = '><path d="M0 0h24"/></svg>';
-		$fill = 65536 - strlen( $head ) - strlen( $tail );
-
-		$this->assertNotSame( '', Svg::sanitize( $head . str_repeat( ' ', $fill ) . $tail ) );
-		$this->assertSame( '', Svg::sanitize( $head . str_repeat( ' ', $fill + 1 ) . $tail ) );
 	}
 }

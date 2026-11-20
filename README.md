@@ -978,7 +978,7 @@ should change when icons are edited in place. An icon font with no SVGs is a
 set too: give `prefix` (`'fa fa-'`), `names` and the `stylesheet` handle.
 
 Every icon is somebody else's markup printed into an admin screen, so
-`Svg::sanitize()` parses it as XML (no network, no entities, no DOCTYPE) and
+sugarcommerce/security's `Svg::sanitize()` parses it as XML (no network, no entities, no DOCTYPE) and
 rebuilds it from an allow-list of shapes and presentation attributes: scripts,
 event handlers, `<style>`, `<foreignObject>`, links, images, animation and
 text are dropped, and a `href` or `url()` may only point inside the icon.

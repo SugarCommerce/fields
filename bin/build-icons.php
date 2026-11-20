@@ -24,7 +24,7 @@
 
 declare( strict_types=1 );
 
-use SugarCommerce\Fields\Icons\Svg;
+use SugarCommerce\Security\Svg;
 
 require __DIR__ . '/../vendor/autoload.php';
 

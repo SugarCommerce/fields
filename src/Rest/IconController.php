@@ -13,7 +13,7 @@ declare( strict_types=1 );
 namespace SugarCommerce\Fields\Rest;
 
 use SugarCommerce\Fields\Icons\Icons;
-use SugarCommerce\Fields\Icons\Svg;
+use SugarCommerce\Security\Svg;
 use SugarCommerce\Fields\Utils\Runtime;
 use WP_Error;
 use WP_REST_Request;

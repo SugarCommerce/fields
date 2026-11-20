@@ -11,7 +11,7 @@ namespace SugarCommerce\Fields\Types;
 
 use SugarCommerce\Fields\Attributes;
 use SugarCommerce\Fields\Field;
-use SugarCommerce\Fields\Icons\Svg;
+use SugarCommerce\Security\Svg;
 use SugarCommerce\Fields\Utils\Runtime;
 
 /**
